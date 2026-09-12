@@ -1,6 +1,6 @@
 # The Shape Tools' Shared Drawing Behaviour — Implementation Notes
 
-Last Updated: 09-12-26 16:48 · Revision 1.8
+Last Updated: 09-12-26 18:25 · Revision 1.9
 
 Implements the open rows of the Basic Shape Annotation Tools PRD's Section 2, Shared Shape Behavior (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.12 at the start), and the per-tool Drawing hints that go with them, with the General UI PRD (version 2.25) and Technical Architecture PRD (version 1.37) rows they own, in the five phases and the close-out defined by `docs/Basic-Shape-Shared-Drawing-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2. Finishing this work leaves the Basic Shape Annotation Tools PRD's Section 2 with no open row.
 
@@ -259,7 +259,7 @@ Every phase is done. The PRDs stand at Basic Shape Annotation Tools PRD 1.19, Bl
 
 **At the Phase 3 commit** (`f789353`), run alone from a scratch worktree between 15:28 and 16:48 while this session's targeted runs shared the machine: **1547 passed, 1 failed, 13 skipped, 1 deselected, in 1 hour 19 minutes.** The one failure is the timing-sensitive Zoom tool test `test_left_click_zooms_in_and_alt_at_the_release_zooms_out`, with the Stamp tool's hint-timer traceback of Section 9.2, so its cause now reads the same in a full run as in the targeted one. This work's own focus-loss test, which failed in the Phase 1 suite, passed: the monkeypatch of `b32659e` holds in a full run.
 
-**At the Phase 5 commit** (`072616c`), the last code commit: running from a scratch worktree at the time of writing; its result is recorded in 12.5 when it ends.
+**At the Phase 5 commit** (`072616c`), the last code commit: **1604 passed, 1 failed, 13 skipped, 1 deselected, in 1 hour 34 minutes** (12.5).
 
 ### 12.2 What remains of the Basic Shape Annotation Tools PRD
 
@@ -300,12 +300,13 @@ Owed by other works and not this one's: a blur region in Solid Fill, worth re-ru
 
 ### 12.5 The Phase 5 full-suite run
 
-Pending at 16:48; the run from the worktree at `072616c` started at 16:48.
+Run alone from a scratch worktree between 16:48 and 18:22: **1604 passed, 1 failed, 13 skipped, 1 deselected, in 1 hour 34 minutes.** The one failure is again the timing-sensitive Zoom tool test `test_left_click_zooms_in_and_alt_at_the_release_zooms_out`, which nothing in this work touches. The 57 tests more than the Phase 3 run are Phases 4 and 5's own. Nothing else failed, so no test anywhere in the suite relied on a drawing tool switching to the Select tool or selecting its new item, which confirms the second silence of Section 11. This work's focus-loss test passed again.
 
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.9 | 09-12-26 18:25 | Claude (Claude Code) | Section 12.5: the full-suite run at the Phase 5 commit, 1604 passed with the one timing-sensitive Zoom tool failure, confirming that no test relied on the switch to the Select tool. |
 | 1.8 | 09-12-26 16:48 | Claude (Claude Code) | Close-out: Section 12 with the full-suite run at the Phase 3 commit (1547 passed, the one timing-sensitive Zoom tool failure), what remains of the Basic Shape PRD outside Section 2, which has no open row, the eight display checks this work owes and the ones other works still owe, what remains elsewhere, and the next required step; the phase-table close-out row done. General UI notes 1.41, Basic Shape remainder notes 1.8. |
 | 1.7 | 09-12-26 15:59 | Claude (Claude Code) | Phase 5 done: Section 11 with no auto-selection and no switch to the Select tool in the seven shape tools, the Blur tool's three release paths, and the Highlighter; `_switch_to_select` removed; the three silences — the Idle hint after a confirmed arc or polygon, no existing test needing a rewrite, and the Phase 4 status bar test tightened — 11.1's tests, and 11.2's close-out; the phase-table row done. Basic Shape PRD 1.19, Blur PRD 1.17, Technical Architecture PRD 1.42. |
 | 1.6 | 09-12-26 15:34 | Claude (Claude Code) | Phase 4 done: Section 10 with the 70 percent preview, the guide lines to the rulers in the view's foreground pass, the Drawing rows of 3.7, 4.8, 5.7, 6.7, and 9.11 and the Idle rows of 3.7 and 4.8, and the six silences found while building — the off-screen rule for the guide lines, the rulers as one toggle, the lines from the geometry, the tools that draw them, the hint on every move, and the dimming in proportion — 10.1's measured cost per move, 10.2's tests, and 10.3's close-out; the phase-table row done. Basic Shape PRD 1.18, General UI PRD 2.32, Technical Architecture PRD 1.41. |
