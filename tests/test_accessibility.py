@@ -60,7 +60,9 @@ class TestAccessibleNames:
             for w in main_window._tool_options.findChildren(QWidget)  # noqa: SLF001
             if w.accessibleName()
         }
-        assert {"Shape", "Tail W", "Bold", "Straight"} <= names
+        # The Callout's own two controls carry their own names, so the audit does not have
+        # to take them from the label beside them (09-12-26, with the bar's overflow).
+        assert {"Bubble shape", "Tail width", "Bold", "Straight"} <= names
 
     def test_document_tabs_and_close_buttons(self, main_window: MainWindow) -> None:
         main_window._file_new()  # noqa: SLF001

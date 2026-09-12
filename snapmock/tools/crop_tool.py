@@ -276,6 +276,8 @@ class CropTool(BaseTool):
     def build_options_widgets(self, toolbar: QToolBar) -> None:
         toolbar.addWidget(QLabel("Aspect:"))
         combo = QComboBox()
+        combo.setAccessibleName("Aspect ratio")
+        combo.setToolTip("Aspect ratio")
         for name in _ASPECT_PRESETS:
             combo.addItem(name)
         combo.currentTextChanged.connect(self._on_aspect_changed)

@@ -322,6 +322,8 @@ class RasterSelectTool(BaseTool):
         toolbar.addSeparator()
         toolbar.addWidget(QLabel("Feather:"))
         feather = QSpinBox()
+        feather.setAccessibleName("Feather")
+        feather.setToolTip("Feather the selection's edge")
         feather.setRange(0, 20)
         feather.setValue(0)
         feather.setSuffix("px")

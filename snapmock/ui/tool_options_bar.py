@@ -21,7 +21,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import QPoint, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
     QAction,
     QColor,
@@ -30,23 +30,29 @@ from PyQt6.QtGui import (
     QIcon,
     QMouseEvent,
     QPainter,
+    QPaintEvent,
     QPixmap,
+    QResizeEvent,
 )
 from PyQt6.QtWidgets import (
+    QApplication,
     QButtonGroup,
     QCheckBox,
     QComboBox,
     QDoubleSpinBox,
     QFontComboBox,
+    QHBoxLayout,
     QInputDialog,
     QLabel,
     QLineEdit,
     QMenu,
     QMessageBox,
+    QSizePolicy,
     QSlider,
     QSpinBox,
     QToolBar,
     QToolButton,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -71,7 +77,7 @@ from snapmock.config.constants import (
 )
 from snapmock.core.emoji_data import EMOJI_SIZE_MAX, EMOJI_SIZE_MIN
 from snapmock.core.stamp_library import STAMP_SIZE_MAX, STAMP_SIZE_MIN
-from snapmock.core.theme_manager import theme_manager
+from snapmock.core.theme_manager import current_theme, theme_manager
 from snapmock.items.base_item import SnapGraphicsItem
 from snapmock.tools.eyedropper_tool import EyedropperTool, format_color_value
 from snapmock.ui.accessibility import apply_default_names
@@ -91,6 +97,8 @@ EYEDROPPER_SWATCH_SIZE = 32
 """Blur PRD 4.5's large sampled-colour swatch."""
 HISTORY_SWATCH_SIZE = 16
 """Blur PRD 4.5's Color History swatches."""
+_STRIP_HINT_WIDTH = 120
+"""What the control strip asks for: enough to be visible, never the sum of the controls."""
 
 
 class _ValueField(QLineEdit):
@@ -352,6 +360,97 @@ def badge_shape_icon(shape: BadgeShape, size: int = 16) -> QIcon:
     return QIcon(pixmap)
 
 
+class _OverflowPopover(QWidget):
+    """The controls that do not fit the bar, stacked in a popover (General UI PRD 15.1).
+
+    15.1 says the Tool Options Bar "collapses into an overflow menu" at the minimum window
+    size. Qt's own toolbar extension button is what a `QToolBar` shows for that, and its
+    popup never opens for the widget actions this bar is made of: at a 1024 px window the
+    Blur tool's bar hid fifteen of its thirty controls, the blur radius among them, and no
+    click could reach them (measured 09-12-26 after Doug's display run). This popover holds
+    the real controls instead of copies, so whatever it shows is the control itself.
+    """
+
+    def __init__(self, parent: QWidget) -> None:
+        super().__init__(parent, Qt.WindowType.Popup)
+        self.setAccessibleName("More tool options")
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(4)
+        self._layout = layout
+
+    @property
+    def rows(self) -> QVBoxLayout:
+        return self._layout
+
+    def take(self, widgets: Sequence[QWidget], *, hidden: set[QWidget] | None = None) -> None:
+        """Show *widgets* here, in the bar's own order, except those the tool has hidden."""
+        for widget in widgets:
+            self._layout.addWidget(widget)
+            widget.setVisible(hidden is None or widget not in hidden)
+
+    def release(self) -> list[QWidget]:
+        """Give every control back, in order, for the bar to lay out again."""
+        widgets = []
+        while self._layout.count():
+            item = self._layout.takeAt(0)
+            widget = item.widget() if item is not None else None
+            if widget is not None:
+                widget.setParent(None)
+                widgets.append(widget)
+        return widgets
+
+
+class _Strip(QWidget):
+    """The row the controls sit in.
+
+    It wants the width the toolbar's row has and never demands more, so the Tool Options
+    Bar spans its row as it always did while the overflow decides what fits: a widget
+    whose size hint were the sum of its controls would make the toolbar ask for 1400 px
+    and Qt would hide the tail behind an extension button whose popup does not open.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self._wanted = _STRIP_HINT_WIDTH
+
+    def set_wanted_width(self, width: int) -> None:
+        """What the whole tool's controls need, whether they are in the strip or in the
+        popover: the toolbar asks for this, so moving a control out never shrinks the row
+        and the two cannot chase each other down."""
+        wanted = max(_STRIP_HINT_WIDTH, width)
+        if wanted == self._wanted:
+            return
+        self._wanted = wanted
+        self.updateGeometry()
+
+    def sizeHint(self) -> QSize:  # noqa: N802
+        return QSize(self._wanted, super().sizeHint().height())
+
+    def minimumSizeHint(self) -> QSize:  # noqa: N802
+        # Zero, so a narrow window squeezes the strip instead of widening the window;
+        # what does not fit is moved to the popover rather than clipped.
+        return QSize(0, super().minimumSizeHint().height())
+
+
+class _Separator(QWidget):
+    """The bar's group divider, as a widget rather than a toolbar separator, so it can
+    move into the overflow popover with the controls around it."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.setFixedWidth(9)
+        self.setAccessibleName("Separator")
+
+    def paintEvent(self, event: QPaintEvent | None) -> None:  # noqa: N802
+        painter = QPainter(self)
+        painter.setPen(current_theme().toolbar_separator)
+        middle = self.width() // 2
+        painter.drawLine(middle, 4, middle, self.height() - 5)
+        painter.end()
+
+
 class ToolOptionsBar(QToolBar):
     """Context-sensitive options for the active tool, 36 px tall (PRD 2.2)."""
 
@@ -379,6 +478,42 @@ class ToolOptionsBar(QToolBar):
         self._themes: ToolThemeManager | None = None
         self._preset_button: QToolButton | None = None
         self._preset_menu: QMenu | None = None
+        # Every control lives in one strip inside the toolbar, so Qt never hides any of
+        # them behind its own extension button, whose popup does not open for widget
+        # actions (PRD 15.1; see _OverflowPopover). The strip takes whatever width the
+        # toolbar gives it and the tail that does not fit moves into the popover.
+        self._strip = _Strip()
+        self._flow = QHBoxLayout(self._strip)
+        self._flow.setContentsMargins(0, 0, 0, 0)
+        self._flow.setSpacing(3)
+        self._flow.addStretch()
+        super().addWidget(self._strip)
+        self._items: list[QWidget] = []
+        """The controls in bar order, whether in the strip or in the popover."""
+        self._proxies: list[QAction] = []
+        """The actions this bar made for the controls in the strip, in order."""
+        self._owned_actions: list[QAction] = []
+        """Every action this bar put on itself, proxies and a tool's own alike, so that
+        rebuilding for the next tool takes all of them off again."""
+        self._action_widgets: dict[QAction, QWidget] = {}
+        self._overflow = _OverflowPopover(self)
+        self._more = QToolButton()
+        self._more.setText("More…")
+        self._more.setToolTip("The options that do not fit at this window width")
+        self._more.setAccessibleName("More options")
+        self._more.setMaximumHeight(_CONTROL_HEIGHT)
+        self._more.clicked.connect(self._open_overflow)
+        self._more_action = super().addWidget(self._more)
+        if self._more_action is not None:
+            self._more_action.setVisible(False)
+        self._reflowing = False
+        self._reflow_queued = False
+        self._pinned: dict[QWidget, int] = {}
+        """Each control's width, measured once while it sat in the strip."""
+        self._tool_hidden: set[QWidget] = set()
+        """The controls the active tool has hidden through the action it kept. Qt's own
+        ``isHidden`` cannot answer that here: moving a control into the popover takes its
+        parent away, which hides it, so the bar keeps the tool's intent itself."""
         self._label = QLabel("No tool selected")
         self.addWidget(self._label)
         self.setMovable(False)
@@ -437,6 +572,260 @@ class ToolOptionsBar(QToolBar):
     def selection_action_copies(self) -> list[QAction]:
         return list(self._selection_copies)
 
+    # ---- the strip and its overflow (PRD 15.1) ----
+
+    def addWidget(self, widget: QWidget | None) -> QAction | None:  # noqa: N802
+        """Put *widget* in the strip and return the action that shows and hides it.
+
+        A tool keeps the returned action to show a control only in the mode it belongs to
+        (the Blur tool's Fill colour, the Polygon tool's Sides), so it behaves as a
+        toolbar's own widget action does.
+        """
+        if widget is None:
+            return None
+        self._flow.insertWidget(self._flow.count() - 1, widget)
+        self._items.append(widget)
+        # Not added to the toolbar itself: a QToolBar builds a button for every action it
+        # is given, and these actions exist only to show and hide the widget in the strip.
+        action = QAction(self)
+        action.changed.connect(lambda w=widget, a=action: self._on_proxy_changed(w, a))
+        self._proxies.append(action)
+        self._owned_actions.append(action)
+        self._action_widgets[action] = widget
+        self._schedule_reflow()
+        return action
+
+    def addSeparator(self) -> QAction | None:  # noqa: N802
+        """A group divider, as a widget so it travels with the controls it divides."""
+        action = self.addWidget(_Separator())
+        if action is not None:
+            action.setSeparator(True)
+        return action
+
+    def addAction(self, action: QAction) -> None:  # type: ignore[override]  # noqa: N802
+        """Show *action* as a button in the strip (the Select tool's Arrange copies)."""
+        button = QToolButton()
+        button.setDefaultAction(action)
+        button.setMaximumHeight(_CONTROL_HEIGHT)
+        self.addWidget(button)
+        self._owned_actions.append(action)
+        self._action_widgets[action] = button
+
+    def widgetForAction(self, action: QAction | None) -> QWidget | None:  # noqa: N802
+        if action is None:
+            return None
+        widget = self._action_widgets.get(action)
+        return widget if widget is not None else super().widgetForAction(action)
+
+    def clear(self) -> None:
+        """Take every control out of the strip and the popover, for the next tool."""
+        self._overflow.hide()
+        for widget in self._overflow.release():
+            widget.deleteLater()
+        for widget in self._items:
+            if widget.parent() is self._strip:
+                self._flow.removeWidget(widget)
+            widget.setParent(None)
+            widget.deleteLater()
+        for action in self._owned_actions:
+            self.removeAction(action)
+        self._items = []
+        self._proxies = []
+        self._owned_actions = []
+        self._action_widgets = {}
+        self._tool_hidden = set()
+        self._pinned = {}
+        self._strip.set_wanted_width(0)
+        if self._more_action is not None:
+            self._more_action.setVisible(False)
+        self._reflow_width = -1
+
+    def _on_proxy_changed(self, widget: QWidget, action: QAction) -> None:
+        """A tool hid or showed one of its controls through the action it kept."""
+        hidden = not action.isVisible()
+        if hidden == (widget in self._tool_hidden):
+            return
+        if hidden:
+            self._tool_hidden.add(widget)
+        else:
+            self._tool_hidden.discard(widget)
+        widget.setVisible(not hidden)
+        self._schedule_reflow()
+
+    @property
+    def control_actions(self) -> list[QAction]:
+        """One action per control in the strip, in order: what shows and hides each."""
+        return list(self._proxies)
+
+    @property
+    def controls(self) -> list[QWidget]:
+        """The controls the active tool put in the bar, in order, wherever they now sit."""
+        return list(self._items)
+
+    @property
+    def more_button(self) -> QToolButton:
+        """The overflow button, shown only while something does not fit (PRD 15.1)."""
+        return self._more
+
+    @property
+    def overflow_popover(self) -> _OverflowPopover:
+        return self._overflow
+
+    @property
+    def overflowing(self) -> list[QWidget]:
+        """The controls in the popover rather than the strip, in bar order."""
+        rows = self._overflow.rows
+        widgets: list[QWidget] = []
+        for index in range(rows.count()):
+            item = rows.itemAt(index)
+            widget = item.widget() if item is not None else None
+            if widget is not None:
+                widgets.append(widget)
+        return widgets
+
+    def _schedule_reflow(self) -> None:
+        """Reflow once the toolbar has been given its width, after a rebuild.
+
+        One pass however many controls were just added: building a tool's bar calls this
+        for every one of them.
+        """
+        if self._reflow_queued:
+            return
+        self._reflow_queued = True
+        QTimer.singleShot(0, self._run_queued_reflow)
+
+    def _run_queued_reflow(self) -> None:
+        self._reflow_queued = False
+        self._reflow()
+
+    def resizeEvent(self, event: QResizeEvent | None) -> None:  # noqa: N802
+        super().resizeEvent(event)
+        self._reflow()
+
+    def showEvent(self, event: object) -> None:  # noqa: N802
+        super().showEvent(event)  # type: ignore[arg-type]
+        self._reflow()
+
+    def _reflow(self) -> None:
+        """Move the tail of the strip that does not fit into the popover, and back again.
+
+        The arithmetic is on each control's own width rather than on the geometry Qt has
+        given it, so the answer does not depend on when a layout pass has run: every
+        control's minimum width is the width it asks for, pinned by :meth:`_pin_widths`,
+        so the strip needs the sum of them plus the spacing between. The pass decides
+        first and moves nothing when the decision has not changed, so the layout passes it
+        causes cannot send it round again.
+        """
+        if self._reflowing:
+            # The pass in flight is already moving widgets; whether another is needed is
+            # decided at the end of it, by the width it then finds.
+            return
+        if not self._items:
+            return
+        available = self.contentsRect().width()
+        if available <= 0:
+            return
+        self._reflowing = True
+        grew = False
+        try:
+            grew = self._pin_widths()
+            spacing = self._flow.spacing()
+            shown = [w for w in self._items if w not in self._tool_hidden]
+            needed = sum(self._pinned.get(w, w.sizeHint().width()) + spacing for w in shown)
+            wanted_tail: list[QWidget] = []
+            if needed > available:
+                room = available - self._more.sizeHint().width() - spacing
+                while shown and needed > room:
+                    victim = shown.pop()
+                    needed -= self._pinned.get(victim, victim.sizeHint().width()) + spacing
+                    wanted_tail.insert(0, victim)
+            wanted_tail = self._with_leading_labels(wanted_tail)
+            if wanted_tail != self.overflowing:
+                self._move(wanted_tail)
+            if self._more_action is not None and self._more_action.isVisible() != bool(
+                wanted_tail
+            ):
+                self._more_action.setVisible(bool(wanted_tail))
+        finally:
+            self._reflowing = False
+        if grew or self.contentsRect().width() != available:
+            # Either a control was measured for the first time, or the toolbar changed
+            # width while this pass ran. Both settle in one more pass.
+            self._schedule_reflow()
+
+    def _with_leading_labels(self, tail: list[QWidget]) -> list[QWidget]:
+        """Take the label of a control that is moving with it.
+
+        ``_add_labelled`` puts a label immediately before the control it names, so a tail
+        that starts at a control would leave its label behind in the strip, naming nothing.
+        """
+        if not tail:
+            return tail
+        first = self._items.index(tail[0])
+        while first > 0 and isinstance(self._items[first - 1], QLabel):
+            first -= 1
+            tail.insert(0, self._items[first])
+        return tail
+
+    def _move(self, tail: Sequence[QWidget]) -> None:
+        """Put every control back in the strip, then hand *tail* to the popover."""
+        for widget in self._overflow.release():
+            self._flow.insertWidget(self._items.index(widget), widget)
+            # Reparenting hid it; the tool's own intent decides whether it shows.
+            widget.setVisible(widget not in self._tool_hidden)
+        self._overflow.hide()
+        for widget in tail:
+            self._flow.removeWidget(widget)
+            widget.setParent(None)
+        if tail:
+            self._overflow.take(tail, hidden=self._tool_hidden)
+
+    def _pin_widths(self) -> bool:
+        """Hold every control at the width it asks for, measured once, in the strip.
+
+        Pinned here rather than when the control joined the strip, because a widget's size
+        hint before it has been shown and styled is smaller than the width it ends up
+        wanting, and a minimum taken then let the layout squeeze the strip instead of
+        overflowing it. Pinned once and then remembered, because a control sitting in the
+        popover reports a different hint there and a width that followed it would never
+        settle. Returns True when a control was measured for the first time, so the caller
+        can run once more with the width it now knows.
+        """
+        measured = False
+        for widget in self._items:
+            if widget in self._tool_hidden or widget in self._pinned:
+                continue
+            if widget.parent() is not self._strip or not widget.isVisible():
+                continue
+            want = max(widget.sizeHint().width(), widget.minimumWidth())
+            self._pinned[widget] = want
+            widget.setMinimumWidth(want)
+            measured = True
+        total = sum(
+            self._pinned.get(w, w.sizeHint().width()) + self._flow.spacing()
+            for w in self._items
+            if w not in self._tool_hidden
+        )
+        self._strip.set_wanted_width(total)
+        return measured
+
+    def _open_overflow(self) -> None:
+        """Show the overflow popover under the More button (PRD 15.1)."""
+        if not self.overflowing:
+            return
+        self._overflow.adjustSize()
+        below = self._more.mapToGlobal(QPoint(0, self._more.height() + 2))
+        size = self._overflow.sizeHint()
+        x, y = below.x(), below.y()
+        screen = QApplication.screenAt(below)
+        if screen is not None:
+            available = screen.availableGeometry()
+            x = max(available.left(), min(x, available.right() - size.width()))
+            y = max(available.top(), min(y, available.bottom() - size.height()))
+        self._overflow.move(x, y)
+        self._overflow.show()
+        self._overflow.raise_()
+
     # ---- composition ----
 
     def set_control_visible(self, key: str, visible: bool) -> None:
@@ -484,12 +873,14 @@ class ToolOptionsBar(QToolBar):
             spec = SHARED_CONTROLS[key]
             if spec.key != "text_style" and spec.key not in tool.creation_defaults:
                 continue
-            before = len(self.actions())
+            before = len(self._proxies)
             self._build_control(spec)
-            self._control_actions[spec.key] = self.actions()[before:]
+            self._control_actions[spec.key] = list(self._proxies[before:])
         self._read_defaults(tool)
         self._update_selection_widgets()
         apply_default_names(self)
+        self._reflow()
+        self._schedule_reflow()
 
     def _add_labelled(self, label: str, widget: QWidget) -> None:
         if label:

@@ -315,6 +315,8 @@ class LassoSelectTool(BaseTool):
     def build_options_widgets(self, toolbar: QToolBar) -> None:
         toolbar.addWidget(QLabel("Mode:"))
         combo = QComboBox()
+        combo.setAccessibleName("Lasso mode")
+        combo.setToolTip("Freeform or polygonal lasso")
         combo.addItems(["Freeform", "Polygonal"])
         combo.currentTextChanged.connect(self._on_mode_changed)
         toolbar.addWidget(combo)
@@ -324,6 +326,8 @@ class LassoSelectTool(BaseTool):
 
         toolbar.addWidget(QLabel("Feather:"))
         feather = QSpinBox()
+        feather.setAccessibleName("Feather")
+        feather.setToolTip("Feather the selection's edge")
         feather.setRange(0, 20)
         feather.setValue(0)
         feather.setSuffix("px")

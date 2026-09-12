@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.28</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.27</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.28</dd>
-    <dt>Last Updated</dt>    <dd>09-12-26 12:50</dd>
+    <dt>Document version</dt><dd>2.27</dd>
+    <dt>Last Updated</dt>    <dd>09-12-26 13:34</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.27</td>
+        <td class="nowrap">09-12-26 13:34</td>
+        <td>Doug Bower</td>
+        <td>The Tool Options Bar owns its overflow: the controls that do not fit move into a popover, where before they were hidden behind a Qt extension button whose popup never opened.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.28</td>
         <td class="nowrap">09-12-26 12:50</td>
@@ -360,6 +367,18 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-12-26 13:34</td>
+        <td>5, 14, 15.1</td>
+        <td>Built</td>
+        <td>The Tool Options Bar's overflow, after Doug's display run of 09-12-26: "When I press B, the cursor goes to a cross to drag, but there are no properties to select the mode, or shape." 15.1 says the bar "collapses into an overflow menu" below the minimum window size, and what a <code>QToolBar</code> offers for that is its extension button, whose popup does not open for the widget actions this bar is built from. Measured before the change: at a 1024 px window the bar is 918 px wide and the Blur tool's bar wants 1446, so Qt hid <strong>fifteen of its thirty controls</strong> — the blur radius, the corner radius, the feather, the brush size, and Invert Mask among them — behind a button that produced nothing on a click, twice verified on the real display. Every drawing tool is over that budget: the Numbered Step bar wants 1556 px, the Arc 1531, the Callout 1492, the Rectangle 1474, the Freehand 1451, the Arrow 1411, the Polygon 1365, the Text 1105, the Highlighter 1103. <strong>What is built.</strong> Every control now sits in one strip inside the toolbar, so Qt has nothing of its own to hide, and the bar decides what fits: the tail that does not fit moves into a popover under a "More…" button at the right end of the bar, which appears only while something is in it. The popover holds the real controls, not copies, so what it shows is the control the tool built and reads; a control's label travels with it. The arithmetic is each control's own width, pinned once while it sits in the strip, so the answer does not depend on when Qt has laid the bar out, and the pass runs after every rebuild and every resize, settling in one further pass and never while the window is idle. Widening the window takes the controls back: at 1600 px the Blur bar keeps all but three. The bar still spans its row and is still 36 px tall, as 2.2 says. <strong>A control is no longer reachable by nothing at any width, on any tool</strong>, which is the rule 15.1 describes and the one the extension button broke. The bars are still wider than the minimum window, and compacting them — 5.2's slider-and-spin-box pairs are 850 px of the Blur bar's width and its labels another 450 — is a separate row, left open deliberately: the overflow makes it a matter of how many clicks, not of whether a control exists.</td>
+      </tr>
+      <tr>
+        <td class="nowrap">09-12-26 13:34</td>
+        <td>15.1, 14</td>
+        <td>Departure</td>
+        <td>Departure in 15.1's wording. The overflow is a popover under a "More…" button rather than a menu, because its rows are the tool's own live controls — a slider, a spin box, a colour swatch — and a <code>QMenu</code> cannot host those: Qt's own attempt to put them in one is the bug this replaces. The button appears at any window width at which a tool's controls do not fit, not only at the 1024 px minimum 15.1 names, since every drawing tool's bar is wider than that minimum. Four tools' controls gained the accessible name the standard asks for, which this work surfaced by making them visible in the popover where the extension button had hidden them: the Callout's bubble shape and tail width, the Crop tool's aspect ratio, the Raster Selection tool's feather, and the Lasso tool's mode and feather. A control in another window is no longer counted as part of a surface's Tab order (Section 14), since a popover is its own surface and Qt refuses a Tab chain that crosses windows.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-12-26 12:50</td>
         <td>12.2</td>

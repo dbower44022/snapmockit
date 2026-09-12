@@ -106,6 +106,8 @@ class CalloutTool(BaseTool):
         """Bubble Shape, Tail Style, Tail Width (Callout PRD 4.6); the rest is shared."""
         toolbar.addWidget(QLabel(" Shape:"))
         self._opt_shape = QComboBox()
+        self._opt_shape.setAccessibleName("Bubble shape")
+        self._opt_shape.setToolTip("Bubble shape")
         self._opt_shape.setMaximumWidth(120)
         self._opt_shape.setMaximumHeight(26)
         for shape in BubbleShape:
@@ -130,6 +132,8 @@ class CalloutTool(BaseTool):
 
         toolbar.addWidget(QLabel(" Tail W:"))
         self._opt_tail_w = QDoubleSpinBox()
+        self._opt_tail_w.setAccessibleName("Tail width")
+        self._opt_tail_w.setToolTip("Tail width")
         self._opt_tail_w.setRange(4.0, 100.0)
         self._opt_tail_w.setDecimals(0)
         self._opt_tail_w.setSuffix(" px")

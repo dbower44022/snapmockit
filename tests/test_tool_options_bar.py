@@ -166,8 +166,7 @@ def test_text_tool_controls_and_alignment_slot(main_window: MainWindow) -> None:
     assert tool.creation_defaults["font_size"] == 24
     # The tool's own alignment buttons sit between the text colour and the box controls.
     texts = []
-    for action in bar.actions():
-        widget = bar.widgetForAction(action)
+    for widget in bar.controls:
         if isinstance(widget, QToolButton) and widget.text() in ("L", "C", "R", "J"):
             texts.append(widget.text())
             if widget.text() == "C":
@@ -183,8 +182,7 @@ def test_callout_own_controls_write_defaults_applied_to_new_items(main_window: M
     assert isinstance(tool, CalloutTool)
     tool._opt_shape.setCurrentIndex(tool._opt_shape.findData(BubbleShape.ELLIPSE))  # noqa: SLF001
     tool._opt_tail_w.setValue(33.0)  # noqa: SLF001
-    for action in bar.actions():
-        widget = bar.widgetForAction(action)
+    for widget in bar.controls:
         if isinstance(widget, QToolButton) and widget.text() == "Curved":
             widget.click()
     assert tool.creation_defaults["bubble_shape"] == BubbleShape.ELLIPSE
@@ -336,11 +334,7 @@ def test_freehand_smoothing_simplifies_the_path() -> None:
 def test_crop_checkbox_is_named_rule_of_thirds(main_window: MainWindow) -> None:
     bar = _bar(main_window)
     main_window.tool_manager.activate("crop")
-    boxes = [
-        bar.widgetForAction(a).text()  # type: ignore[union-attr]
-        for a in bar.actions()
-        if isinstance(bar.widgetForAction(a), QCheckBox)
-    ]
+    boxes = [w.text() for w in bar.controls if isinstance(w, QCheckBox)]
     assert boxes == ["Rule of Thirds"]
 
 
@@ -350,4 +344,6 @@ def test_tools_without_options_show_only_their_name(main_window: MainWindow) -> 
     for tool_id in ("pan", "zoom"):
         main_window.tool_manager.activate(tool_id)
         assert bar.shared_widgets == {}
-        assert len([a for a in bar.actions() if not a.isSeparator()]) == 1
+        # One control, the tool's name label; the strip and the overflow button are the
+        # bar's own furniture and are not the tool's controls.
+        assert len(bar.controls) == 1

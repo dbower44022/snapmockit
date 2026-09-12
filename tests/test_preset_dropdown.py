@@ -55,13 +55,13 @@ def _width_spin(window: MainWindow) -> QDoubleSpinBox:
 def test_dropdown_is_the_leftmost_control_of_a_tool_with_defaults(main_window: MainWindow) -> None:
     main_window.tool_manager.activate("arrow")
     bar = _bar(main_window)
-    first = bar.widgetForAction(bar.actions()[0])
+    first = bar.controls[0]
     assert isinstance(first, QToolButton)
     assert first is bar.preset_button
     assert first.objectName() == "PresetDropdown"
     assert first.accessibleName() == "Arrow preset"
     assert first.text() == f"{DEFAULT_THEME_NAME} ▾"
-    second = bar.widgetForAction(bar.actions()[1])
+    second = bar.controls[1]
     assert isinstance(second, QLabel) and second.text().startswith("Arrow")
 
     main_window.tool_manager.activate("select")

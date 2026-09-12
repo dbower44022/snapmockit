@@ -237,11 +237,20 @@ def describe(widget: QWidget) -> str:
 
 
 def focusable_controls(root: QWidget) -> list[QWidget]:
-    """The Tab stops under *root* in construction order, *root* itself first if it is one."""
+    """The Tab stops under *root* in construction order, *root* itself first if it is one.
+
+    A control in another window is not one of them, even when *root* is its parent: a
+    popup — the colour picker's popover, the Tool Options Bar's overflow — is its own
+    surface with its own Tab order, and ``setTabOrder`` refuses a chain that crosses
+    windows in any case.
+    """
     stops: list[QWidget] = []
+    window = root.window()
     candidates: Iterable[QWidget] = [root, *root.findChildren(QWidget)]
     for widget in candidates:
         if isinstance(widget, QMenuBar) or is_internal(widget):
+            continue
+        if widget.window() is not window:
             continue
         if widget.focusPolicy() & Qt.FocusPolicy.TabFocus:
             stops.append(widget)
