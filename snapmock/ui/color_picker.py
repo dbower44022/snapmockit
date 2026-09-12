@@ -237,7 +237,13 @@ class _GradientBar(QWidget):
 
 
 class _MiniSwatch(QToolButton):
-    """A recent or saved colour; right-click on a saved one stores the current colour."""
+    """A recent or saved colour.
+
+    A saved slot is filled by a click while it is empty or by a right-click at any time,
+    and applies its colour on a click once it holds one (PRD 11.1). The tooltip says which,
+    because a row of empty squares labelled "Saved" says nothing about how to fill it: Doug
+    reported exactly that on 09-12-26 — "there is no button to save it".
+    """
 
     save_requested = pyqtSignal(int)
 
@@ -254,10 +260,33 @@ class _MiniSwatch(QToolButton):
     def color(self) -> QColor | None:
         return self._color
 
+    @property
+    def index(self) -> int:
+        """Which slot of the row this is."""
+        return self._index
+
+    @property
+    def saveable(self) -> bool:
+        """Whether this is a saved slot, which a click may write to."""
+        return self._saveable
+
     def set_color(self, color: QColor | None) -> None:
         self._color = QColor(color) if color is not None else None
-        self.setToolTip(_hex_text(self._color) if self._color is not None else "Empty slot")
+        self.setToolTip(self._hint())
+        self.setAccessibleDescription(self._hint())
         self.update()
+
+    def _hint(self) -> str:
+        """What a click and a right-click do here, in words, for the tooltip and the
+        accessible description."""
+        if self._color is None:
+            if self._saveable:
+                return "Empty slot — click to save the colour above here"
+            return "Empty slot — colours you use appear here"
+        value = _hex_text(self._color)
+        if self._saveable:
+            return f"{value} — click to use it, right-click to replace it"
+        return f"{value} — click to use it"
 
     def paintEvent(self, event: QPaintEvent | None) -> None:
         painter = QPainter(self)
@@ -393,6 +422,11 @@ class ColorPopover(QWidget):
         row.setSpacing(2)
         caption = QLabel(label)
         caption.setFixedWidth(44)
+        caption.setToolTip(
+            "Click a slot to save the colour above; right-click one to replace it"
+            if saveable
+            else "The colours you have used recently"
+        )
         row.addWidget(caption)
         swatches: list[_MiniSwatch] = []
         for i in range(SWATCH_COUNT):
@@ -500,8 +534,16 @@ class ColorPopover(QWidget):
         self._apply(QColor(0, 0, 0, 0))
 
     def _on_swatch_clicked(self, swatch: _MiniSwatch) -> None:
+        """A filled swatch applies its colour; an empty saved slot takes the current one.
+
+        11.1 gives a saved slot two gestures, a click to apply and a right-click to save,
+        and an empty slot has nothing to apply: a click there saves instead, so the row can
+        be filled without knowing that right-click is the way (PRD 2.26 row).
+        """
         if swatch.color is not None:
             self._apply(QColor(swatch.color))
+        elif swatch.saveable:
+            self._on_save_requested(swatch.index)
 
     def _on_save_requested(self, index: int) -> None:
         """Right-click on a saved slot stores the current colour there (PRD 11.1)."""

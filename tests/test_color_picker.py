@@ -134,6 +134,52 @@ def test_saved_slots_store_on_right_click(qtbot: QtBot) -> None:
     popover2.hide()
 
 
+def test_a_click_on_an_empty_saved_slot_saves_the_colour(qtbot: QtBot) -> None:
+    """Doug, 09-12-26: "there is no button to save it". A click on an empty slot is it."""
+    picker = _picker(qtbot, "#123456")
+    popover = _open(qtbot, picker)
+    slot = popover._saved_swatches[2]  # noqa: SLF001
+    assert slot.color is None
+    slot.click()
+    assert slot.color == QColor("#123456")
+    assert AppSettings().saved_colors()[2] == QColor("#123456")
+    # A second click on the now-filled slot applies it rather than overwriting it.
+    picker.color = QColor("#FFFFFF")
+    slot.click()
+    assert picker.color == QColor("#123456")
+    assert AppSettings().saved_colors()[2] == QColor("#123456")
+    popover.hide()
+
+
+def test_a_click_on_an_empty_recent_slot_does_nothing(qtbot: QtBot) -> None:
+    picker = _picker(qtbot, "#123456")
+    popover = _open(qtbot, picker)
+    slot = popover._recent_swatches[SWATCH_COUNT - 1]  # noqa: SLF001
+    assert slot.color is None
+    slot.click()
+    assert slot.color is None
+    assert picker.color == QColor("#123456")
+    popover.hide()
+
+
+def test_every_swatch_says_what_a_click_does(qtbot: QtBot) -> None:
+    """A row of empty squares labelled "Saved" has to explain itself (PRD 11.1)."""
+    picker = _picker(qtbot, "#ABCDEF")
+    popover = _open(qtbot, picker)
+    saved = popover._saved_swatches[0]  # noqa: SLF001
+    recent = popover._recent_swatches[0]  # noqa: SLF001
+    assert "click to save" in saved.toolTip().lower()
+    assert saved.toolTip() == saved.accessibleDescription()
+    saved.click()  # now it holds a colour
+    assert "click to use it" in saved.toolTip()
+    assert "right-click to replace" in saved.toolTip()
+    if recent.color is not None:
+        assert "click to use it" in recent.toolTip()
+    else:
+        assert "appear here" in recent.toolTip()
+    popover.hide()
+
+
 def test_setting_color_updates_an_open_popover_without_emitting(qtbot: QtBot) -> None:
     picker = _picker(qtbot)
     seen: list[QColor] = []
