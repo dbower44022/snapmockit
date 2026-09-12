@@ -15,6 +15,7 @@ from snapmock.config.constants import (
 from snapmock.core.path_utils import constrained_rect
 from snapmock.items.ellipse_item import EllipseItem
 from snapmock.tools.base_tool import BaseTool
+from snapmock.ui.dimension_overlay import diameter_text, size_text
 
 
 class EllipseTool(BaseTool):
@@ -67,6 +68,23 @@ class EllipseTool(BaseTool):
         item = self._preview_item
         return item if isinstance(item, EllipseItem) else None
 
+    @property
+    def drawing_measurement(self) -> tuple[str, ...]:
+        """6.2's dimension tooltip: the bounding box, or the diameter of a circle drawn
+        with Shift held (the kickoff's fourth silence)."""
+        item = self._item
+        if item is None:
+            return ()
+        width, height = item.rect.width(), item.rect.height()
+        if self.constrains(self._drawing_modifiers):
+            return (diameter_text(width),)
+        return (size_text(width, height),)
+
+    def _centre_marker_origin(self) -> QPointF | None:
+        if self._item is None or not self.draws_from_centre(self._drawing_modifiers):
+            return None
+        return QPointF(self._start)
+
     def mouse_press(self, event: QMouseEvent) -> bool:
         if self._scene is None or event.button() != Qt.MouseButton.LeftButton:
             return False
@@ -99,6 +117,7 @@ class EllipseTool(BaseTool):
         )
         item.setPos(rect.topLeft())
         item.rect = QRectF(0, 0, rect.width(), rect.height())
+        self._show_drawing_feedback(event)
         return True
 
     def mouse_release(self, event: QMouseEvent) -> bool:

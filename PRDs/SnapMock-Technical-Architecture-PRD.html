@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.39</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.40</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.39</dd>
-    <dt>Last Updated</dt>    <dd>09-12-26 12:34</dd>
+    <dt>Document version</dt><dd>1.40</dd>
+    <dt>Last Updated</dt>    <dd>09-12-26 15:19</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.40</td>
+        <td class="nowrap">09-12-26 15:19</td>
+        <td>Doug Bower</td>
+        <td>Shared drawing behaviour Phase 3 built: Section 3.9's tool overlays gain the dimension tooltip as a widget over the viewport, Section 3.3's BaseTool gains the drawing measurement, and Section 10 gains ui/dimension_overlay.py.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.39</td>
         <td class="nowrap">09-12-26 12:34</td>
@@ -399,6 +406,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-12-26 15:19</td>
+        <td>3.3, 3.9, 8, 10</td>
+        <td>Built</td>
+        <td>The shape tools' shared drawing behaviour, Phase 3 (09-12-26; notes in <code>docs/Basic-Shape-Shared-Drawing-Implementation.md</code>, Section 9). <strong>3.9:</strong> the tool overlays gain the Basic Shape PRD's 2.4 dimension tooltip, with its constrain icon, and the centre marker, as decision 1 (option A) of the 1.38 row put them: <code>snapmock/ui/dimension_overlay.py</code> holds <code>DimensionOverlay</code>, a widget parented to the canvas view's viewport, transparent to mouse events and taking no focus, and the <code>CentreMarker</code> it owns, a second small widget on the origin point, since the tooltip follows the cursor and the marker does not. Neither is a scene item, so no display render, export, thumbnail, or clipboard copy can contain either. One overlay serves every tool on a viewport, found as the viewport's child rather than held by a tool or the view. The screen-edge rule is one function, <code>beside_cursor</code>, which the Eyedropper's loupe of 1.36 and the tooltip both call. A scroll with no mouse move carries both widgets with the viewport's content, so the marker stays on the origin point and the tooltip is put back beside the cursor on the next move. <strong>3.3:</strong> <code>BaseTool</code> gains <code>drawing_measurement</code>, each tool's one function for its measurements, which the tooltip shows and the status bar hint is built from, and the protected <code>_show_drawing_feedback</code> and <code>_hide_drawing_feedback</code> each drawing tool calls from its move and its end. <strong>Section 8:</strong> no metric is added; the tooltip costs 0.025 ms per mouse move to compute and place and its repaint 0.3 to 0.55 ms, beside the loupe's 0.36 to 0.45 ms, measured on the offscreen platform over a 1920 by 1080 pixel canvas with fifty items. <strong>Section 10:</strong> <code>ui/dimension_overlay.py</code>.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-12-26 12:34</td>
         <td>3.3</td>
@@ -2231,6 +2244,7 @@ docstring.</p>
         context_menus.py          # Context menu builder functions for canvas, items, and…
         crop_overlay.py           # visual overlay showing the crop region with handles and…
         cursors.py                # canvas cursors of General UI PRD 6.6 that Qt does not provide
+        dimension_overlay.py      # the shape tools' dimension tooltip, constrain icon, and centre marker (Basic Shape PRD 2.4), widgets over the viewport
         document_tabs.py          # tab bar plus stacked views for the open documents
         emoji_picker.py           # the emoji picker popover of the marker PRD's Section 4.2 and the skin-tone palette
         export_dialog.py          # Export dialog: format options, region, output path, preview, size estimate

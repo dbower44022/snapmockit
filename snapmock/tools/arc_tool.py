@@ -30,6 +30,7 @@ from snapmock.config.constants import (
 from snapmock.core.path_utils import constrain_angle
 from snapmock.items.arc_item import ArcItem
 from snapmock.tools.base_tool import BaseTool
+from snapmock.ui.dimension_overlay import length_angle_text
 
 _ARC_TYPES: tuple[tuple[ArcType, str, str], ...] = (
     (ArcType.OPEN, "Open", "Open: the arc alone"),
@@ -124,23 +125,39 @@ class ArcTool(BaseTool):
         return self._item
 
     @property
-    def status_hint(self) -> str:
-        """The hints of 7.7, with the dimension tooltip's values (7.2)."""
+    def drawing_measurement(self) -> tuple[str, ...]:
+        """7.2's dimension tooltip: the chord's length and angle in step 1, then the arc's
+        length and its bulge in step 2."""
         item = self._item
         if self._step is _Step.CHORD and item is not None:
             chord = item.end_point - item.start_point
-            length = math.hypot(chord.x(), chord.y())
-            angle = -math.degrees(math.atan2(chord.y(), chord.x()))
-            return (
-                f"L: {length:.0f}px ∠ {angle:.1f}° | Shift: constrain angle | "
-                "Release to set chord."
-            )
+            return (length_angle_text(chord.x(), chord.y()),)
         if self._step is _Step.CURVE and item is not None:
             mid = (item.start_point + item.end_point) / 2.0
             peak = item.peak()
             bulge = math.hypot(peak.x() - mid.x(), peak.y() - mid.y())
+            return (f"Arc: {item.curve_path().length():.0f}px Bulge: {bulge:.0f}px",)
+        return ()
+
+    def _centre_marker_origin(self) -> QPointF | None:
+        """The press point is the chord's midpoint under the centre-draw modifier."""
+        if self._step is not _Step.CHORD or not self.draws_from_centre(self._drawing_modifiers):
+            return None
+        return QPointF(self._start)
+
+    def _shift_constrains_now(self) -> bool:
+        """Shift holds the chord's angle in step 1 and nothing in step 2 (7.2)."""
+        return self._step is _Step.CHORD
+
+    @property
+    def status_hint(self) -> str:
+        """The hints of 7.7, with the dimension tooltip's values (7.2)."""
+        measurement = " | ".join(self.drawing_measurement)
+        if self._step is _Step.CHORD and measurement:
+            return f"{measurement} | Shift: constrain angle | Release to set chord."
+        if self._step is _Step.CURVE and measurement:
             return (
-                f"Arc: {item.curve_path().length():.0f}px Bulge: {bulge:.0f}px | "
+                f"{measurement} | "
                 "Move mouse to adjust curvature. Click to confirm. Escape to cancel."
             )
         return "Click and drag to define the arc chord. Then move to set curvature."
@@ -249,6 +266,7 @@ class ArcTool(BaseTool):
             # 2.3 moves the chord's start away from where the press landed
             item.control_point = self.control_for(pos - item.pos())
         self._show_hint()
+        self._show_drawing_feedback(event)
         return True
 
     def control_for(self, cursor: QPointF) -> QPointF:
@@ -278,6 +296,7 @@ class ArcTool(BaseTool):
             return True
         self._step = _Step.CURVE
         self._show_hint()
+        self._show_drawing_feedback(event)
         return True
 
     def mouse_double_click(self, event: QMouseEvent) -> bool:
@@ -302,6 +321,7 @@ class ArcTool(BaseTool):
         return True
 
     def cancel(self) -> None:
+        self._hide_drawing_feedback()
         if self._item is not None and self._scene is not None and self._item.scene() is not None:
             self._scene.removeItem(self._item)
         self._item = None
@@ -313,6 +333,7 @@ class ArcTool(BaseTool):
         super().deactivate()
 
     def _confirm(self) -> None:
+        self._hide_drawing_feedback()
         item, scene = self._item, self._scene
         self._item = None
         self._step = _Step.IDLE

@@ -105,24 +105,45 @@ def swatch_rect() -> QRect:
     return swatch
 
 
+def beside_cursor(
+    cursor: QPoint, size: tuple[int, int], viewport: QRect, offset: int, *, above: bool
+) -> QPoint:
+    """The top-left corner of an overlay of *size* beside a cursor at *cursor* inside
+    *viewport*, both in the viewport's coordinates.
+
+    The screen-edge rule every overlay over the canvas view's viewport shares, so the
+    Eyedropper's loupe (Blur PRD 4.3) and the dimension tooltip (Basic Shape PRD 2.4) are
+    one piece of arithmetic rather than two copies of it (Basic Shape shared drawing
+    decision 1). The overlay sits *offset* pixels to the right of the cursor and *offset*
+    pixels above it (*above*) or below it; it flips to the left of the cursor rather than
+    past the right edge, and to the other side vertically rather than past the top or the
+    bottom edge, and is clamped to the viewport after either flip, so it is always wholly
+    visible.
+    """
+    width, height = size
+    x = cursor.x() + offset
+    if x + width > viewport.width():
+        x = cursor.x() - offset - width
+    if above:
+        y = cursor.y() - offset - height
+        if y < 0:
+            y = cursor.y() + offset
+    else:
+        y = cursor.y() + offset
+        if y + height > viewport.height():
+            y = cursor.y() - offset - height
+    x = max(0, min(x, max(0, viewport.width() - width)))
+    y = max(0, min(y, max(0, viewport.height() - height)))
+    return QPoint(x, y)
+
+
 def loupe_position(cursor: QPoint, viewport: QRect) -> QPoint:
     """The widget's top-left corner for a cursor at *cursor* inside *viewport* (4.3).
 
     The loupe sits 20 px above and to the right of the cursor, and is repositioned when
-    it would leave the viewport: it flips to the left of the cursor rather than past the
-    right edge and below the cursor rather than past the top edge, and is clamped to the
-    viewport after either flip, so it is always wholly visible.
+    it would leave the viewport, by the rule of :func:`beside_cursor`.
     """
-    width, height = loupe_size()
-    x = cursor.x() + LOUPE_CURSOR_OFFSET
-    if x + width > viewport.width():
-        x = cursor.x() - LOUPE_CURSOR_OFFSET - width
-    y = cursor.y() - LOUPE_CURSOR_OFFSET - height
-    if y < 0:
-        y = cursor.y() + LOUPE_CURSOR_OFFSET
-    x = max(0, min(x, max(0, viewport.width() - width)))
-    y = max(0, min(y, max(0, viewport.height() - height)))
-    return QPoint(x, y)
+    return beside_cursor(cursor, loupe_size(), viewport, LOUPE_CURSOR_OFFSET, above=True)
 
 
 class LoupeOverlay(QWidget):

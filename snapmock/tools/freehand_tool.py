@@ -36,6 +36,9 @@ _CAP_STYLES: tuple[tuple[StrokeCap, str, str], ...] = (
 _CONTROL_HEIGHT = 26
 MIN_STROKE_EXTENT = 2.0
 """A stroke whose points span less than this in both directions is an accidental click."""
+DRAWING_STATE = "Drawing…"
+"""9.11's Drawing row names a state rather than a measurement, and the tooltip shows the
+same, so the tooltip and the hint agree (notes Section 9)."""
 STRAIGHT_SEGMENT_DEGREES = 45.0
 """9.5: a Shift-held segment follows horizontal, vertical, or 45-degree diagonal lines."""
 
@@ -178,6 +181,11 @@ class FreehandTool(BaseTool):
         item = self._preview_item
         return item if isinstance(item, FreehandItem) else None
 
+    @property
+    def drawing_measurement(self) -> tuple[str, ...]:
+        """The Freehand's state while a stroke is drawn (2.4, 9.11)."""
+        return (DRAWING_STATE,) if self._item is not None else ()
+
     def mouse_press(self, event: QMouseEvent) -> bool:
         if self._scene is None or event.button() != Qt.MouseButton.LeftButton:
             return False
@@ -204,6 +212,7 @@ class FreehandTool(BaseTool):
             self._straight_from = None
             self._straight_anchor = None
             item.add_point(local)
+            self._show_drawing_feedback(event)
             return True
         # 9.5: one straight segment from where Shift was first held, replaced on every
         # move, so a curve and a straight run mix in one stroke
@@ -213,6 +222,7 @@ class FreehandTool(BaseTool):
         else:
             item.restore_preview(self._straight_from)
         item.add_point(constrain_angle(self._straight_anchor, local, STRAIGHT_SEGMENT_DEGREES))
+        self._show_drawing_feedback(event)
         return True
 
     def mouse_release(self, event: QMouseEvent) -> bool:

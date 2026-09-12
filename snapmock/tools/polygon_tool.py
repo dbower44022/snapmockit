@@ -130,18 +130,26 @@ class PolygonTool(BaseTool):
         return self._creation_defaults.get("polygon_mode") is PolygonMode.REGULAR
 
     @property
+    def drawing_measurement(self) -> tuple[str, ...]:
+        """8.7's Drawing values, which the tooltip shows (2.4): the vertices placed so far,
+        or a regular polygon's sides and radius."""
+        if self._step is _Step.PLACING:
+            return (f"Vertices: {len(self._points)}",)
+        if self._step is _Step.DRAGGING and self._item is not None:
+            return (f"Sides: {self._item.sides}", f"R: {self._item.radius or 0.0:.0f}px")
+        return ()
+
+    @property
     def status_hint(self) -> str:
-        """The hints of 8.7."""
+        """The hints of 8.7, built from the tooltip's values."""
+        measurement = " | ".join(self.drawing_measurement)
         if self._step is _Step.PLACING:
             return (
-                f"Vertices: {len(self._points)} | Click: add vertex | Right-click: undo | "
+                f"{measurement} | Click: add vertex | Right-click: undo | "
                 "Enter: close | Escape: cancel"
             )
-        if self._step is _Step.DRAGGING and self._item is not None:
-            return (
-                f"Sides: {self._item.sides} | R: {self._item.radius or 0.0:.0f}px | "
-                "Shift: constrain rotation | Release to confirm."
-            )
+        if self._step is _Step.DRAGGING and measurement:
+            return f"{measurement} | Shift: constrain rotation | Release to confirm."
         if self._regular():
             return "Click and drag to draw a regular polygon. Shift: constrain rotation."
         return "Click to place vertices. Double-click or click first vertex to close."
@@ -319,6 +327,7 @@ class PolygonTool(BaseTool):
                 self.cancel()
             else:
                 self._update_preview()
+                self._show_drawing_feedback(event)
             return True
         if event.button() != Qt.MouseButton.LeftButton:
             return False
@@ -328,6 +337,7 @@ class PolygonTool(BaseTool):
             return True
         if self._regular():
             self._begin_regular(self._snap_pos(self._scene_pos(event)))
+            self._show_drawing_feedback(event)
             return True
         pos = self._placed(event)
         if (
@@ -343,6 +353,7 @@ class PolygonTool(BaseTool):
         if self._step is _Step.IDLE:
             self._begin_freeform()
         self._update_preview()
+        self._show_drawing_feedback(event)
         return True
 
     def _begin_freeform(self) -> None:
@@ -395,6 +406,7 @@ class PolygonTool(BaseTool):
         if self._step is _Step.PLACING:
             self._cursor = self._placed(event)
             self._update_preview()
+            self._show_drawing_feedback(event)
             return True
         if self._step is _Step.DRAGGING and self._item is not None:
             pos = self._scene_pos(event)
@@ -404,6 +416,7 @@ class PolygonTool(BaseTool):
                 angle = round(angle / 15.0) * 15.0
             self._item.regular_geometry = (QPointF(0, 0), math.hypot(dx, dy), angle)
             self._show_hint()
+            self._show_drawing_feedback(event)
             return True
         return False
 
@@ -457,6 +470,7 @@ class PolygonTool(BaseTool):
         self._add(item)
 
     def _add(self, item: PolygonItem) -> None:
+        self._hide_drawing_feedback()
         scene = self._scene
         self._remove_closing()
         self._item = None
@@ -478,6 +492,7 @@ class PolygonTool(BaseTool):
         self._closing = None
 
     def cancel(self) -> None:
+        self._hide_drawing_feedback()
         self._remove_closing()
         if self._item is not None and self._item.scene() is not None and self._scene is not None:
             self._scene.removeItem(self._item)

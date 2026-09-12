@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 from PyQt6.QtCore import QPointF, Qt
 from PyQt6.QtGui import QContextMenuEvent, QCursor, QKeyEvent, QMouseEvent
 
+from snapmock.ui.dimension_overlay import dimension_overlay, existing_dimension_overlay
 from snapmock.ui.unmet_requirements import check_requirements
 
 if TYPE_CHECKING:
@@ -38,6 +39,8 @@ class BaseTool(ABC):
         self._selection_manager: SelectionManager | None = None
         self._creation_defaults: dict[str, Any] = {}
         self._preview_item: QGraphicsItem | None = None
+        # The modifiers of the last drawing move, which the measurements read (2.4)
+        self._drawing_modifiers = Qt.KeyboardModifier.NoModifier
 
     @property
     def creation_defaults(self) -> dict[str, Any]:
@@ -74,6 +77,7 @@ class BaseTool(ABC):
 
     def deactivate(self) -> None:
         """Called when another tool replaces this one."""
+        self._hide_drawing_feedback()
         self._scene = None
         self._selection_manager = None
 
@@ -164,10 +168,63 @@ class BaseTool(ABC):
 
     def _end_preview(self) -> None:
         """Take the drawing preview out of the scene, if there is one."""
+        self._hide_drawing_feedback()
         item = self._preview_item
         self._preview_item = None
         if item is not None and self._scene is not None and item.scene() is not None:
             self._scene.removeItem(item)
+
+    # --- the drawing feedback beside the cursor (Basic Shape PRD 2.4) ---
+
+    @property
+    def drawing_measurement(self) -> tuple[str, ...]:
+        """The measurements of the shape being drawn, empty when nothing is drawn (2.4).
+
+        Each tool's one function for them: the dimension tooltip shows the parts joined
+        by a space and the status bar's Drawing hint is built from the same parts, so the
+        two can never disagree (the kickoff's sixth silence).
+        """
+        return ()
+
+    def _centre_marker_origin(self) -> QPointF | None:
+        """The origin point in scene coordinates while the centre-draw modifier is held
+        and the tool draws from it (2.3: the Rectangle, the Ellipse, and the Arc), else
+        None."""
+        return None
+
+    def _shift_constrains_now(self) -> bool:
+        """Whether Shift constrains anything at the tool's present step; the Arc's
+        curvature step overrides this, since Shift holds nothing there."""
+        return True
+
+    def _show_drawing_feedback(self, event: QMouseEvent) -> None:
+        """Put the dimension tooltip beside the cursor, with the constrain icon while Shift
+        is held and the centre marker on the origin point while the centre-draw modifier
+        is held (2.4). Each drawing tool calls this after it has moved its preview."""
+        self._drawing_modifiers = event.modifiers()
+        view = self._view
+        viewport = view.viewport() if view is not None else None
+        if view is None or viewport is None:
+            return
+        parts = self.drawing_measurement
+        if not parts:
+            self._hide_drawing_feedback()
+            return
+        origin = self._centre_marker_origin()
+        centre = view.mapFromScene(origin) if origin is not None else None
+        dimension_overlay(viewport).show_measurement(
+            event.pos(),
+            " ".join(parts),
+            self.constrains(self._drawing_modifiers) and self._shift_constrains_now(),
+            centre,
+        )
+
+    def _hide_drawing_feedback(self) -> None:
+        view = self._view
+        viewport = view.viewport() if view is not None else None
+        overlay = existing_dimension_overlay(viewport) if viewport is not None else None
+        if overlay is not None:
+            overlay.hide_feedback()
 
     @property
     def _view(self) -> SnapView | None:

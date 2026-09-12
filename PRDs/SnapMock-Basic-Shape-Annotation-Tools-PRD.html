@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Basic Shape Annotation Tools</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.16</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.17</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Line · Arrow · Rectangle · Ellipse · Arc · Polygon · Freehand / Pen</dd>
-    <dt>Document version</dt><dd>1.16</dd>
-    <dt>Last Updated</dt>    <dd>09-12-26 14:51</dd>
+    <dt>Document version</dt><dd>1.17</dd>
+    <dt>Last Updated</dt>    <dd>09-12-26 15:19</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.17</td>
+        <td class="nowrap">09-12-26 15:19</td>
+        <td>Doug Bower</td>
+        <td>Shared drawing behaviour Phase 3 built: 2.4's dimension tooltip with each tool's measurements, the constrain icon while Shift is held, and the centre marker at the origin point while the centre-draw modifier is held.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.16</td>
         <td class="nowrap">09-12-26 14:51</td>
@@ -184,6 +191,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-12-26 15:19</td>
+        <td>2.4, 3.2, 5.2, 6.2, 7.2, 7.7, 8.7, 12</td>
+        <td>Built</td>
+        <td>The shape tools' shared drawing behaviour, Phase 3 (09-12-26; notes in <code>docs/Basic-Shape-Shared-Drawing-Implementation.md</code>, Section 9). 2.4's dimension tooltip is built for all seven tools as decision 1 (option A) put it: a widget over the canvas view's viewport, <code>snapmock/ui/dimension_overlay.py</code>, which follows the cursor at a 15 by 15 pixel offset and is repositioned rather than leave the viewport — to the left of the cursor at the right edge, above it at the bottom edge — by the same screen-edge function the Eyedropper's loupe now uses, factored out of the loupe rather than copied. The measurements are each tool's section's own: the Line's and the Arrow's <code>L: 245px ∠ 32.5°</code> (3.2, 4.2), the Rectangle's and the Ellipse's <code>W: 320 H: 240</code> (5.2, 6.2), the Ellipse's <code>D: 320</code> while Shift is held (6.2), the Arc's chord length and angle in step 1 and <code>Arc: 315px Bulge: 45px</code> in step 2 (7.2), the Polygon's vertex count or its sides and radius (8.7), and the Freehand's state. Each tool computes them in one function, <code>BaseTool.drawing_measurement</code>, which the tooltip shows and from which the Arc's and the Polygon's status bar hints are now built, so the two cannot disagree; the other five tools' Drawing hints are built from it in Phase 4. The constrain icon of 2.4, a small padlock in the accent colour, sits beside the measurements while Shift is held; the centre marker, a small crosshair, sits on the origin point while the centre-draw modifier is held, on Alt or on Ctrl (decision 4), for the three tools 2.3 gives that modifier. The tooltip and the marker hide on release, on a confirmed arc or polygon, on Escape, on a tool switch, on a focus loss that cancels the drag, and when the pointer leaves the viewport. Measured for Section 12's 60 frames a second: computing and placing the tooltip costs 0.025 ms per mouse move, and the repaint it causes adds 0.3 to 0.55 ms, against the 16.7 ms a frame allows. Silences decided: the Freehand's tooltip reads <code>Drawing…</code>, the state 9.11's Drawing row names, rather than a point count the release's simplification would discard; the tooltip sits below and to the right of the cursor, which 2.4 does not say; the centre marker is a second small widget owned by the tooltip's, because 2.4 puts it on the origin point while the tooltip follows the cursor, so decision 1's "one widget" departs in the letter and not in the design; the Arc shows no constrain icon in step 2, where Shift holds nothing; the Line, the Arrow, the Freehand, and the Polygon show no centre marker, since 2.3 gives them no centre-draw modifier and 3.2 says Alt is ignored on a line; the tooltip appears from the first move of a drag, since a press alone measures nothing; a modifier pressed with no move changes the tooltip on the next move, as it changes the geometry; the angle reads counter-clockwise from the rightward horizontal, 180° for a leftward line and never -0.0°, which also corrects the Arc's step 1 hint for a level chord. Section 12, Line, "The dimension tooltip shows length and angle during drawing", and Ellipse, "The dimension tooltip shows width by height, or diameter for circles", are met by tests. 2.4's 70 percent preview and its guide lines are Phase 4's.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-12-26 14:51</td>
         <td>2.1, 2.3, 5.7, 6.7, 9.5, 9.11, 12</td>

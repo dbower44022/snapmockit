@@ -26,6 +26,7 @@ from snapmock.config.constants import (
 from snapmock.core.path_utils import constrain_angle
 from snapmock.items.arrow_item import ArrowItem
 from snapmock.tools.base_tool import BaseTool
+from snapmock.ui.dimension_overlay import length_angle_text
 
 _LINE_STYLES: tuple[tuple[LineStyle, str, str], ...] = (
     (LineStyle.STRAIGHT, "Straight", "Straight line"),
@@ -160,6 +161,14 @@ class ArrowTool(BaseTool):
         item = self._preview_item
         return item if isinstance(item, ArrowItem) else None
 
+    @property
+    def drawing_measurement(self) -> tuple[str, ...]:
+        """4.2's dimension tooltip: the length and the angle from the horizontal."""
+        item = self._item
+        if item is None:
+            return ()
+        return (length_angle_text(item.line.dx(), item.line.dy()),)
+
     def mouse_press(self, event: QMouseEvent) -> bool:
         if self._scene is None or event.button() != Qt.MouseButton.LeftButton:
             return False
@@ -186,6 +195,7 @@ class ArrowTool(BaseTool):
             current = constrain_angle(self._start, current)
         local_end = current - self._start
         item.line = QLineF(QPointF(0, 0), local_end)
+        self._show_drawing_feedback(event)
         return True
 
     def mouse_release(self, event: QMouseEvent) -> bool:
