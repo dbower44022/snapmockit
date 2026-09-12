@@ -251,9 +251,27 @@ def test_a_tool_switch_during_a_drag_leaves_nothing_in_the_scene(
     assert not tool.is_active_operation
 
 
-def test_a_focus_loss_during_a_drag_leaves_nothing(main_window: MainWindow) -> None:
+def _neutral_input_state(monkeypatch: pytest.MonkeyPatch) -> None:
+    """No real mouse button held and no focused widget.
+
+    ``SnapView.focusOutEvent`` refuses to cancel when a mouse button is down or when
+    focus moved to a child of its own viewport, so that a transient focus loss during
+    a real drag does not throw the drag away. Neither is the case being tested here,
+    and both read the application's ambient state, which other tests in the same
+    process can leave set — so they are pinned rather than left to chance.
+    """
+    monkeypatch.setattr(
+        QApplication, "mouseButtons", staticmethod(lambda: Qt.MouseButton.NoButton)
+    )
+    monkeypatch.setattr(QApplication, "focusWidget", staticmethod(lambda: None))
+
+
+def test_a_focus_loss_during_a_drag_leaves_nothing(
+    main_window: MainWindow, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """``SnapView.focusOutEvent`` cancels the active tool's operation; it could not see
     a shape drag before this work, because ``is_active_operation`` was always False."""
+    _neutral_input_state(monkeypatch)
     scene, view = main_window.scene, main_window.view
     main_window.tool_manager.activate("rectangle")
     tool = main_window.tool_manager.active_tool
@@ -265,6 +283,29 @@ def test_a_focus_loss_during_a_drag_leaves_nothing(main_window: MainWindow) -> N
 
     assert scene.annotation_items() == []
     assert not tool.is_active_operation
+
+
+def test_a_focus_loss_with_the_button_still_down_keeps_the_drag(
+    main_window: MainWindow, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The other half of the same rule: a transient focus loss while the button is held
+    — a tooltip stealing focus on Linux — leaves the drag alone to finish normally."""
+    _neutral_input_state(monkeypatch)
+    monkeypatch.setattr(
+        QApplication, "mouseButtons", staticmethod(lambda: Qt.MouseButton.LeftButton)
+    )
+    scene, view = main_window.scene, main_window.view
+    main_window.tool_manager.activate("rectangle")
+    tool = main_window.tool_manager.active_tool
+    assert tool is not None
+
+    _press(tool, view, QPointF(60, 60))
+    _move(tool, view, QPointF(200, 160))
+    view.focusOutEvent(QFocusEvent(QEvent.Type.FocusOut))
+
+    assert tool.is_active_operation
+    _release(tool, view, QPointF(200, 160))
+    assert len(scene.annotation_items()) == 1
 
 
 def test_the_space_bar_pan_stands_down_while_a_drag_lasts(main_window: MainWindow) -> None:
