@@ -1,6 +1,6 @@
 # Basic Shape Remainder and Blur Modes Implementation Notes
 
-Last Updated: 09-12-26 10:35 · Revision 1.7
+Last Updated: 09-12-26 16:01 · Revision 1.8
 
 Implements the remainder of the Basic Shape Annotation Tools PRD (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.8 at the start) and the Blur / Pixelate tool of the Blur, Highlighter, and Eyedropper Tools PRD (version 1.4), with the General UI PRD (version 2.16) and Technical Architecture PRD (version 1.28) rows they own, in the five phases and the close-out defined by `docs/Basic-Shape-Remainder-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2.
 
@@ -179,10 +179,13 @@ The older checks the Vector Item Properties notes list are answered there.
 
 **Next required step:** the work is complete. The kickoff it named, `docs/Freeform-Blur-Highlighter-Kickoff-Prompt.md` (revision 1.0), was run on 09-11-26 and is complete: its notes are `docs/Freeform-Blur-Highlighter-Implementation.md`, and every row this work left open in the Blur PRD's Section 2 is now built or recorded as a departure there. The display checks above are still owed, and that work adds its own.
 
+**Section 2 of the Basic Shape PRD is closed** by `docs/Basic-Shape-Shared-Drawing-Implementation.md` (09-12-26): the rows the 1.12 row left open in Section 2 — the dimension tooltip and constrain icon of 2.4 and the not-auto-selected rule of 2.5 — are built there, with the Freehand tool's Shift straight segments of 9.5. The shape tools this work built now stay active after a shape is made and draw a 70 percent preview with a tooltip beside the cursor. What remains of the Basic Shape PRD outside Section 2 is named in that work's Section 12.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.8 | 09-12-26 16:01 | Claude (Claude Code) | Section 10: the pointer to the shared drawing work, which closes the Basic Shape PRD's Section 2 and 9.5. |
 | 1.7 | 09-12-26 10:35 | Claude (Claude Code) | Section 10: the second display run of 09-12-26. Gaussian Blur and Pixelate pass; Solid Fill stays blocked, narrowed from the shared colour picker (which the same run proved works) to the Blur tool's own Fill swatch, whose signal wiring is sound headlessly, leaving the popover interaction as the fault |
 | 1.6 | 09-12-26 09:58 | Claude (Claude Code) | Section 10: the display checks Doug ran on 09-12-26, quoted. Six of the seven pass — the curved and elbow arrows, the freehand handles, the three arc types, the star polygon, and the individual corner radii. The blur modes stay owed, Solid Fill blocked by a colour picker that does not commit a pick. |
 | 1.5 | 09-11-26 22:36 | Claude (Claude Code) | Section 10: the kickoff this work named is complete, with its notes in `docs/Freeform-Blur-Highlighter-Implementation.md`; the display checks stay owed. |

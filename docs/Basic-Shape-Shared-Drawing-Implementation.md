@@ -1,6 +1,6 @@
 # The Shape Tools' Shared Drawing Behaviour — Implementation Notes
 
-Last Updated: 09-12-26 15:59 · Revision 1.7
+Last Updated: 09-12-26 16:48 · Revision 1.8
 
 Implements the open rows of the Basic Shape Annotation Tools PRD's Section 2, Shared Shape Behavior (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.12 at the start), and the per-tool Drawing hints that go with them, with the General UI PRD (version 2.25) and Technical Architecture PRD (version 1.37) rows they own, in the five phases and the close-out defined by `docs/Basic-Shape-Shared-Drawing-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2. Finishing this work leaves the Basic Shape Annotation Tools PRD's Section 2 with no open row.
 
@@ -20,8 +20,8 @@ The rest of the starting state, read from the code: no tool draws its preview at
 | 2 | The modifiers (2.3, 9.5): Shift squaring and circling, the centre-draw modifier, the two together, the Freehand's straight segments | Done | abd92a6, then this close-out commit |
 | 3 | The dimension tooltip (2.4): the tooltip, the constrain icon, the centre marker | Done | f789353 |
 | 4 | The preview and the hints (2.4, 3.7, 4.8, 5.7, 6.7, 9.11): the 70 percent preview, the guide lines, the Drawing hints | Done | a4f5231 |
-| 5 | The post-creation rule (2.1, 2.5): no auto-selection, no tool switch | Done | this commit |
-| Close-out | PRD rows, the notes complete, the General UI notes' Section 25 pointer, the Basic Shape remainder notes' Section 10 pointer, the display checks | Not started | |
+| 5 | The post-creation rule (2.1, 2.5): no auto-selection, no tool switch | Done | 072616c |
+| Close-out | PRD rows, the notes complete, the General UI notes' Section 25 pointer, the Basic Shape remainder notes' Section 10 pointer, the display checks | Done | this commit |
 
 ## 2. Decisions
 
@@ -251,10 +251,62 @@ Silences found while building, decided as the code says:
 
 **Next required step:** the close-out of the work — the full-suite run at this commit, the General UI notes' Section 25 pointer, the Basic Shape remainder notes' Section 10 pointer, the display checks this work owes, and the rows of the Basic Shape Annotation Tools PRD that remain anywhere in the document.
 
+## 12. Close-out of the work
+
+Every phase is done. The PRDs stand at Basic Shape Annotation Tools PRD 1.19, Blur, Highlighter, and Eyedropper Tools PRD 1.17, General UI PRD 2.32, and Technical Architecture PRD 1.42. The General UI notes carry the Section 25 pointer (1.41) and the Basic Shape remainder notes the Section 10 pointer (1.8). Phases 3, 4, and 5 were each built and closed out in one commit, as the continuation kickoff allowed; the close-out adds only documents.
+
+### 12.1 The suite
+
+**At the Phase 3 commit** (`f789353`), run alone from a scratch worktree between 15:28 and 16:48 while this session's targeted runs shared the machine: **1547 passed, 1 failed, 13 skipped, 1 deselected, in 1 hour 19 minutes.** The one failure is the timing-sensitive Zoom tool test `test_left_click_zooms_in_and_alt_at_the_release_zooms_out`, with the Stamp tool's hint-timer traceback of Section 9.2, so its cause now reads the same in a full run as in the targeted one. This work's own focus-loss test, which failed in the Phase 1 suite, passed: the monkeypatch of `b32659e` holds in a full run.
+
+**At the Phase 5 commit** (`072616c`), the last code commit: running from a scratch worktree at the time of writing; its result is recorded in 12.5 when it ends.
+
+### 12.2 What remains of the Basic Shape Annotation Tools PRD
+
+**Section 2 has no open row.** 2.1 is built but for its preview wording, the departure the 1.13 row records; 2.3 is built but for Ctrl's reserved edge snapping, which no version of the document asks for; 2.4 and 2.5 are built whole; 2.2 and 2.6 were built by the Vector Item Properties work.
+
+Outside Section 2, read against the code on 09-12-26:
+
+- **9.2's brush-tip cursor** is not built: the Freehand tool shows the crosshair, where 9.2 asks for a filled circle of the stroke's width and colour.
+- **9.2's pressure data** is reserved by the PRD itself for a future version and is stored as null.
+- **9.10's two performance rows.** The simplification and fitting on release take up to 630 ms at 0 percent smoothing on a jittery 5000-point stroke against the 50 ms asked (Basic Shape remainder notes, Section 9.3); and the rule that a stroke over 2000 raw points renders only its most recent 500 while it is drawn has no code behind it in `FreehandItem`.
+- **Section 12's 60 frames a second at 4K with 100 items** has been measured by this work only at 1920 by 1080 pixels with fifty items on the offscreen platform, where a drawing move costs about 1.3 ms at most. That is strong evidence the row holds and not a measurement at the size the row names.
+- **The document's three Open Issues** — the tool count in Section 2's first paragraph, the undated early versions, and the approval status — are records for Doug to settle and change no requirement.
+
+The Line tool on `L` rather than `U` is a settled departure (1.5 row), not an open row.
+
+### 12.3 Display checks owed
+
+This work's own, none of them run, since every check in Phases 3 to 5 is a geometry, text, or pixel test on the offscreen platform:
+
+1. The dimension tooltip beside the cursor with each of the seven tools, reading as Sections 3 to 9 word it, the Arc's changing between its two steps.
+2. The tooltip near the right and the bottom edges of the viewport, flipping to the other side of the cursor.
+3. The constrain icon beside the tooltip while Shift is held, and the centre marker on the press point while Ctrl is held, with the Rectangle.
+4. The preview drawn visibly fainter than a placed shape, and the placed shape at full strength.
+5. The guide lines from a rectangle's edges to the two rulers with View > Show Rulers on, and none with it off.
+6. Three rectangles drawn in succession without touching anything between them, the Rectangle tool still active, nothing selected, and three Ctrl+Z presses taking them away one at a time.
+7. A blur region and a highlight stroke each leaving their tool active.
+8. The status bar's Drawing row changing as the drag moves, and the Idle row back on release.
+
+Owed by other works and not this one's: a blur region in Solid Fill, worth re-running since the colour picker was rebuilt on 09-12-26 though the Blur tool's own Fill swatch was never exercised on the display; a highlight in Multiply over dark text; the painted and the erased blur regions; the Whole Layer region and its source modes; and the Eyedropper and Blur performance work's three — the loupe at each sample size, the loupe near the viewport's edges, and the Eyedropper's bar at a narrow window — all three blocked on the display run of 09-12-26 by the Eyedropper not activating from `I`.
+
+### 12.4 What remains elsewhere
+
+- **The Stamp tool's placement-hint timer** has no parent and outlives its scene in the test suite, which is the traced cause of the timing-sensitive Zoom tool failure (Section 9.2; inferred from the traceback, not reproduced alone). A small fix in the Numbered Steps, Stamps, and Emoji work's code would remove the last recurring failure from the suite.
+- **The Zoom tool's Alt+click and the blur brush's Alt+paint eraser** have no second route on a desktop whose window manager takes Alt plus a mouse button. They belong to the Navigation and Raster Operations PRD and the Blur PRD.
+- **The Windows capture backend** (`docs/Windows-Backend-Kickoff-Prompt.md`) waits for a Windows machine, and the macOS backend is deferred with no Mac available.
+
+**Next required step:** Doug's display run of the eight checks in 12.3, recorded in this document as Section 8's run was. After it, the most valuable code work on this machine is the Freehand tool's rows of 12.2 — the brush-tip cursor and the two 9.10 performance rows — or the Stamp tool's timer fix, which is a one-commit follow-up; neither has a kickoff prompt yet, and one can be written on request.
+
+### 12.5 The Phase 5 full-suite run
+
+Pending at 16:48; the run from the worktree at `072616c` started at 16:48.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.8 | 09-12-26 16:48 | Claude (Claude Code) | Close-out: Section 12 with the full-suite run at the Phase 3 commit (1547 passed, the one timing-sensitive Zoom tool failure), what remains of the Basic Shape PRD outside Section 2, which has no open row, the eight display checks this work owes and the ones other works still owe, what remains elsewhere, and the next required step; the phase-table close-out row done. General UI notes 1.41, Basic Shape remainder notes 1.8. |
 | 1.7 | 09-12-26 15:59 | Claude (Claude Code) | Phase 5 done: Section 11 with no auto-selection and no switch to the Select tool in the seven shape tools, the Blur tool's three release paths, and the Highlighter; `_switch_to_select` removed; the three silences — the Idle hint after a confirmed arc or polygon, no existing test needing a rewrite, and the Phase 4 status bar test tightened — 11.1's tests, and 11.2's close-out; the phase-table row done. Basic Shape PRD 1.19, Blur PRD 1.17, Technical Architecture PRD 1.42. |
 | 1.6 | 09-12-26 15:34 | Claude (Claude Code) | Phase 4 done: Section 10 with the 70 percent preview, the guide lines to the rulers in the view's foreground pass, the Drawing rows of 3.7, 4.8, 5.7, 6.7, and 9.11 and the Idle rows of 3.7 and 4.8, and the six silences found while building — the off-screen rule for the guide lines, the rulers as one toggle, the lines from the geometry, the tools that draw them, the hint on every move, and the dimming in proportion — 10.1's measured cost per move, 10.2's tests, and 10.3's close-out; the phase-table row done. Basic Shape PRD 1.18, General UI PRD 2.32, Technical Architecture PRD 1.41. |
 | 1.5 | 09-12-26 15:19 | Claude (Claude Code) | Phase 3 done: Section 9 with the dimension tooltip, the constrain icon, and the centre marker built as widgets over the viewport, the edge rule shared with the loupe, `drawing_measurement` as each tool's one function, the eight silences found while building — the Freehand's `Drawing…`, the marker as a second widget, the tooltip's side, the icon, which tools show the marker, the first move, the angle's range, and a scroll carrying the widgets — 9.1's measured cost per move, 9.2's tests, and 9.3's close-out; the phase-table row done. Basic Shape PRD 1.17, Technical Architecture PRD 1.40. |

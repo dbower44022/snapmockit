@@ -1,6 +1,6 @@
 # General UI Implementation Notes
 
-Last Updated: 09-12-26 14:51 · Revision 1.40
+Last Updated: 09-12-26 16:01 · Revision 1.41
 
 Implements the SnapMock General User Interface PRD (version 2.4, `PRDs/SnapMock-General-UI-PRD.html`) in the eight phases defined by `docs/General-UI-Implementation-Kickoff-Prompt.md`. A session pasting that prompt starts at the first phase not marked done in Section 1.
 
@@ -690,10 +690,19 @@ Three things in these notes move. **Section 5.2's Eyedropper row**: the tool now
 
 The Section 17.2 table gains no walk: the sampling render walks every visible item rather than the top-level items, and adds no property to any item.
 
+## 25. The Shape Tools' Shared Drawing Behaviour
+
+Run from `docs/Basic-Shape-Shared-Drawing-Kickoff-Prompt.md` (revision 1.0) and its continuation `docs/Basic-Shape-Shared-Drawing-Phase-3-Kickoff-Prompt.md` (revision 1.1) on 09-12-26, with its own notes in `docs/Basic-Shape-Shared-Drawing-Implementation.md`: the Basic Shape Annotation Tools PRD's Section 2 — the press guard on a locked or hidden layer, the preview's life and Escape, the Shift and centre-draw modifiers, the dimension tooltip with its constrain icon and centre marker, the 70 percent preview, the guide lines to the rulers, the Drawing hints, and the post-creation rule under which every tool that draws stays active and leaves its new item unselected.
+
+Four things in these notes move. **Section 1.3's never-disabled route** now carries the drawing tools' refusal on a locked or hidden layer, which the Basic Shape PRD words as a status bar warning; General UI PRD 2.27. **Section 12.2's centre-draw modifier** has Ctrl as a second route beside Alt, because Alt plus a mouse button never reaches the canvas on the Cinnamon desktop this project is built on; Alt keeps its meaning everywhere, and the Zoom tool's Alt+click and the blur brush's Alt+paint eraser still have no second route; General UI PRD 2.26 and 2.28. **Section 9's Tool Hint zone** follows a drawing operation: the Drawing row on every move, built from the values the dimension tooltip shows, and the Idle row again when the drag ends; General UI PRD 2.32. **The switch to the Select tool after a shape is made is gone** from the seven shape tools, the Blur tool, and the Highlighter; a test or a walk that relied on it activates the Select tool itself, and none in the suite needed rewriting.
+
+The Section 17.2 table gains no walk: no item gains a property. The canvas view gains a second overlay widget beside the Eyedropper's loupe, sharing its screen-edge function, and a fifth foreground pass, the guide lines, beside the grid, the guides, the crosshairs, and the layer hover outline.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.41 | 09-12-26 16:01 | Claude (Claude Code) | Section 25, the shape tools' shared drawing behaviour: what moves in Sections 1.3, 9, and 12.2, and the switch to the Select tool that is gone. General UI PRD 2.26, 2.27, 2.28, and 2.32. |
 | 1.40 | 09-12-26 14:51 | Claude (Claude Code) | The header revision, left at 1.38 while the change log stood at 1.39, is corrected to match. The two Section 6 bullets of 09-12-26 carry their display result: checks 8 and 9 of the shared drawing work's run both pass, so the colour picker's Saved row and the Tool Options Bar's "More…" popover are confirmed on the display. Their PRD references are corrected from 2.26 and 2.27 to 2.29 and 2.30, the numbers `fc704a9` gave them after a parallel session took the same two. |
 | 1.39 | 09-12-26 13:35 | Claude (Claude Code) | Section 6 gains the bullet for the Tool Options Bar's own overflow, built after Doug's display run of 09-12-26: the strip and the "More…" popover replace Qt's extension button, whose popup never opened, with the measured figures that found it. Four tools' controls gained accessible names, and a surface's Tab order no longer reaches into another window. General UI PRD 2.27. |
 | 1.38 | 09-12-26 12:24 | Claude (Claude Code) | Section 6 gains the bullet for the colour picker's save affordance, built after Doug's display run of 09-12-26: a click on an empty Saved slot stores the colour and every swatch says what a click does. What was checked and found correct is recorded with it, so the next session does not hunt for a bug in the live apply. General UI PRD 2.26. |
