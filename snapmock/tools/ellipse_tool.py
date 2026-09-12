@@ -59,7 +59,15 @@ class EllipseTool(BaseTool):
 
     @property
     def status_hint(self) -> str:
-        """6.7's Idle row, with the centre-draw modifier's second route (decision 4)."""
+        """6.7's Idle, Drawing, and Shift-held circle rows, with the centre-draw modifier's
+        second route (decision 4); the Drawing rows' values are the tooltip's."""
+        if self._item is not None:
+            measurement = " | ".join(self.drawing_measurement)
+            if self.constrains(self._drawing_modifiers):
+                return f"{measurement} | Alt or Ctrl: from center | Release to confirm."
+            return (
+                f"{measurement} | Shift: circle | Alt or Ctrl: from center | Release to confirm."
+            )
         return "Click and drag to draw an ellipse. Shift: circle. Alt or Ctrl: from center."
 
     @property
@@ -79,6 +87,10 @@ class EllipseTool(BaseTool):
         if self.constrains(self._drawing_modifiers):
             return (diameter_text(width),)
         return (size_text(width, height),)
+
+    def _drawing_bounds(self) -> QRectF | None:
+        item = self._item
+        return item.mapRectToScene(item.rect) if item is not None else None
 
     def _centre_marker_origin(self) -> QPointF | None:
         if self._item is None or not self.draws_from_centre(self._drawing_modifiers):

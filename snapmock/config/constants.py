@@ -190,6 +190,14 @@ HEAD_SIZE_CUSTOM_MIN = 4.0
 HEAD_SIZE_CUSTOM_MAX = 60.0
 
 
+DRAWING_PREVIEW_OPACITY = 0.7
+"""Basic Shape PRD 2.4: a shape being drawn is shown at 70 percent of its own opacity, to
+tell it from the items already placed; the committed item has its own opacity back."""
+
+DRAWING_GUIDE_OPACITY = 0.3
+"""Basic Shape PRD 2.4: the dashed guide lines from a shape being drawn to the rulers are
+the accent colour at 30 percent opacity."""
+
 CORNER_RADIUS_MAX = 200.0
 """The Corner Radius control's range (Basic Shape PRD 5.4); the item clamps to half the
 smaller side (5.3)."""

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from PyQt6.QtCore import QLineF, QPointF, Qt
+from PyQt6.QtCore import QLineF, QPointF, QRectF, Qt
 from PyQt6.QtGui import QColor, QIcon, QMouseEvent, QPainter, QPixmap
 from PyQt6.QtWidgets import QButtonGroup, QLabel, QToolBar, QToolButton
 
@@ -103,7 +103,11 @@ class ArrowTool(BaseTool):
 
     @property
     def status_hint(self) -> str:
-        return "Click and drag to draw arrow | Shift: constrain angle"
+        """4.8's Idle and Drawing rows; the Drawing row's values are the tooltip's."""
+        if self._item is not None:
+            measurement = " | ".join(self.drawing_measurement)
+            return f"{measurement} | Shift: snap to 15° | Release to confirm."
+        return "Click and drag to draw an arrow. Shift: constrain angle."
 
     # ------------------------------------------------------------ the options bar
 
@@ -168,6 +172,12 @@ class ArrowTool(BaseTool):
         if item is None:
             return ()
         return (length_angle_text(item.line.dx(), item.line.dy()),)
+
+    def _drawing_bounds(self) -> QRectF | None:
+        item = self._item
+        if item is None:
+            return None
+        return item.mapRectToScene(QRectF(item.line.p1(), item.line.p2()).normalized())
 
     def mouse_press(self, event: QMouseEvent) -> bool:
         if self._scene is None or event.button() != Qt.MouseButton.LeftButton:

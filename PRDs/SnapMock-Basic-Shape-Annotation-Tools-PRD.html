@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Basic Shape Annotation Tools</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.17</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.18</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Line · Arrow · Rectangle · Ellipse · Arc · Polygon · Freehand / Pen</dd>
-    <dt>Document version</dt><dd>1.17</dd>
-    <dt>Last Updated</dt>    <dd>09-12-26 15:19</dd>
+    <dt>Document version</dt><dd>1.18</dd>
+    <dt>Last Updated</dt>    <dd>09-12-26 15:34</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.18</td>
+        <td class="nowrap">09-12-26 15:34</td>
+        <td>Doug Bower</td>
+        <td>Shared drawing behaviour Phase 4 built: 2.4's 70 percent preview and its guide lines to the rulers, and the Drawing rows of 3.7, 4.8, 5.7, 6.7, and 9.11 with the Idle rows of 3.7 and 4.8.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.17</td>
         <td class="nowrap">09-12-26 15:19</td>
@@ -191,6 +198,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-12-26 15:34</td>
+        <td>2.4, 3.7, 4.8, 5.7, 6.7, 7.7, 8.7, 9.11, 12</td>
+        <td>Built</td>
+        <td>The shape tools' shared drawing behaviour, Phase 4 (09-12-26; notes in <code>docs/Basic-Shape-Shared-Drawing-Implementation.md</code>, Section 10). <strong>2.4's first bullet:</strong> the shape being drawn is shown at 70 percent of its own opacity in all seven tools, and the committed item has its own opacity back, which is the opacity it is saved with; <code>BaseTool</code> dims the preview it holds for the five drag-drawn tools, and the Arc and the Polygon dim the preview they keep. <strong>2.4's last bullet</strong>, as decision 3 (option A) put it: while a shape is drawn and the rulers are visible, dashed 1 pixel lines in the accent colour at 30 percent opacity run from the shape's left and right edges up to the horizontal ruler and from its top and bottom edges left to the vertical ruler, drawn in the canvas view's foreground pass and never in a render of the scene. They start from the shape's own geometry — the rectangle and the ellipse's bounding rectangle, the line's two ends, the stroke's path, the arc's curve, the polygon's outline — and not from its stroke or its shadow, and they follow the modifiers because they are read from the preview after the modifiers have shaped it. <strong>The Drawing rows</strong> read as their tables word them, from the values the dimension tooltip shows: 3.7's and 4.8's <code>L: 245px ∠ 32.5° | Shift: snap to 15° | Release to confirm.</code>; 5.7's <code>W: 320 H: 240 | Shift: square | Alt or Ctrl: from center | Release to confirm.</code>; 6.7's two rows, <code>W: 320 H: 240 | Shift: circle | Alt or Ctrl: from center | Release to confirm.</code> and, while Shift is held, <code>D: 320 | Alt or Ctrl: from center | Release to confirm.</code>; 9.11's <code>Drawing… Shift: straight segments. Release to finish.</code> The centre modifier's second route of decision 4 is named where the tables say Alt. The hint is put in the status bar on every move of a drawing tool and the Idle row is put back when the drag ends, by one shared route the Arc and the Polygon now use as well. <strong>The Idle rows of 3.7 and 4.8</strong> now read <code>Click and drag to draw a line. Shift: constrain angle.</code> and <code>Click and drag to draw an arrow. Shift: constrain angle.</code>, where the shipped tools read the shorter <code>Click and drag to draw line | Shift: constrain angle</code>. Silences decided: "to the rulers" when the shape is off screen — a line is drawn only where the shape's edge lies on the ruler's inner side of the viewport, so a shape whose top is above the viewport draws no line to the horizontal ruler, and an edge past a side of the viewport is clipped away with the rest of the painting; the rulers are one View toggle in this application, so the first kickoff's "only on the axes whose ruler is visible" reads as both axes or neither; the guide lines are drawn for all seven tools, as 2.4 is shared behaviour, and not for the Blur tool or the Highlighter. Measured for Section 12's 60 frames a second: a drawing move with its repaint costs 1.0 to 1.3 ms with the rulers visible and the tooltip and the guide lines drawn, against 0.3 to 0.37 ms without either, measured over a bare view with no status bar, so the hint's own cost is not in the figure, on the offscreen platform over a 1920 by 1080 pixel canvas with fifty items, against the 16.7 ms a frame allows. With this phase 2.4 is built whole; 2.1's last mouse-release step and 2.5 remain, which Phase 5 closes.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-12-26 15:19</td>
         <td>2.4, 3.2, 5.2, 6.2, 7.2, 7.7, 8.7, 12</td>

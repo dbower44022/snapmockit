@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PyQt6.QtCore import QLineF, QPointF, Qt
+from PyQt6.QtCore import QLineF, QPointF, QRectF, Qt
 from PyQt6.QtGui import QColor, QMouseEvent
 
 from snapmock.commands.add_item import AddItemCommand
@@ -54,7 +54,11 @@ class LineTool(BaseTool):
 
     @property
     def status_hint(self) -> str:
-        return "Click and drag to draw line | Shift: constrain angle"
+        """3.7's Idle and Drawing rows; the Drawing row's values are the tooltip's."""
+        if self._item is not None:
+            measurement = " | ".join(self.drawing_measurement)
+            return f"{measurement} | Shift: snap to 15° | Release to confirm."
+        return "Click and drag to draw a line. Shift: constrain angle."
 
     @property
     def _item(self) -> LineItem | None:
@@ -69,6 +73,12 @@ class LineTool(BaseTool):
         if item is None:
             return ()
         return (length_angle_text(item.line.dx(), item.line.dy()),)
+
+    def _drawing_bounds(self) -> QRectF | None:
+        item = self._item
+        if item is None:
+            return None
+        return item.mapRectToScene(QRectF(item.line.p1(), item.line.p2()).normalized())
 
     def mouse_press(self, event: QMouseEvent) -> bool:
         if self._scene is None or event.button() != Qt.MouseButton.LeftButton:

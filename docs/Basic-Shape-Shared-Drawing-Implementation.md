@@ -1,6 +1,6 @@
 # The Shape Tools' Shared Drawing Behaviour — Implementation Notes
 
-Last Updated: 09-12-26 15:19 · Revision 1.5
+Last Updated: 09-12-26 15:34 · Revision 1.6
 
 Implements the open rows of the Basic Shape Annotation Tools PRD's Section 2, Shared Shape Behavior (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.12 at the start), and the per-tool Drawing hints that go with them, with the General UI PRD (version 2.25) and Technical Architecture PRD (version 1.37) rows they own, in the five phases and the close-out defined by `docs/Basic-Shape-Shared-Drawing-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2. Finishing this work leaves the Basic Shape Annotation Tools PRD's Section 2 with no open row.
 
@@ -18,8 +18,8 @@ The rest of the starting state, read from the code: no tool draws its preview at
 |---|---|---|---|
 | 1 | The drawing lifecycle (2.1, 2.3's Escape, Section 12): the decisions and these notes; the press guard, the preview's life, `cancel`, `is_active_operation`, Escape; close-out | Done | ea4f535, 1e71cd0, then this close-out commit |
 | 2 | The modifiers (2.3, 9.5): Shift squaring and circling, the centre-draw modifier, the two together, the Freehand's straight segments | Done | abd92a6, then this close-out commit |
-| 3 | The dimension tooltip (2.4): the tooltip, the constrain icon, the centre marker | Done | this commit |
-| 4 | The preview and the hints (2.4, 3.7, 4.8, 5.7, 6.7, 9.11): the 70 percent preview, the guide lines, the Drawing hints | Not started | |
+| 3 | The dimension tooltip (2.4): the tooltip, the constrain icon, the centre marker | Done | f789353 |
+| 4 | The preview and the hints (2.4, 3.7, 4.8, 5.7, 6.7, 9.11): the 70 percent preview, the guide lines, the Drawing hints | Done | this commit |
 | 5 | The post-creation rule (2.1, 2.5): no auto-selection, no tool switch | Not started | |
 | Close-out | PRD rows, the notes complete, the General UI notes' Section 25 pointer, the Basic Shape remainder notes' Section 10 pointer, the display checks | Not started | |
 
@@ -196,10 +196,44 @@ A second targeted run over `tests/test_tools`, the status bar, the cursors, the 
 
 **Next required step:** Phase 4, the preview and the hints (2.4, 3.7, 4.8, 5.7, 6.7, 9.11) — the preview drawn at 70 percent opacity and restored to full when committed; the guide lines of 2.4 per decision 3 in `SnapView.drawForeground`, from the preview's bounding box while a drag lasts and only on the axes whose ruler is visible, with the second half of the kickoff's named silence (the shape off screen) to decide; the Drawing rows of 3.7, 4.8, 5.7, 6.7, and 9.11 built from `drawing_measurement`; and the Idle rows of 3.7 and 4.8 corrected. Tests: the preview's opacity during the drag and the committed item's, each tool's drawing hint text, the Ellipse's Shift-held diameter row, and the guide lines against decision 3.
 
+## 10. What Phase 4 built
+
+One commit, the build and its close-out together, as Phase 3's was.
+
+**The 70 percent preview.** `DRAWING_PREVIEW_OPACITY` in `config/constants.py`. `BaseTool._dim_preview` records the preview's own opacity and sets it to 70 percent of that; `_undim_preview` gives it back. `_start_preview` and `_end_preview` call them for the five drag-drawn tools, and the Arc and the Polygon call them where they add their preview to the scene and where they commit it. The committed item therefore carries exactly the opacity it had before the drag, which is the opacity `VectorItem` serialises.
+
+**The guide lines**, per decision 3. `DRAWING_GUIDE_OPACITY` in `config/constants.py`. `SnapView.set_drawing_guides(rect)` stores the shape's own edges in scene coordinates and repaints only the strips the old and the new lines cross, as `_move_crosshairs` does, and nothing while the rulers are hidden. `drawForeground` calls `_draw_drawing_guides` after the crosshairs while the rulers are visible: the left and right edges run up to the top of the viewport, where the horizontal ruler sits, and the top and bottom edges run left to the vertical ruler, dashed, cosmetic, one pixel, in the accent colour at 30 percent. `BaseTool._drawing_bounds` is each tool's own edges: the rectangle's and the ellipse's `rect`, the line's and the arrow's two ends, the Freehand stroke's path, the arc's curve, and the polygon's outline, each mapped to the scene. `_show_drawing_feedback` passes it to the view on every move, and `_hide_drawing_feedback` clears it.
+
+**The hints.** `BaseTool._show_status_hint` is the one route a tool's hint reaches the window's status bar. `_show_drawing_feedback` calls it on every move, and `_end_preview` calls it when the drag ends, so the Idle row comes back. The Arc's and the Polygon's own `_show_hint` copies are gone and their calls use the shared route. Each drag-drawn tool's `status_hint` returns its Drawing row while `_item` exists, joined from `drawing_measurement`, and its Idle row otherwise. The Line's and the Arrow's Idle rows now read as 3.7 and 4.8 word them.
+
+Silences found while building, decided as the code says:
+
+- **"To the rulers" when the shape is off screen**, the second of the two silences the continuation kickoff named. A line is drawn only where the shape's edge lies on the ruler's inner side of the viewport. A shape whose top is above the viewport therefore draws no line to the horizontal ruler, since that line would run over the shape itself, and a shape left of the viewport draws none to the vertical ruler. An edge past the right or the bottom of the viewport is clipped away with the rest of the painting. The alternative, lines drawn from wherever the edge is clamped to the viewport, would put a line on screen that no edge of the shape is on.
+- **The rulers are one toggle.** `SnapView.set_rulers_visible` shows both rulers or neither, and View > Show Rulers is one action, so the first kickoff's eighth silence — only the axes whose ruler is visible — reads as both axes or neither. A second flag would be needed before one axis could be shown alone, and no PRD asks for one.
+- **The lines start from the geometry**, never the stroke or the shadow: a 12 pixel stroke would otherwise put the lines 6 pixels off the coordinates the tooltip reports. The arc's lines run from its curve and not from the closing lines of a Chord or Pie, which the preview does not yet show as final; the polygon's include the vertex following the cursor, since that is the shape being drawn.
+- **The guide lines are drawn for all seven tools**, as 2.4 is shared shape behaviour, and not for the Blur tool or the Highlighter, whose PRD does not ask for them.
+- **The hint is put in the status bar on every move**, since its measurements change on every move; a hint updated only on a change of step would show stale ones.
+- **The dimming multiplies the item's own opacity** rather than setting 0.7 outright. No shape tool sets an opacity below full today, so the two read the same now, and a later one that did would not be committed at the wrong opacity.
+
+### 10.1 The cost per move
+
+Measured on this machine on the offscreen platform, as in 9.1, while the Phase 3 full suite was running from its worktree (load average about 2.5 of 16 cores): a drawing move with its repaint costs **0.30 to 0.37 ms** with the drawing feedback switched off, **0.64 to 0.93 ms** with the tooltip and the rulers hidden, and **1.01 to 1.29 ms** with the rulers visible and the guide lines drawn, the Line's figure first and the Rectangle's second. The measurement drives a bare view with no window, so the status bar hint's own cost is not in these figures. The guide lines therefore add about 0.35 ms per move, and the tooltip with the guide lines about 0.7 to 0.9 ms, against the 16.7 ms a frame allows. A test holds a loose ceiling of one frame per move with the rulers visible.
+
+### 10.2 Tests
+
+`tests/test_drawing_preview_and_hints.py` (33): the preview at 70 percent and the committed item at full for the five drag-drawn tools, and for the Arc and the regular Polygon; the dimming in proportion to the item's own opacity and given back; each tool's Drawing row, the Ellipse's Shift-held diameter row included, and its values the tooltip's; each tool's Idle row before and after a drag; the window's status bar following a drag and Escape putting the Idle row back; the guide lines starting from the shape's own edges under a 12 pixel stroke, following the modifiers, and gone at a release and a cancel; the four lines to the two rulers with their pen; no vertical line for a shape off the top; the lines painted only while the rulers are visible, reaching the screen over a white canvas, and absent from a render of the scene; the Arc's and the Polygon's guides from their own edges; and the cost per move under a loose ceiling. `tests/test_dimension_tooltip.py` is unchanged. A targeted run at this commit over nine modules — the two of Phases 3 and 4, the Arc, the Polygon, this work's lifecycle and modifier modules, the canvas area, the status bar, and the loupe — passed 187 tests.
+
+### 10.3 Phase 4 close-out
+
+2.4 is built whole: the 70 percent preview, the dimension tooltip, the constrain icon, the centre marker, and the guide lines. The Drawing rows of 3.7, 4.8, 5.7, 6.7, and 9.11 and the Idle rows of 3.7 and 4.8 read as their tables word them, with decision 4's second route named. Basic Shape PRD 1.18, General UI PRD 2.32 (Section 9), and Technical Architecture PRD 1.41 carry the rows.
+
+**Next required step:** Phase 5, the post-creation rule (2.1, 2.5) — per decision 2, the seven shape tools, the Blur tool from its three release paths, and the Highlighter stop selecting the new item and stop switching to the Select tool, so the tool stays active and each shape is its own undo step; every test that assumed the switch is rewritten to activate the Select tool itself. Tests: three shapes drawn in succession with one tool, each its own undo entry; the selection empty after a draw; the tool still active; and the Text and Callout tools keeping their present behaviour.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.6 | 09-12-26 15:34 | Claude (Claude Code) | Phase 4 done: Section 10 with the 70 percent preview, the guide lines to the rulers in the view's foreground pass, the Drawing rows of 3.7, 4.8, 5.7, 6.7, and 9.11 and the Idle rows of 3.7 and 4.8, and the six silences found while building — the off-screen rule for the guide lines, the rulers as one toggle, the lines from the geometry, the tools that draw them, the hint on every move, and the dimming in proportion — 10.1's measured cost per move, 10.2's tests, and 10.3's close-out; the phase-table row done. Basic Shape PRD 1.18, General UI PRD 2.32, Technical Architecture PRD 1.41. |
 | 1.5 | 09-12-26 15:19 | Claude (Claude Code) | Phase 3 done: Section 9 with the dimension tooltip, the constrain icon, and the centre marker built as widgets over the viewport, the edge rule shared with the loupe, `drawing_measurement` as each tool's one function, the eight silences found while building — the Freehand's `Drawing…`, the marker as a second widget, the tooltip's side, the icon, which tools show the marker, the first move, the angle's range, and a scroll carrying the widgets — 9.1's measured cost per move, 9.2's tests, and 9.3's close-out; the phase-table row done. Basic Shape PRD 1.17, Technical Architecture PRD 1.40. |
 | 1.4 | 09-12-26 14:51 | Claude (Claude Code) | Section 8, the display run of 09-12-26: ten checks, ten as described, none failed. The seven this work owed are answered — the modifiers of 2.3 and 9.5, the Escape and tool-switch lifecycle of 2.1 and 2.3, and the locked-layer refusal — and the two the other session owed pass in the same sitting. What the run did not settle is named: Alt, which cannot reach the canvas, and the Blur tool's own Fill swatch, which was not among the checks. Basic Shape PRD 1.16, General UI PRD 2.31, General UI notes 1.40. |
 | 1.3 | 09-12-26 14:14 | Claude (Claude Code) | Section 7 with three things settled after the Phase 2 close-out: this work's own suite failure and its fix, the General UI PRD's version collision with a parallel session, and the two works that session finished. The next required step names the continuation kickoff, `docs/Basic-Shape-Shared-Drawing-Phase-3-Kickoff-Prompt.md` (revision 1.0). General UI PRD 2.30. |

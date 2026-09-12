@@ -86,7 +86,13 @@ class RectangleTool(BaseTool):
 
     @property
     def status_hint(self) -> str:
-        """5.7's Idle row, with the centre-draw modifier's second route (decision 4)."""
+        """5.7's Idle and Drawing rows, with the centre-draw modifier's second route
+        (decision 4); the Drawing row's values are the tooltip's."""
+        if self._item is not None:
+            measurement = " | ".join(self.drawing_measurement)
+            return (
+                f"{measurement} | Shift: square | Alt or Ctrl: from center | Release to confirm."
+            )
         return "Click and drag to draw a rectangle. Shift: square. Alt or Ctrl: from center."
 
     # ------------------------------------------------------------ the options bar
@@ -191,6 +197,10 @@ class RectangleTool(BaseTool):
         if item is None:
             return ()
         return (size_text(item.rect.width(), item.rect.height()),)
+
+    def _drawing_bounds(self) -> QRectF | None:
+        item = self._item
+        return item.mapRectToScene(item.rect) if item is not None else None
 
     def _centre_marker_origin(self) -> QPointF | None:
         if self._item is None or not self.draws_from_centre(self._drawing_modifiers):

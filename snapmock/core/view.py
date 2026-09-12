@@ -6,7 +6,17 @@ import bisect
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import QEvent, QMimeData, QPoint, QPointF, QRectF, Qt, QTimeLine, pyqtSignal
+from PyQt6.QtCore import (
+    QEvent,
+    QMimeData,
+    QPoint,
+    QPointF,
+    QRect,
+    QRectF,
+    Qt,
+    QTimeLine,
+    pyqtSignal,
+)
 from PyQt6.QtGui import (
     QColor,
     QCursor,
@@ -27,6 +37,7 @@ from PyQt6.QtWidgets import QGraphicsView, QWidget
 from snapmock.config.constants import (
     CANVAS_SHADOW_OFFSET,
     CHECKERBOARD_CELL_SIZE,
+    DRAWING_GUIDE_OPACITY,
     EMPTY_CANVAS_FONT_SIZE,
     EMPTY_CANVAS_TEXT,
     GRID_MAJOR_MULTIPLE,
@@ -91,6 +102,10 @@ class SnapView(QGraphicsView):
         # Crosshairs (General UI PRD 3.3): full-width lines through the cursor position
         self._crosshairs_visible: bool = False
         self._crosshair_pos: QPointF | None = None
+
+        # The guide lines from a shape being drawn to the rulers (Basic Shape PRD 2.4):
+        # the shape's own edges in scene coordinates while a drag lasts, else None
+        self._drawing_guides: QRectF | None = None
 
         # Guides and snapping (General UI PRD 6.5). The guides themselves live on the scene.
         self._guides_visible: bool = True
@@ -237,6 +252,78 @@ class SnapView(QGraphicsView):
         painter.setPen(pen)
         painter.drawLine(QPointF(rect.left(), pos.y()), QPointF(rect.right(), pos.y()))
         painter.drawLine(QPointF(pos.x(), rect.top()), QPointF(pos.x(), rect.bottom()))
+
+    # --- the guide lines to the rulers while a shape is drawn (Basic Shape PRD 2.4) ---
+
+    @property
+    def drawing_guides(self) -> QRectF | None:
+        """The edges the guide lines start from, in scene coordinates, while a shape is
+        drawn; None at rest."""
+        return QRectF(self._drawing_guides) if self._drawing_guides is not None else None
+
+    def set_drawing_guides(self, rect: QRectF | None) -> None:
+        """Draw 2.4's guide lines from *rect*'s edges to the rulers, or none for None.
+
+        The drawing tool calls this on every move (Basic Shape shared drawing decision 3);
+        only the strips the old and the new lines cross are repainted, as the crosshairs
+        do, and nothing is repainted while the rulers are hidden.
+        """
+        if rect == self._drawing_guides:
+            return
+        old = self._drawing_guides
+        self._drawing_guides = QRectF(rect) if rect is not None else None
+        if not self._rulers_visible:
+            return
+        vp = self.viewport()
+        if vp is None:
+            return
+        for bounds in (old, rect):
+            for strip in self._drawing_guide_strips(bounds):
+                vp.update(strip)
+
+    def _drawing_guide_strips(self, rect: QRectF | None) -> list[QRect]:
+        """The viewport rectangles *rect*'s guide lines cross: each vertical line from the
+        shape's top up to the horizontal ruler, each horizontal line from its left to the
+        vertical ruler."""
+        if rect is None:
+            return []
+        top_left = self.mapFromScene(rect.topLeft())
+        bottom_right = self.mapFromScene(rect.bottomRight())
+        strips = []
+        for x in (top_left.x(), bottom_right.x()):
+            strips.append(QRect(x - 2, 0, 5, max(0, top_left.y()) + 2))
+        for y in (top_left.y(), bottom_right.y()):
+            strips.append(QRect(0, y - 2, max(0, top_left.x()) + 2, 5))
+        return strips
+
+    def _draw_drawing_guides(self, painter: QPainter) -> None:
+        """2.4: dashed 1 pixel lines at 30 percent opacity in the accent colour, from the
+        shape's edges to the rulers.
+
+        The left and right edges run up to the horizontal ruler along the top, and the top
+        and bottom edges run left to the vertical ruler. A line is drawn only where the
+        shape's edge lies below or to the right of the ruler it runs to, so a shape whose
+        top is above the viewport draws no vertical lines, and an edge past the viewport's
+        side is clipped away with the rest of the painting (notes Section 10).
+        """
+        rect = self._drawing_guides
+        if rect is None:
+            return
+        origin = self.mapToScene(QPoint(0, 0))
+        color = QColor(current_theme().accent)
+        color.setAlphaF(DRAWING_GUIDE_OPACITY)
+        pen = QPen(color, 0, Qt.PenStyle.DashLine)
+        pen.setCosmetic(True)
+        painter.save()
+        painter.setPen(pen)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+        if origin.y() < rect.top():
+            for x in (rect.left(), rect.right()):
+                painter.drawLine(QPointF(x, rect.top()), QPointF(x, origin.y()))
+        if origin.x() < rect.left():
+            for y in (rect.top(), rect.bottom()):
+                painter.drawLine(QPointF(rect.left(), y), QPointF(origin.x(), y))
+        painter.restore()
 
     # --- guides (General UI PRD 6.5) ---
 
@@ -811,6 +898,8 @@ class SnapView(QGraphicsView):
             self._draw_guides(painter, rect)
         if self._crosshairs_visible:
             self._draw_crosshairs(painter, rect)
+        if self._rulers_visible and self._drawing_guides is not None:
+            self._draw_drawing_guides(painter)
         if self._highlighted_layer is not None:
             self._draw_layer_highlight(painter, snap)
 

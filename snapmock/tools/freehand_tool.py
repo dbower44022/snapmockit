@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from PyQt6.QtCore import QPointF, Qt
+from PyQt6.QtCore import QPointF, QRectF, Qt
 from PyQt6.QtGui import QColor, QIcon, QMouseEvent, QPainterPath
 from PyQt6.QtWidgets import QButtonGroup, QLabel, QToolBar, QToolButton
 
@@ -95,7 +95,9 @@ class FreehandTool(BaseTool):
 
     @property
     def status_hint(self) -> str:
-        """9.11's Idle row."""
+        """9.11's Idle and Drawing rows; the Drawing row's state is the tooltip's."""
+        if self._item is not None:
+            return f"{DRAWING_STATE} Shift: straight segments. Release to finish."
         return "Click and drag to draw a freehand stroke. Shift: constrain to straight segments."
 
     # ------------------------------------------------------------ the options bar
@@ -185,6 +187,10 @@ class FreehandTool(BaseTool):
     def drawing_measurement(self) -> tuple[str, ...]:
         """The Freehand's state while a stroke is drawn (2.4, 9.11)."""
         return (DRAWING_STATE,) if self._item is not None else ()
+
+    def _drawing_bounds(self) -> QRectF | None:
+        item = self._item
+        return item.mapRectToScene(item.path.boundingRect()) if item is not None else None
 
     def mouse_press(self, event: QMouseEvent) -> bool:
         if self._scene is None or event.button() != Qt.MouseButton.LeftButton:

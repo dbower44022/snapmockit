@@ -16,7 +16,7 @@ import math
 from enum import Enum, auto
 from typing import Any
 
-from PyQt6.QtCore import QPointF, Qt
+from PyQt6.QtCore import QPointF, QRectF, Qt
 from PyQt6.QtGui import (
     QAction,
     QColor,
@@ -139,6 +139,12 @@ class PolygonTool(BaseTool):
             return (f"Sides: {self._item.sides}", f"R: {self._item.radius or 0.0:.0f}px")
         return ()
 
+    def _drawing_bounds(self) -> QRectF | None:
+        item = self._item
+        if item is None or self._step is _Step.IDLE:
+            return None
+        return item.mapRectToScene(item.outline().boundingRect())
+
     @property
     def status_hint(self) -> str:
         """The hints of 8.7, built from the tooltip's values."""
@@ -153,13 +159,6 @@ class PolygonTool(BaseTool):
         if self._regular():
             return "Click and drag to draw a regular polygon. Shift: constrain rotation."
         return "Click to place vertices. Double-click or click first vertex to close."
-
-    def _show_hint(self) -> None:
-        view = self._view
-        window = view.window() if view is not None else None
-        show = getattr(window, "show_status_hint", None)
-        if callable(show):
-            show(self.status_hint)
 
     # ------------------------------------------------------------ the options bar
 
@@ -364,6 +363,7 @@ class PolygonTool(BaseTool):
         item.polygon_mode = PolygonMode.FREEFORM
         item.closed = False  # the preview is the open path; the dashed line shows the close
         item.setPos(self._points[0])
+        self._dim_preview(item)
         self._scene.addItem(item)
         self._item = item
         closing = QGraphicsPathItem()
@@ -386,7 +386,7 @@ class PolygonTool(BaseTool):
                 path.moveTo(self._cursor)
                 path.lineTo(origin)
             self._closing.setPath(path)
-        self._show_hint()
+        self._show_status_hint()
 
     def _begin_regular(self, center: QPointF) -> None:
         assert self._scene is not None
@@ -398,9 +398,10 @@ class PolygonTool(BaseTool):
         item.closed = True
         item.regular_geometry = (QPointF(0, 0), 0.0, -90.0)
         item.setPos(center)
+        self._dim_preview(item)
         self._scene.addItem(item)
         self._item = item
-        self._show_hint()
+        self._show_status_hint()
 
     def mouse_move(self, event: QMouseEvent) -> bool:
         if self._step is _Step.PLACING:
@@ -415,7 +416,6 @@ class PolygonTool(BaseTool):
             if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
                 angle = round(angle / 15.0) * 15.0
             self._item.regular_geometry = (QPointF(0, 0), math.hypot(dx, dy), angle)
-            self._show_hint()
             self._show_drawing_feedback(event)
             return True
         return False
@@ -479,6 +479,7 @@ class PolygonTool(BaseTool):
         if scene is None:
             return
         scene.removeItem(item)
+        self._undim_preview(item)
         layer = scene.layer_manager.active_layer
         if layer is not None:
             scene.command_stack.push(AddItemCommand(scene, item, layer.layer_id))
@@ -499,7 +500,7 @@ class PolygonTool(BaseTool):
         self._item = None
         self._points = []
         self._step = _Step.IDLE
-        self._show_hint()
+        self._show_status_hint()
 
     def deactivate(self) -> None:
         self.cancel()

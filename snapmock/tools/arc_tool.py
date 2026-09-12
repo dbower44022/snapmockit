@@ -13,7 +13,7 @@ import math
 from enum import Enum, auto
 from typing import Any
 
-from PyQt6.QtCore import QPointF, Qt
+from PyQt6.QtCore import QPointF, QRectF, Qt
 from PyQt6.QtGui import QColor, QIcon, QKeyEvent, QMouseEvent, QPainter, QPixmap
 from PyQt6.QtWidgets import QButtonGroup, QLabel, QToolBar, QToolButton
 
@@ -145,6 +145,13 @@ class ArcTool(BaseTool):
             return None
         return QPointF(self._start)
 
+    def _drawing_bounds(self) -> QRectF | None:
+        """The curve's own extent, the closing lines of a Chord or Pie left out."""
+        item = self._item
+        if item is None or self._step is _Step.IDLE:
+            return None
+        return item.mapRectToScene(item.curve_path().boundingRect())
+
     def _shift_constrains_now(self) -> bool:
         """Shift holds the chord's angle in step 1 and nothing in step 2 (7.2)."""
         return self._step is _Step.CHORD
@@ -161,13 +168,6 @@ class ArcTool(BaseTool):
                 "Move mouse to adjust curvature. Click to confirm. Escape to cancel."
             )
         return "Click and drag to define the arc chord. Then move to set curvature."
-
-    def _show_hint(self) -> None:
-        view = self._view
-        window = view.window() if view is not None else None
-        show = getattr(window, "show_status_hint", None)
-        if callable(show):
-            show(self.status_hint)
 
     # ------------------------------------------------------------ the options bar
 
@@ -236,9 +236,10 @@ class ArcTool(BaseTool):
         self._item = ArcItem(start=QPointF(0, 0), end=QPointF(0, 0), control=QPointF(0, 0))
         self._item.apply_creation_defaults(self._creation_defaults)
         self._item.setPos(self._start)
+        self._dim_preview(self._item)
         self._scene.addItem(self._item)
         self._step = _Step.CHORD
-        self._show_hint()
+        self._show_status_hint()
         return True
 
     def mouse_move(self, event: QMouseEvent) -> bool:
@@ -265,7 +266,6 @@ class ArcTool(BaseTool):
             # The item's own position, not the press point: the centre-draw modifier of
             # 2.3 moves the chord's start away from where the press landed
             item.control_point = self.control_for(pos - item.pos())
-        self._show_hint()
         self._show_drawing_feedback(event)
         return True
 
@@ -295,7 +295,6 @@ class ArcTool(BaseTool):
             self.cancel()
             return True
         self._step = _Step.CURVE
-        self._show_hint()
         self._show_drawing_feedback(event)
         return True
 
@@ -326,7 +325,7 @@ class ArcTool(BaseTool):
             self._scene.removeItem(self._item)
         self._item = None
         self._step = _Step.IDLE
-        self._show_hint()
+        self._show_status_hint()
 
     def deactivate(self) -> None:
         self.cancel()
@@ -340,6 +339,7 @@ class ArcTool(BaseTool):
         if item is None or scene is None:
             return
         scene.removeItem(item)
+        self._undim_preview(item)
         layer = scene.layer_manager.active_layer
         if layer is None:
             return
