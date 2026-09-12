@@ -547,6 +547,10 @@ class BlurTool(BaseTool):
     def mouse_press(self, event: QMouseEvent) -> bool:
         if self._scene is None or event.button() != Qt.MouseButton.LeftButton:
             return False
+        # 8.1: no region on a locked or hidden layer. A stroke that continues a region
+        # already begun is not a new press in that sense, so the guard runs before it
+        if self._paint_mask is None and not self.layer_allows_drawing():
+            return True
         if self._paint_mask is not None or self.freeform:
             return self._paint_press(self._scene_pos(event))
         if self._creation_defaults.get("region_shape") is BlurRegionShape.WHOLE_LAYER:

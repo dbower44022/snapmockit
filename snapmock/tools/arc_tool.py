@@ -213,6 +213,8 @@ class ArcTool(BaseTool):
             return True
         if self._step is _Step.CHORD:
             return True
+        if not self.layer_allows_drawing():
+            return True
         self._start = self._snap_pos(self._scene_pos(event))
         self._item = ArcItem(start=QPointF(0, 0), end=QPointF(0, 0), control=QPointF(0, 0))
         self._item.apply_creation_defaults(self._creation_defaults)

@@ -35,7 +35,6 @@ from snapmock.items.base_item import SnapGraphicsItem
 from snapmock.items.numbered_step_item import NumberedStepItem
 from snapmock.tools.base_tool import BaseTool
 from snapmock.ui.cursors import numbered_step_cursor
-from snapmock.ui.unmet_requirements import check_requirements
 
 if TYPE_CHECKING:
     from snapmock.core.scene import SnapScene
@@ -206,27 +205,15 @@ class NumberedStepTool(BaseTool):
         if callable(renumber):
             renumber()
 
-    def _window(self) -> Any:
-        view = self._view
-        return view.window() if view is not None else None
-
     # ------------------------------------------------------------ placing
 
     def _layer_allows_placing(self) -> bool:
-        """PRD 2.11 and 8.4: no step on a locked or hidden layer; the Section 1.3 message."""
-        if self._scene is None:
-            return False
-        layer = self._scene.layer_manager.active_layer
-        if layer is None:
-            return False
-        return check_requirements(
-            self._window(),
-            "Numbered Step",
-            [
-                (not layer.locked, "an unlocked active layer"),
-                (layer.visible, "a visible active layer"),
-            ],
-        )
+        """PRD 2.11 and 8.4: no step on a locked or hidden layer; the Section 1.3 message.
+
+        The rule and its wording are ``BaseTool.layer_allows_drawing``'s, shared with
+        every drawing tool since the shape tools' shared drawing work.
+        """
+        return self.layer_allows_drawing()
 
     def mouse_press(self, event: QMouseEvent) -> bool:
         if self._scene is None or event.button() != Qt.MouseButton.LeftButton:

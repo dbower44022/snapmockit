@@ -322,6 +322,10 @@ class PolygonTool(BaseTool):
             return True
         if event.button() != Qt.MouseButton.LeftButton:
             return False
+        # 2.1: the first press of a polygon is refused on a locked or hidden layer; the
+        # presses that follow it place vertices in a shape already begun
+        if self._step is _Step.IDLE and not self.layer_allows_drawing():
+            return True
         if self._regular():
             self._begin_regular(self._snap_pos(self._scene_pos(event)))
             return True

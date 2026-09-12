@@ -54,7 +54,6 @@ class FreehandTool(BaseTool):
 
     def __init__(self) -> None:
         super().__init__()
-        self._item: FreehandItem | None = None
         self._cap_buttons: dict[StrokeCap, QToolButton] = {}
         self._close_button: QToolButton | None = None
         self._creation_defaults = {
@@ -165,32 +164,40 @@ class FreehandTool(BaseTool):
             return self._scene.views()[0].mapToScene(event.pos())
         return QPointF()
 
+    @property
+    def _item(self) -> FreehandItem | None:
+        """The stroke being drawn: the shared drawing preview, typed."""
+        item = self._preview_item
+        return item if isinstance(item, FreehandItem) else None
+
     def mouse_press(self, event: QMouseEvent) -> bool:
         if self._scene is None or event.button() != Qt.MouseButton.LeftButton:
             return False
+        if not self.layer_allows_drawing():
+            return True
         pos = self._scene_pos(event)
-        self._item = FreehandItem()
-        self._item.apply_creation_defaults(self._creation_defaults)
-        self._item.is_closed = False  # Close Path joins the ends on release (9.6)
-        self._item.setPos(pos)
-        self._item.add_point(QPointF(0, 0))
-        self._scene.addItem(self._item)
+        item = FreehandItem()
+        item.apply_creation_defaults(self._creation_defaults)
+        item.is_closed = False  # Close Path joins the ends on release (9.6)
+        item.setPos(pos)
+        item.add_point(QPointF(0, 0))
+        self._start_preview(item)
         return True
 
     def mouse_move(self, event: QMouseEvent) -> bool:
-        if self._item is None or self._scene is None:
+        item = self._item
+        if item is None or self._scene is None:
             return False
         pos = self._scene_pos(event)
-        local = pos - self._item.pos()
-        self._item.add_point(local)
+        local = pos - item.pos()
+        item.add_point(local)
         return True
 
     def mouse_release(self, event: QMouseEvent) -> bool:
-        if self._item is None or self._scene is None:
-            return False
-        self._scene.removeItem(self._item)
         created_item = self._item
-        self._item = None
+        if created_item is None or self._scene is None:
+            return False
+        self._end_preview()
         points = created_item.path_points
         xs = [p.x() for p in points]
         ys = [p.y() for p in points]

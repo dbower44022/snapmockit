@@ -33,7 +33,6 @@ class EllipseTool(BaseTool):
     def __init__(self) -> None:
         super().__init__()
         self._start: QPointF = QPointF()
-        self._item: EllipseItem | None = None
         self._creation_defaults = {
             "stroke_color": QColor(DEFAULT_STROKE_COLOR),
             "fill_color": QColor(DEFAULT_FILL_COLOR),
@@ -60,35 +59,43 @@ class EllipseTool(BaseTool):
     def status_hint(self) -> str:
         return "Click and drag to draw ellipse | Shift: circle"
 
+    @property
+    def _item(self) -> EllipseItem | None:
+        """The ellipse being drawn: the shared drawing preview, typed."""
+        item = self._preview_item
+        return item if isinstance(item, EllipseItem) else None
+
     def mouse_press(self, event: QMouseEvent) -> bool:
         if self._scene is None or event.button() != Qt.MouseButton.LeftButton:
             return False
+        if not self.layer_allows_drawing():
+            return True
         self._start = self._snap_pos(
             self._scene.views()[0].mapToScene(event.pos()) if self._scene.views() else QPointF()
         )
-        self._item = EllipseItem(rect=QRectF(0, 0, 0, 0))
-        self._item.apply_creation_defaults(self._creation_defaults)
-        self._item.setPos(self._start)
-        self._scene.addItem(self._item)
+        item = EllipseItem(rect=QRectF(0, 0, 0, 0))
+        item.apply_creation_defaults(self._creation_defaults)
+        item.setPos(self._start)
+        self._start_preview(item)
         return True
 
     def mouse_move(self, event: QMouseEvent) -> bool:
-        if self._item is None or self._scene is None:
+        item = self._item
+        if item is None or self._scene is None:
             return False
         current = self._snap_pos(
             self._scene.views()[0].mapToScene(event.pos()) if self._scene.views() else QPointF()
         )
         rect = QRectF(self._start, current).normalized()
-        self._item.setPos(rect.topLeft())
-        self._item.rect = QRectF(0, 0, rect.width(), rect.height())
+        item.setPos(rect.topLeft())
+        item.rect = QRectF(0, 0, rect.width(), rect.height())
         return True
 
     def mouse_release(self, event: QMouseEvent) -> bool:
-        if self._item is None or self._scene is None:
-            return False
-        self._scene.removeItem(self._item)
         created_item = self._item
-        self._item = None
+        if created_item is None or self._scene is None:
+            return False
+        self._end_preview()
         if created_item.rect.width() > 2 and created_item.rect.height() > 2:
             layer = self._scene.layer_manager.active_layer
             if layer is not None:

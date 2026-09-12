@@ -53,7 +53,6 @@ class RectangleTool(BaseTool):
     def __init__(self) -> None:
         super().__init__()
         self._start: QPointF = QPointF()
-        self._item: RectangleItem | None = None
         self._toolbar: QToolBar | None = None
         self._mode_button: QToolButton | None = None
         self._corner_spins: dict[str, QSpinBox] = {}
@@ -176,36 +175,44 @@ class RectangleTool(BaseTool):
 
     # ------------------------------------------------------------ drawing
 
+    @property
+    def _item(self) -> RectangleItem | None:
+        """The rectangle being drawn: the shared drawing preview, typed."""
+        item = self._preview_item
+        return item if isinstance(item, RectangleItem) else None
+
     def mouse_press(self, event: QMouseEvent) -> bool:
         if self._scene is None or event.button() != Qt.MouseButton.LeftButton:
             return False
+        if not self.layer_allows_drawing():
+            return True
         self._start = self._snap_pos(
             self._scene.views()[0].mapToScene(event.pos()) if self._scene.views() else QPointF()
         )
-        self._item = RectangleItem(rect=QRectF(0, 0, 0, 0))
-        self._item.apply_creation_defaults(self._creation_defaults)
-        self._item.setPos(self._start)
-        self._scene.addItem(self._item)
+        item = RectangleItem(rect=QRectF(0, 0, 0, 0))
+        item.apply_creation_defaults(self._creation_defaults)
+        item.setPos(self._start)
+        self._start_preview(item)
         return True
 
     def mouse_move(self, event: QMouseEvent) -> bool:
-        if self._item is None or self._scene is None:
+        item = self._item
+        if item is None or self._scene is None:
             return False
         current = self._snap_pos(
             self._scene.views()[0].mapToScene(event.pos()) if self._scene.views() else QPointF()
         )
         rect = QRectF(self._start, current).normalized()
-        self._item.setPos(rect.topLeft())
-        self._item.rect = QRectF(0, 0, rect.width(), rect.height())
+        item.setPos(rect.topLeft())
+        item.rect = QRectF(0, 0, rect.width(), rect.height())
         return True
 
     def mouse_release(self, event: QMouseEvent) -> bool:
-        if self._item is None or self._scene is None:
-            return False
-        # Remove the preview item
-        self._scene.removeItem(self._item)
         created_item = self._item
-        self._item = None
+        if created_item is None or self._scene is None:
+            return False
+        # Take the preview out of the scene; it never joined a layer's item list
+        self._end_preview()
         # Only create if it has meaningful size
         if created_item.rect.width() > 2 and created_item.rect.height() > 2:
             layer = self._scene.layer_manager.active_layer

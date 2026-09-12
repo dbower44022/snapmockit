@@ -296,6 +296,8 @@ class HighlightTool(BaseTool):
     def mouse_press(self, event: QMouseEvent) -> bool:
         if self._scene is None or event.button() != Qt.MouseButton.LeftButton:
             return False
+        if not self.layer_allows_drawing():
+            return True
         pos = self._scene_pos(event)
         self._origin = QPointF(pos)
         self._raw = [QPointF(0, 0)]
