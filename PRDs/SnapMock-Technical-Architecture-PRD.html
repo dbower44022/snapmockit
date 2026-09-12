@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.41</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.42</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.41</dd>
-    <dt>Last Updated</dt>    <dd>09-12-26 15:34</dd>
+    <dt>Document version</dt><dd>1.42</dd>
+    <dt>Last Updated</dt>    <dd>09-12-26 15:59</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.42</td>
+        <td class="nowrap">09-12-26 15:59</td>
+        <td>Doug Bower</td>
+        <td>Section 3.3's BaseTool loses _switch_to_select: no tool that draws switches to the Select tool after making an item.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.41</td>
         <td class="nowrap">09-12-26 15:34</td>
@@ -413,6 +420,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-12-26 15:59</td>
+        <td>3.3</td>
+        <td>Changed</td>
+        <td>The shape tools' shared drawing behaviour, Phase 5 (09-12-26; notes in <code>docs/Basic-Shape-Shared-Drawing-Implementation.md</code>, Section 11). The seven shape tools, the Blur tool, and the Highlighter no longer select the item they make or switch to the Select tool (the Basic Shape PRD's 2.1 and 2.5, decision 2, option A), so <code>BaseTool._switch_to_select</code>, which reached the window's tool manager through the view, had no caller and is removed. The listed <code>BaseTool</code> interface is unchanged: the method was never part of it. The Callout tool's hand-over of a new callout to the Text tool is its own route and is untouched.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-12-26 15:34</td>
         <td>3.3, 3.9, 8</td>

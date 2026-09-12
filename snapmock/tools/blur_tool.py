@@ -481,7 +481,7 @@ class BlurTool(BaseTool):
         self._show_hint()
         return True
 
-    def finish_freeform(self, *, switch: bool = True) -> None:
+    def finish_freeform(self) -> None:
         """Commit the painted region, or drop it when nothing was painted (2.3)."""
         item, mask = self._item, self._paint_mask
         self._paint_mask = self._stroke_base = None
@@ -498,11 +498,9 @@ class BlurTool(BaseTool):
         if mask is None or item.alpha_mask is None or rect.isEmpty() or layer is None:
             self._show_hint()
             return
+        # Basic Shape shared drawing decision 2: the tool stays active and the new region is
+        # not selected, whichever of the three routes made it
         self._scene.command_stack.push(AddItemCommand(self._scene, item, layer.layer_id))
-        if self._selection_manager is not None:
-            self._selection_manager.select(item)
-        if switch:
-            self._switch_to_select()
         self._show_hint()
 
     def discard_freeform(self) -> None:
@@ -539,7 +537,7 @@ class BlurTool(BaseTool):
     def deactivate(self) -> None:
         """A tool switch finalizes the painted region (2.3)."""
         if self._paint_mask is not None:
-            self.finish_freeform(switch=False)
+            self.finish_freeform()
         super().deactivate()
 
     # ------------------------------------------------------------ drawing (2.3)
@@ -575,10 +573,7 @@ class BlurTool(BaseTool):
         item.apply_creation_defaults(self._creation_defaults)
         item.region_shape = BlurRegionShape.WHOLE_LAYER
         item.setPos(canvas.topLeft())
-        scene.command_stack.push(AddItemCommand(scene, item, layer.layer_id))
-        if self._selection_manager is not None:
-            self._selection_manager.select(item)
-        self._switch_to_select()
+        scene.command_stack.push(AddItemCommand(scene, item, layer.layer_id))  # decision 2
         self._show_hint()
         return True
 
@@ -628,10 +623,7 @@ class BlurTool(BaseTool):
             layer = self._scene.layer_manager.active_layer
             if layer is not None:
                 cmd = AddItemCommand(self._scene, created_item, layer.layer_id)
-                self._scene.command_stack.push(cmd)
-                if self._selection_manager is not None:
-                    self._selection_manager.select(created_item)
-                self._switch_to_select()
+                self._scene.command_stack.push(cmd)  # decision 2: no selection, no switch
         self._show_hint()
         return True
 

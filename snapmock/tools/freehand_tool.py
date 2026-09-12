@@ -250,9 +250,7 @@ class FreehandTool(BaseTool):
         created_item.smooth(float(self._creation_defaults.get("smoothing", 50)) / 100.0)
         layer = self._scene.layer_manager.active_layer
         if layer is not None:
+            # 2.1, 2.5: the tool stays active and the new stroke is not selected (decision 2)
             cmd = AddItemCommand(self._scene, created_item, layer.layer_id)
             self._scene.command_stack.push(cmd)
-            if self._selection_manager is not None:
-                self._selection_manager.select(created_item)
-            self._switch_to_select()
         return True

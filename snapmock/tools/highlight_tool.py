@@ -372,11 +372,10 @@ class HighlightTool(BaseTool):
             created_item.set_points([(p.x(), p.y()) for p in points])
             layer = self._scene.layer_manager.active_layer
             if layer is not None:
+                # Basic Shape shared drawing decision 2: the tool stays active and the new
+                # highlight is not selected, as for every tool that draws
                 cmd = AddItemCommand(self._scene, created_item, layer.layer_id)
                 self._scene.command_stack.push(cmd)
-                if self._selection_manager is not None:
-                    self._selection_manager.select(created_item)
-                self._switch_to_select()
         self._show_hint()
         return True
 

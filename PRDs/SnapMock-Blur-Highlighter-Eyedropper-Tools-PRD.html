@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Blur, Highlighter &amp; Eyedropper Tools</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.16</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.17</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Blur / Pixelate · Highlighter · Eyedropper</dd>
-    <dt>Document version</dt><dd>1.16</dd>
-    <dt>Last Updated</dt>    <dd>09-12-26 12:34</dd>
+    <dt>Document version</dt><dd>1.17</dd>
+    <dt>Last Updated</dt>    <dd>09-12-26 15:59</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.17</td>
+        <td class="nowrap">09-12-26 15:59</td>
+        <td>Doug Bower</td>
+        <td>The Blur tool and the Highlighter stay active after a region or a stroke is made and leave it unselected, the shape tools' post-creation rule.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.16</td>
         <td class="nowrap">09-12-26 12:34</td>
@@ -171,6 +178,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-12-26 15:59</td>
+        <td>2.3, 2.4, 3</td>
+        <td>Built</td>
+        <td>The shape tools' shared drawing behaviour, Phase 5, decision 2 (option A) (09-12-26; notes in <code>docs/Basic-Shape-Shared-Drawing-Implementation.md</code>, Section 11). The rule the 1.15 row recorded is built: after a blur region or a highlight stroke is made, the tool stays active and the new item is not selected, as the Basic Shape Annotation Tools PRD's 2.1 and 2.5 give every shape tool. All three of the Blur tool's release paths follow it — the drag-drawn rectangle or ellipse, the Whole Layer region placed by a click, and the brush-painted region finished by Enter — and so does a painted region finalized by a tool switch, which had been selected without the switch before. Each region and each stroke is its own undo step. The cost the 1.15 row named is paid: to resize a region just drawn, the user presses <code>V</code> first.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-12-26 12:34</td>
         <td>2.3, 3, 8.1</td>

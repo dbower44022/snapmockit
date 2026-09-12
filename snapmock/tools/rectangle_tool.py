@@ -252,9 +252,8 @@ class RectangleTool(BaseTool):
         if created_item.rect.width() > 2 and created_item.rect.height() > 2:
             layer = self._scene.layer_manager.active_layer
             if layer is not None:
+                # 2.1, 2.5: the tool stays active and the new item is not selected, so the
+                # next shape can be drawn at once, each its own undo step (decision 2)
                 cmd = AddItemCommand(self._scene, created_item, layer.layer_id)
                 self._scene.command_stack.push(cmd)
-                if self._selection_manager is not None:
-                    self._selection_manager.select(created_item)
-                self._switch_to_select()
         return True

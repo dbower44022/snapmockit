@@ -482,10 +482,9 @@ class PolygonTool(BaseTool):
         self._undim_preview(item)
         layer = scene.layer_manager.active_layer
         if layer is not None:
+            # 2.1, 2.5: the tool stays active and the new polygon is not selected (decision 2)
             scene.command_stack.push(AddItemCommand(scene, item, layer.layer_id))
-            if self._selection_manager is not None:
-                self._selection_manager.select(item)
-            self._switch_to_select()
+        self._show_status_hint()
 
     def _remove_closing(self) -> None:
         if self._closing is not None and self._closing.scene() is not None:

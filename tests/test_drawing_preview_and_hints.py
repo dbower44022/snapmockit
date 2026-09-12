@@ -260,7 +260,8 @@ def test_the_status_bar_follows_the_drag_and_returns_to_idle(main_window: MainWi
     assert label.text() == "D: 100 | Alt or Ctrl: from center | Release to confirm."
 
     _release(tool, view, QPointF(160, 120))
-    assert main_window.tool_manager.active_tool_id != "ellipse" or label.text() == idle
+    assert main_window.tool_manager.active_tool_id == "ellipse"  # the tool stays (2.5)
+    assert label.text() == idle
 
 
 def test_escape_puts_the_idle_row_back(main_window: MainWindow) -> None:

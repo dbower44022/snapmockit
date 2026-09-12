@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Basic Shape Annotation Tools</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.18</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.19</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Line · Arrow · Rectangle · Ellipse · Arc · Polygon · Freehand / Pen</dd>
-    <dt>Document version</dt><dd>1.18</dd>
-    <dt>Last Updated</dt>    <dd>09-12-26 15:34</dd>
+    <dt>Document version</dt><dd>1.19</dd>
+    <dt>Last Updated</dt>    <dd>09-12-26 15:59</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.19</td>
+        <td class="nowrap">09-12-26 15:59</td>
+        <td>Doug Bower</td>
+        <td>Shared drawing behaviour Phase 5 built: 2.1's last mouse-release step and 2.5 — every shape tool stays active after a shape is made and leaves it unselected, each shape its own undo step. Section 2 has no open row.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.18</td>
         <td class="nowrap">09-12-26 15:34</td>
@@ -198,6 +205,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-12-26 15:59</td>
+        <td>2.1, 2.5, 12</td>
+        <td>Built</td>
+        <td>The shape tools' shared drawing behaviour, Phase 5 (09-12-26; notes in <code>docs/Basic-Shape-Shared-Drawing-Implementation.md</code>, Section 11). 2.1's last mouse-release step and 2.5's post-creation rule are built, as decision 2 (option A) put them: the Line, Arrow, Rectangle, Ellipse, Arc, Polygon, and Freehand tools no longer select the new item and no longer switch to the Select tool, so the tool returns to Idle, its Idle hint comes back, and the next shape can be drawn at once. Each shape is its own <code>AddItemCommand</code> and so its own undo step. The same rule reaches the Blur tool and the Highlighter, whose own PRD's row records it, and the Text and Callout tools keep their behaviour: the new text item is selected for inline editing, and a new callout is handed to the Text tool. <code>BaseTool._switch_to_select</code> had no caller left and is removed. To edit a shape the user switches to the Select tool (V), as 2.5 says. Silences decided: a confirmed arc and a confirmed polygon put the tool's Idle hint back, as a released drag-drawn shape does, since the tool no longer changes and nothing else would. Section 12's Shared Behavior row "All shape creation operations produce an AddItemCommand and are fully undoable" is met by tests drawing three shapes in succession with each tool and undoing them one at a time. <strong>With this row Section 2 has no open row</strong>: 2.1 is built but for its preview wording, which is the departure the 1.13 row records; 2.3 is built but for Ctrl's reserved edge snapping, which no version of this document asks for; 2.4 and 2.5 are built whole.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-12-26 15:34</td>
         <td>2.4, 3.7, 4.8, 5.7, 6.7, 7.7, 8.7, 9.11, 12</td>

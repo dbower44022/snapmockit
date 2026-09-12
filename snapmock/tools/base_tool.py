@@ -271,14 +271,6 @@ class BaseTool(ABC):
         view = self._view
         return view.snap_point(pos) if view is not None else pos
 
-    def _switch_to_select(self) -> None:
-        """Switch to the select tool via the view's tool manager."""
-        view = self._view
-        if view is not None:
-            main_window = view.window()
-            if main_window is not None and hasattr(main_window, "tool_manager"):
-                main_window.tool_manager.activate("select")
-
     # --- event handlers (return True if consumed) ---
 
     def mouse_press(self, event: QMouseEvent) -> bool:

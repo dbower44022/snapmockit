@@ -1,6 +1,6 @@
 # The Shape Tools' Shared Drawing Behaviour — Implementation Notes
 
-Last Updated: 09-12-26 15:34 · Revision 1.6
+Last Updated: 09-12-26 15:59 · Revision 1.7
 
 Implements the open rows of the Basic Shape Annotation Tools PRD's Section 2, Shared Shape Behavior (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.12 at the start), and the per-tool Drawing hints that go with them, with the General UI PRD (version 2.25) and Technical Architecture PRD (version 1.37) rows they own, in the five phases and the close-out defined by `docs/Basic-Shape-Shared-Drawing-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2. Finishing this work leaves the Basic Shape Annotation Tools PRD's Section 2 with no open row.
 
@@ -19,8 +19,8 @@ The rest of the starting state, read from the code: no tool draws its preview at
 | 1 | The drawing lifecycle (2.1, 2.3's Escape, Section 12): the decisions and these notes; the press guard, the preview's life, `cancel`, `is_active_operation`, Escape; close-out | Done | ea4f535, 1e71cd0, then this close-out commit |
 | 2 | The modifiers (2.3, 9.5): Shift squaring and circling, the centre-draw modifier, the two together, the Freehand's straight segments | Done | abd92a6, then this close-out commit |
 | 3 | The dimension tooltip (2.4): the tooltip, the constrain icon, the centre marker | Done | f789353 |
-| 4 | The preview and the hints (2.4, 3.7, 4.8, 5.7, 6.7, 9.11): the 70 percent preview, the guide lines, the Drawing hints | Done | this commit |
-| 5 | The post-creation rule (2.1, 2.5): no auto-selection, no tool switch | Not started | |
+| 4 | The preview and the hints (2.4, 3.7, 4.8, 5.7, 6.7, 9.11): the 70 percent preview, the guide lines, the Drawing hints | Done | a4f5231 |
+| 5 | The post-creation rule (2.1, 2.5): no auto-selection, no tool switch | Done | this commit |
 | Close-out | PRD rows, the notes complete, the General UI notes' Section 25 pointer, the Basic Shape remainder notes' Section 10 pointer, the display checks | Not started | |
 
 ## 2. Decisions
@@ -229,10 +229,33 @@ Measured on this machine on the offscreen platform, as in 9.1, while the Phase 3
 
 **Next required step:** Phase 5, the post-creation rule (2.1, 2.5) — per decision 2, the seven shape tools, the Blur tool from its three release paths, and the Highlighter stop selecting the new item and stop switching to the Select tool, so the tool stays active and each shape is its own undo step; every test that assumed the switch is rewritten to activate the Select tool itself. Tests: three shapes drawn in succession with one tool, each its own undo entry; the selection empty after a draw; the tool still active; and the Text and Callout tools keeping their present behaviour.
 
+## 11. What Phase 5 built
+
+One commit, the build and its close-out together.
+
+Decision 2, option A. The Rectangle, Ellipse, Line, Arrow, and Freehand tools' `mouse_release`, the Arc's `_confirm`, and the Polygon's `_add` push the `AddItemCommand` and nothing more: no `select`, no switch to the Select tool. The Highlighter's release does the same. The Blur tool's three release paths do too — `mouse_release` for a drag-drawn rectangle or ellipse, `_place_whole_layer` for the Whole Layer region, and `finish_freeform` for a brush-painted region — and `finish_freeform` loses its `switch` flag, which had existed only so that a tool switch could finalize a painted region without switching a second time; that path had still selected the region, and no longer does. `BaseTool._switch_to_select` had no caller left and is removed. The Text and Callout tools are untouched.
+
+Silences found while building, decided as the code says:
+
+- **A confirmed arc and a confirmed polygon put the Idle hint back.** Before, the switch to the Select tool replaced the hint; now the tool stays, so `_confirm` and `_add` call `_show_status_hint`, as `_end_preview` does for the five drag-drawn tools.
+- **No existing test needed rewriting.** The kickoff expected every test that drew and then relied on the Select tool to be rewritten. Twenty-eight modules that draw through a tool and read the selection or the active tool — among them the Arc, Polygon, arrow, corner radius, blur, find-and-replace colour, guides, integration, menus, navigation keys, presets, tool manager, and vector panel modules — passed 311 tests with the switch removed. Every test that goes on to use the Select tool already activates it itself, and the tests with a bare `SnapView` never saw the switch. The full suite at this commit is the check that nothing outside those modules relied on it.
+- **The Phase 4 test of the status bar returning to Idle** had been written to pass whether or not the tool switched; it now asserts that the Ellipse stays active and its Idle row comes back.
+
+### 11.1 Tests
+
+`tests/test_post_creation.py` (24): three shapes in succession with each of the seven shape tools, the tool still active and the selection empty after each, three commands on the stack, and three undos taking them away one at a time; each new shape unselected and selectable once the Select tool is activated; the regular Polygon staying active; the Idle hint back after a rectangle, an arc, and a polygon; the Blur tool staying active after two drag-drawn rectangles, two ellipses, and two brush-painted regions, after a Whole Layer region, and a painted region finalized by a tool switch left unselected; the Highlighter staying active through three strokes; the Text tool still selecting its new item for editing; and the Callout tool still handing its new callout to the Text tool.
+
+### 11.2 Phase 5 close-out
+
+2.1's last mouse-release step and 2.5 are built, and Section 12's Shared Behavior row on `AddItemCommand` and undo is met by tests. Basic Shape PRD 1.19, Blur, Highlighter, and Eyedropper Tools PRD 1.17, and Technical Architecture PRD 1.42 carry the rows. **The Basic Shape Annotation Tools PRD's Section 2 has no open row.**
+
+**Next required step:** the close-out of the work — the full-suite run at this commit, the General UI notes' Section 25 pointer, the Basic Shape remainder notes' Section 10 pointer, the display checks this work owes, and the rows of the Basic Shape Annotation Tools PRD that remain anywhere in the document.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.7 | 09-12-26 15:59 | Claude (Claude Code) | Phase 5 done: Section 11 with no auto-selection and no switch to the Select tool in the seven shape tools, the Blur tool's three release paths, and the Highlighter; `_switch_to_select` removed; the three silences — the Idle hint after a confirmed arc or polygon, no existing test needing a rewrite, and the Phase 4 status bar test tightened — 11.1's tests, and 11.2's close-out; the phase-table row done. Basic Shape PRD 1.19, Blur PRD 1.17, Technical Architecture PRD 1.42. |
 | 1.6 | 09-12-26 15:34 | Claude (Claude Code) | Phase 4 done: Section 10 with the 70 percent preview, the guide lines to the rulers in the view's foreground pass, the Drawing rows of 3.7, 4.8, 5.7, 6.7, and 9.11 and the Idle rows of 3.7 and 4.8, and the six silences found while building — the off-screen rule for the guide lines, the rulers as one toggle, the lines from the geometry, the tools that draw them, the hint on every move, and the dimming in proportion — 10.1's measured cost per move, 10.2's tests, and 10.3's close-out; the phase-table row done. Basic Shape PRD 1.18, General UI PRD 2.32, Technical Architecture PRD 1.41. |
 | 1.5 | 09-12-26 15:19 | Claude (Claude Code) | Phase 3 done: Section 9 with the dimension tooltip, the constrain icon, and the centre marker built as widgets over the viewport, the edge rule shared with the loupe, `drawing_measurement` as each tool's one function, the eight silences found while building — the Freehand's `Drawing…`, the marker as a second widget, the tooltip's side, the icon, which tools show the marker, the first move, the angle's range, and a scroll carrying the widgets — 9.1's measured cost per move, 9.2's tests, and 9.3's close-out; the phase-table row done. Basic Shape PRD 1.17, Technical Architecture PRD 1.40. |
 | 1.4 | 09-12-26 14:51 | Claude (Claude Code) | Section 8, the display run of 09-12-26: ten checks, ten as described, none failed. The seven this work owed are answered — the modifiers of 2.3 and 9.5, the Escape and tool-switch lifecycle of 2.1 and 2.3, and the locked-layer refusal — and the two the other session owed pass in the same sitting. What the run did not settle is named: Alt, which cannot reach the canvas, and the Blur tool's own Fill swatch, which was not among the checks. Basic Shape PRD 1.16, General UI PRD 2.31, General UI notes 1.40. |
