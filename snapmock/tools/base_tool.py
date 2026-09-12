@@ -128,6 +128,27 @@ class BaseTool(ABC):
             ],
         )
 
+    @staticmethod
+    def constrains(modifiers: Qt.KeyboardModifier) -> bool:
+        """2.3: Shift constrains proportions or the angle while drawing."""
+        return bool(modifiers & Qt.KeyboardModifier.ShiftModifier)
+
+    @staticmethod
+    def draws_from_centre(modifiers: Qt.KeyboardModifier) -> bool:
+        """2.3: the origin point becomes the centre of the shape instead of a corner.
+
+        Alt is the key every product requirements document names (Basic Shape 2.3,
+        General UI 12.2), and Ctrl is the second route to it (decision 4, option B).
+        Alt plus a mouse button never reaches the canvas on a desktop whose window
+        manager claims it as the window-move gesture, which is the case on the Linux
+        desktop this project is built on, so without the second route the behaviour
+        does not exist there at all. Ctrl is free during a drag: 2.3 reserves it for
+        edge snapping, which is unbuilt.
+        """
+        return bool(
+            modifiers & (Qt.KeyboardModifier.AltModifier | Qt.KeyboardModifier.ControlModifier)
+        )
+
     def _start_preview(self, item: QGraphicsItem) -> None:
         """Put *item* in the scene as the drawing preview (Basic Shape PRD 2.1).
 

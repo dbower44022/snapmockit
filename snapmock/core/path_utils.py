@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 
 import numpy as np
-from PyQt6.QtCore import QLineF, QPointF
+from PyQt6.QtCore import QLineF, QPointF, QRectF
 
 
 def _perpendicular_distance(point: QPointF, line_start: QPointF, line_end: QPointF) -> float:
@@ -35,6 +35,31 @@ def constrain_angle(origin: QPointF, point: QPointF, step_degrees: float = 15.0)
     return QPointF(
         origin.x() + length * math.cos(snapped), origin.y() + length * math.sin(snapped)
     )
+
+
+def constrained_rect(
+    origin: QPointF, current: QPointF, *, square: bool = False, from_centre: bool = False
+) -> QRectF:
+    """The rectangle a drag from *origin* to *current* defines under 2.3's modifiers.
+
+    With neither modifier the two points are opposite corners, which is what every
+    shape tool drew before. ``square`` (Shift) makes both sides the longer of the two
+    the drag spans, so the square follows the cursor's dominant direction and keeps
+    the corner at *origin*. ``from_centre`` (Alt, or Ctrl by decision 4) makes *origin*
+    the centre and the drag the half-diagonal, so the rectangle grows outward on every
+    side at once. Both together give a square centred on *origin*.
+    """
+    dx = current.x() - origin.x()
+    dy = current.y() - origin.y()
+    if square:
+        side = max(abs(dx), abs(dy))
+        dx = math.copysign(side, dx) if dx else side
+        dy = math.copysign(side, dy) if dy else side
+    if from_centre:
+        return QRectF(
+            origin.x() - abs(dx), origin.y() - abs(dy), 2 * abs(dx), 2 * abs(dy)
+        ).normalized()
+    return QRectF(origin, QPointF(origin.x() + dx, origin.y() + dy)).normalized()
 
 
 def simplify_rdp(points: list[QPointF], epsilon: float = 2.0) -> list[QPointF]:

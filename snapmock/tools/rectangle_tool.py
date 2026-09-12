@@ -23,6 +23,7 @@ from snapmock.config.constants import (
     BorderStyle,
     CornerRadiusMode,
 )
+from snapmock.core.path_utils import constrained_rect
 from snapmock.items.rectangle_item import RectangleItem
 from snapmock.tools.base_tool import BaseTool
 
@@ -84,7 +85,8 @@ class RectangleTool(BaseTool):
 
     @property
     def status_hint(self) -> str:
-        return "Click and drag to draw rectangle | Shift: square"
+        """5.7's Idle row, with the centre-draw modifier's second route (decision 4)."""
+        return "Click and drag to draw a rectangle. Shift: square. Alt or Ctrl: from center."
 
     # ------------------------------------------------------------ the options bar
 
@@ -202,7 +204,15 @@ class RectangleTool(BaseTool):
         current = self._snap_pos(
             self._scene.views()[0].mapToScene(event.pos()) if self._scene.views() else QPointF()
         )
-        rect = QRectF(self._start, current).normalized()
+        # 2.3: Shift squares the rectangle, the centre-draw modifier grows it from the
+        # press point; either takes effect from the move it is first seen on
+        modifiers = event.modifiers()
+        rect = constrained_rect(
+            self._start,
+            current,
+            square=self.constrains(modifiers),
+            from_centre=self.draws_from_centre(modifiers),
+        )
         item.setPos(rect.topLeft())
         item.rect = QRectF(0, 0, rect.width(), rect.height())
         return True

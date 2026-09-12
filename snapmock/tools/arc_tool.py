@@ -231,13 +231,23 @@ class ArcTool(BaseTool):
         pos = self._scene_pos(event)
         if self._step is _Step.CHORD:
             current = self._snap_pos(pos)
-            if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+            if self.constrains(event.modifiers()):
                 current = constrain_angle(self._start, current)
-            end = current - self._start
-            item.end_point = end
-            item.control_point = end / 2.0
+            if self.draws_from_centre(event.modifiers()):
+                # 2.3 lists the Arc under the centre-draw modifier and Section 7 does not
+                # say what it does: the press point becomes the chord's midpoint, so the
+                # chord grows both ways at once (notes Section 6)
+                half = current - self._start
+                item.setPos(self._start - half)
+                item.end_point = half * 2.0
+            else:
+                item.setPos(self._start)
+                item.end_point = current - self._start
+            item.control_point = item.end_point / 2.0
         else:
-            item.control_point = self.control_for(pos - self._start)
+            # The item's own position, not the press point: the centre-draw modifier of
+            # 2.3 moves the chord's start away from where the press landed
+            item.control_point = self.control_for(pos - item.pos())
         self._show_hint()
         return True
 

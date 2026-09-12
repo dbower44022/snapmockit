@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import Any
 
 from PyQt6.QtCore import QPointF, Qt
-from PyQt6.QtGui import QColor, QIcon, QMouseEvent
+from PyQt6.QtGui import QColor, QIcon, QMouseEvent, QPainterPath
 from PyQt6.QtWidgets import QButtonGroup, QLabel, QToolBar, QToolButton
 
 from snapmock.commands.add_item import AddItemCommand
@@ -23,6 +23,7 @@ from snapmock.config.constants import (
     BorderStyle,
     StrokeCap,
 )
+from snapmock.core.path_utils import constrain_angle
 from snapmock.items.freehand_item import FreehandItem
 from snapmock.tools.base_tool import BaseTool
 from snapmock.tools.highlight_tool import cap_icon
@@ -35,6 +36,8 @@ _CAP_STYLES: tuple[tuple[StrokeCap, str, str], ...] = (
 _CONTROL_HEIGHT = 26
 MIN_STROKE_EXTENT = 2.0
 """A stroke whose points span less than this in both directions is an accidental click."""
+STRAIGHT_SEGMENT_DEGREES = 45.0
+"""9.5: a Shift-held segment follows horizontal, vertical, or 45-degree diagonal lines."""
 
 
 class FreehandTool(BaseTool):
@@ -55,6 +58,10 @@ class FreehandTool(BaseTool):
     def __init__(self) -> None:
         super().__init__()
         self._cap_buttons: dict[StrokeCap, QToolButton] = {}
+        # 9.5: the stroke as it stood when Shift was first held, and the point the
+        # straight segment runs from. None while the stroke follows the cursor freehand
+        self._straight_from: tuple[list[QPointF], QPainterPath] | None = None
+        self._straight_anchor: QPointF | None = None
         self._close_button: QToolButton | None = None
         self._creation_defaults = {
             "stroke_color": QColor(DEFAULT_STROKE_COLOR),
@@ -85,7 +92,8 @@ class FreehandTool(BaseTool):
 
     @property
     def status_hint(self) -> str:
-        return "Click and draw freehand path"
+        """9.11's Idle row."""
+        return "Click and drag to draw a freehand stroke. Shift: constrain to straight segments."
 
     # ------------------------------------------------------------ the options bar
 
@@ -181,6 +189,8 @@ class FreehandTool(BaseTool):
         item.is_closed = False  # Close Path joins the ends on release (9.6)
         item.setPos(pos)
         item.add_point(QPointF(0, 0))
+        self._straight_from = None
+        self._straight_anchor = None
         self._start_preview(item)
         return True
 
@@ -188,9 +198,21 @@ class FreehandTool(BaseTool):
         item = self._item
         if item is None or self._scene is None:
             return False
-        pos = self._scene_pos(event)
-        local = pos - item.pos()
-        item.add_point(local)
+        local = self._scene_pos(event) - item.pos()
+        if not self.constrains(event.modifiers()):
+            # Freehand again: the straight segment, if there was one, keeps its end point
+            self._straight_from = None
+            self._straight_anchor = None
+            item.add_point(local)
+            return True
+        # 9.5: one straight segment from where Shift was first held, replaced on every
+        # move, so a curve and a straight run mix in one stroke
+        if self._straight_from is None or self._straight_anchor is None:
+            self._straight_from = item.preview_snapshot()
+            self._straight_anchor = self._straight_from[0][-1]
+        else:
+            item.restore_preview(self._straight_from)
+        item.add_point(constrain_angle(self._straight_anchor, local, STRAIGHT_SEGMENT_DEGREES))
         return True
 
     def mouse_release(self, event: QMouseEvent) -> bool:
@@ -198,6 +220,8 @@ class FreehandTool(BaseTool):
         if created_item is None or self._scene is None:
             return False
         self._end_preview()
+        self._straight_from = None
+        self._straight_anchor = None
         points = created_item.path_points
         xs = [p.x() for p in points]
         ys = [p.y() for p in points]

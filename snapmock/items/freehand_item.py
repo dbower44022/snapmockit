@@ -148,6 +148,23 @@ class FreehandItem(VectorItem):
                 self._preview.quadTo(prev, _mid(prev, p))
         self._rebuild_path()
 
+    def preview_snapshot(self) -> tuple[list[QPointF], QPainterPath]:
+        """The raw points and the preview path as they stand, to be restored later.
+
+        Shift's straight segments (9.5) replace the segment being drawn on every move
+        rather than appending to it. The tool takes one snapshot when Shift is first
+        held and restores it before each move, which costs a list copy rather than a
+        replay of every point through :meth:`add_point`.
+        """
+        return ([QPointF(p) for p in self._path_points], QPainterPath(self._preview))
+
+    def restore_preview(self, snapshot: tuple[list[QPointF], QPainterPath]) -> None:
+        """Put the stroke back to a :meth:`preview_snapshot`; the snapshot stays usable."""
+        points, preview = snapshot
+        self._path_points = list(points)
+        self._preview = QPainterPath(preview)
+        self._rebuild_path()
+
     def fit_segments(self, smoothing: float) -> list[BezierSegment]:
         """The segments the two stages of 9.3 give for the raw points at *smoothing*."""
         smoothing = _clamp_unit(smoothing, DEFAULT_SMOOTHING)

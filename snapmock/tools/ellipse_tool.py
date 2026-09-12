@@ -12,6 +12,7 @@ from snapmock.config.constants import (
     DEFAULT_STROKE_WIDTH,
     BorderStyle,
 )
+from snapmock.core.path_utils import constrained_rect
 from snapmock.items.ellipse_item import EllipseItem
 from snapmock.tools.base_tool import BaseTool
 
@@ -57,7 +58,8 @@ class EllipseTool(BaseTool):
 
     @property
     def status_hint(self) -> str:
-        return "Click and drag to draw ellipse | Shift: circle"
+        """6.7's Idle row, with the centre-draw modifier's second route (decision 4)."""
+        return "Click and drag to draw an ellipse. Shift: circle. Alt or Ctrl: from center."
 
     @property
     def _item(self) -> EllipseItem | None:
@@ -86,7 +88,15 @@ class EllipseTool(BaseTool):
         current = self._snap_pos(
             self._scene.views()[0].mapToScene(event.pos()) if self._scene.views() else QPointF()
         )
-        rect = QRectF(self._start, current).normalized()
+        # 2.3 and 6.2: Shift makes the bounding rectangle a square, so the ellipse is a
+        # circle; the centre-draw modifier puts the centre at the press point
+        modifiers = event.modifiers()
+        rect = constrained_rect(
+            self._start,
+            current,
+            square=self.constrains(modifiers),
+            from_centre=self.draws_from_centre(modifiers),
+        )
         item.setPos(rect.topLeft())
         item.rect = QRectF(0, 0, rect.width(), rect.height())
         return True
