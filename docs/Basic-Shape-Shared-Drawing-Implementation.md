@@ -1,6 +1,6 @@
 # The Shape Tools' Shared Drawing Behaviour — Implementation Notes
 
-Last Updated: 09-12-26 12:34 · Revision 1.1
+Last Updated: 09-12-26 12:50 · Revision 1.2
 
 Implements the open rows of the Basic Shape Annotation Tools PRD's Section 2, Shared Shape Behavior (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.12 at the start), and the per-tool Drawing hints that go with them, with the General UI PRD (version 2.25) and Technical Architecture PRD (version 1.37) rows they own, in the five phases and the close-out defined by `docs/Basic-Shape-Shared-Drawing-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2. Finishing this work leaves the Basic Shape Annotation Tools PRD's Section 2 with no open row.
 
@@ -17,7 +17,7 @@ The rest of the starting state, read from the code: no tool draws its preview at
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
 | 1 | The drawing lifecycle (2.1, 2.3's Escape, Section 12): the decisions and these notes; the press guard, the preview's life, `cancel`, `is_active_operation`, Escape; close-out | Done | ea4f535, 1e71cd0, then this close-out commit |
-| 2 | The modifiers (2.3, 9.5): Shift squaring and circling, the centre-draw modifier, the two together, the Freehand's straight segments | Not started | |
+| 2 | The modifiers (2.3, 9.5): Shift squaring and circling, the centre-draw modifier, the two together, the Freehand's straight segments | Done | abd92a6, then this close-out commit |
 | 3 | The dimension tooltip (2.4): the tooltip, the constrain icon, the centre marker | Not started | |
 | 4 | The preview and the hints (2.4, 3.7, 4.8, 5.7, 6.7, 9.11): the 70 percent preview, the guide lines, the Drawing hints | Not started | |
 | 5 | The post-creation rule (2.1, 2.5): no auto-selection, no tool switch | Not started | |
@@ -88,9 +88,46 @@ The press guard of 2.1 and the Section 12 Shared Behavior row on locked and hidd
 
 **Next required step:** Phase 2, the modifiers (2.3, 9.5) — Shift squaring the Rectangle and circling the Ellipse from the press point; the centre-draw modifier of decision 4, Alt or Ctrl, on the Rectangle, the Ellipse, and the Arc; the two together; and Shift holding a Freehand stroke to horizontal, vertical, and 45-degree segments from the last direction change. Tests: each modifier on each tool by geometry, both together, a modifier pressed and released mid-drag taking effect from that moment, and a Freehand stroke mixing a curve and a straight segment.
 
+## 6. What Phase 2 built
+
+Step 1, abd92a6.
+
+`constrained_rect` in `core/path_utils.py` is the geometry of 2.3 for the two tools that draw from a bounding rectangle. Shift squares the drag to its longer axis with the pressed corner staying where it was pressed, so the square follows the cursor into whichever quadrant it went. The centre-draw modifier makes the press point the centre and the drag the half-diagonal, so the shape grows on every side at once. Both together give a square centred on the press point. `BaseTool.constrains` and `BaseTool.draws_from_centre` put the key reading in one place, the second reading Alt and Ctrl alike, which is decision 4.
+
+The Rectangle and the Ellipse take all four combinations; the Arc takes the centre-draw modifier on its chord and Shift on its angle, as it already did. Because every tool recomputes its geometry from the press point on each move, a modifier pressed or released mid-drag takes effect from that move with nothing restarting, which is the silence of Section 2.2.
+
+The Freehand's Shift segments of 9.5: one straight segment from the point Shift was first held, snapped to horizontal, vertical, or 45 degrees, replaced on every move rather than appended to, so one stroke mixes a freehand curve and a precise straight run. `FreehandItem.preview_snapshot` and `restore_preview` carry it.
+
+The Idle hints of 5.7, 6.7, and 9.11 now read as their tables word them, with the centre modifier's second route named; the Drawing rows are Phase 4's.
+
+Silences found while building:
+
+- **2.3 lists the Arc under the centre-draw modifier and Section 7 never says what it does.** Read as the chord's midpoint: the press point stays under the cursor's start and the chord grows both ways from it. Shift and the centre modifier together are allowed on the Arc, where 2.3's own row lists the pair for the Rectangle and the Ellipse only; refusing the combination on one tool of the three would be arbitrary.
+- **9.5's "last direction change point" is read as the point at which the straight segment began** — where Shift was pressed. The alternative, committing a segment whenever the snapped direction changes, turns a small wobble near a 22.5-degree boundary into a staircase the user did not ask for. Releasing Shift ends the segment and freehand drawing resumes from its end; pressing Shift again starts a new one.
+- **The Shift segment keeps the cursor's own distance from the anchor**, as `constrain_angle` does for the Line and Arrow tools, rather than projecting the cursor onto the axis. One rule for every Shift constraint in the application.
+- **Squaring uses the longer of the two axes, not the shorter.** The square then always contains the drag, and a drag that is nearly square does not collapse toward the smaller side.
+- The centre-draw modifier moves the Arc item's own position away from the press point, so the curvature step measures from `item.pos()` and not from the press point; measuring from the press point would have put the peak on the wrong side of a centre-drawn chord.
+
+### 6.1 The Shift segment's cost per move
+
+9.10 asks for 60 frames a second while drawing, for strokes up to 5000 raw points, and a Shift move replaces the segment being drawn rather than appending to it. The first implementation replayed the kept points through `add_point` on every move, which is linear in the stroke's length: measured on this machine, **0.354 ms at 100 points, 1.9 ms at 500, and 10.3 ms at 2000**, against the 16.7 ms a frame allows. Restoring a snapshot taken once when Shift is first held replaces the replay with a list copy: **0.011 ms at 100 points, 0.012 ms at 500, 0.064 ms at 2000, and 0.083 ms at 5000**. A test holds a loose ceiling of one frame over a 500-point stroke.
+
+### 6.2 Tests
+
+`tests/test_shape_modifiers.py` (22): the helper's four combinations and the square in each of the four quadrants; Shift squaring the Rectangle and circling the Ellipse; the centre modifier under Alt and under Ctrl on both tools; the two together on both under both keys; a modifier pressed and released mid-drag taking effect from that move with nothing restarting; the Arc's chord growing both ways from the press point under both keys, the two modifiers together on it, and its curvature step following the moved chord; the Freehand's straight segment on the horizontal, the vertical, and the diagonal, a stroke mixing a curve and a straight run and resuming freehand after it, the snapshot restoring the stroke and staying usable, and the cost per move under a loose ceiling.
+
+Targeted runs at the step 1 commit: 229 passed over twelve modules with one failure, `tests/test_tools/test_zoom_tool.py::test_alt_at_the_press_alone_zooms_out` of the timing-sensitive family, which passes alone; and 71 passed over the six hint, bar, preset, and theme modules.
+
+### 6.3 Phase 2 close-out
+
+2.3 is built but for the Escape row, which Phase 1 built, and Ctrl's reserved edge snapping, which no version of this document has ever asked for. 9.5 is built. The Idle rows of 5.7, 6.7, and 9.11 are corrected; their Drawing rows and the Line's and Arrow's are Phase 4's.
+
+**Next required step:** Phase 3, the dimension tooltip (2.4) — per decision 1, a tooltip following the cursor at a 15 by 15 pixel offset as a widget over the canvas view's viewport, repositioned when it would leave the viewport, showing each tool's own measurements; the constrain icon beside it while Shift is held; and the centre marker at the origin point while the centre-draw modifier is held. Tests: the tooltip's text per tool, its offset and its repositioning at each viewport edge, the icon appearing with the modifier, the marker's position, the tooltip never reaching a render of the scene, and its cost per mouse move under a loose ceiling.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.2 | 09-12-26 12:50 | Claude (Claude Code) | Phase 2 done: Section 6 with the modifiers built and the five silences found while building — the Arc's centre-draw reading, 9.5's "last direction change point" read as where Shift was pressed, the Shift segment keeping the cursor's distance, the square taking the longer axis, and the Arc's curvature step measuring from the item — Section 6.1's measured cost per Shift move before and after the snapshot, 6.2's tests, and 6.3's close-out; the phase-table row done. Basic Shape PRD 1.15, General UI PRD 2.28. |
 | 1.1 | 09-12-26 12:34 | Claude (Claude Code) | Phase 1 done: Section 3's step 2 with the shared drawing lifecycle on `BaseTool` and the six silences found while building, Section 4's tests and targeted run, Section 5's phase close-out and the next required step; the phase-table row done. Basic Shape PRD 1.14, Blur PRD 1.16, General UI PRD 2.27, Technical Architecture PRD 1.39. |
 | 1.0 | 09-12-26 12:01 | Claude (Claude Code) | Initial notes: the starting state at commit 0313e27 with the kickoff's three probes, the phase table, the four decisions (1 A, 2 A, 3 A, 4 B) and the kickoff's eight silences as chosen 09-12-26, and three corrections to the kickoff found in the reading — five tools' Idle hints differ from their tables and omit the Alt clause, General UI PRD 6.6's forbidden-cursor row names a locked item and not a locked layer, and the Blur tool switches to the Select tool from three release paths. Basic Shape PRD 1.13, Blur PRD 1.15, General UI PRD 2.26, Technical Architecture PRD 1.38. |

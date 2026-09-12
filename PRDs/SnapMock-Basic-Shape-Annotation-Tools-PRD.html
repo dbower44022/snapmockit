@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Basic Shape Annotation Tools</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.14</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.15</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Line · Arrow · Rectangle · Ellipse · Arc · Polygon · Freehand / Pen</dd>
-    <dt>Document version</dt><dd>1.14</dd>
-    <dt>Last Updated</dt>    <dd>09-12-26 12:34</dd>
+    <dt>Document version</dt><dd>1.15</dd>
+    <dt>Last Updated</dt>    <dd>09-12-26 12:50</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.15</td>
+        <td class="nowrap">09-12-26 12:50</td>
+        <td>Doug Bower</td>
+        <td>Shared drawing behaviour Phase 2 built: 2.3's Shift and centre-draw modifiers on the Rectangle, Ellipse, and Arc, and 9.5's Shift straight segments for the Freehand tool.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.14</td>
         <td class="nowrap">09-12-26 12:34</td>
@@ -170,6 +177,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-12-26 12:50</td>
+        <td>2.3, 5.7, 6.7, 9.5, 9.11, 12</td>
+        <td>Built</td>
+        <td>The shape tools' shared drawing behaviour, Phase 2 (09-12-26; notes Section 6). <strong>2.3's Shift row</strong> is built for the two tools that drew without it: Shift squares the Rectangle and circles the Ellipse, taking the longer of the two axes the drag spans so the square always contains the drag, with the pressed corner staying where it was pressed and the square following the cursor into whichever quadrant it went. <strong>2.3's centre-draw row</strong> is built on the Rectangle, the Ellipse, and the Arc: the press point becomes the centre and the drag the half-diagonal, so the shape grows on every side at once. It is read on Alt and on Ctrl alike, which is this work's decision 4 and General UI PRD 2.26's row — Alt plus a mouse button never reaches the canvas on a desktop whose window manager claims that gesture, and 2.3 reserves Ctrl for edge snapping that is unbuilt. <strong>2.3's Shift plus Alt row</strong> gives a square or a circle centred on the press point. A modifier pressed or released in the middle of a drag takes effect from that move and nothing restarts, since every tool recomputes its geometry from the press point each time. The geometry is one function, <code>constrained_rect</code>, shared by the two tools rather than written twice. <strong>9.5</strong> is built: Shift holds a Freehand stroke to a straight segment from the point Shift was first held, snapped to horizontal, vertical, or 45 degrees and replaced on every move rather than appended to, so one stroke mixes a freehand curve and a precise straight run; releasing Shift resumes freehand from the segment's end. The segment keeps the cursor's own distance from the anchor, as the Line and Arrow tools' Shift already does, rather than projecting the cursor onto the axis. Silences: 2.3 lists the Arc under the centre-draw modifier and Section 7 never says what it means, read here as the chord's midpoint, with Shift and the centre modifier allowed together on the Arc although 2.3's own row lists the pair for the Rectangle and Ellipse only; and 9.5's "last direction change point" is read as the point at which the straight segment began, rather than committing a new segment whenever the snapped direction changes, which would turn a small wobble near a boundary into a staircase. Measured for 9.10's 60 frames a second: a Shift move costs 0.012 ms over a 500-point stroke and 0.083 ms over the 5000 points 9.10 names, against the 16.7 ms a frame allows. <strong>The Idle rows of 5.7, 6.7, and 9.11</strong> now read as those tables word them, with the centre modifier's second route named ("Alt or Ctrl: from center"); they had been the shipped tools' own shorter wording, and the Rectangle's and Ellipse's had never named the centre modifier at all. Their Drawing rows, and the Line's and the Arrow's, are Phase 4's. <strong>Section 12</strong>: the Rectangle rows "Shift constrains to a perfect square" and "Alt draws from center", and the Ellipse rows "Shift constrains to a perfect circle" and "Alt draws from center, where the origin is the center and the radius extends to the cursor", are met by tests, as is the Freehand row "Shift during drawing constrains to straight horizontal, vertical, or 45-degree segments".</td>
+      </tr>
       <tr>
         <td class="nowrap">09-12-26 12:34</td>
         <td>2.1, 2.3, 12</td>
