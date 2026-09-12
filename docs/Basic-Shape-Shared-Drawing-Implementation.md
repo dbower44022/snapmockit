@@ -1,6 +1,6 @@
 # The Shape Tools' Shared Drawing Behaviour — Implementation Notes
 
-Last Updated: 09-12-26 14:14 · Revision 1.3
+Last Updated: 09-12-26 14:51 · Revision 1.4
 
 Implements the open rows of the Basic Shape Annotation Tools PRD's Section 2, Shared Shape Behavior (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.12 at the start), and the per-tool Drawing hints that go with them, with the General UI PRD (version 2.25) and Technical Architecture PRD (version 1.37) rows they own, in the five phases and the close-out defined by `docs/Basic-Shape-Shared-Drawing-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2. Finishing this work leaves the Basic Shape Annotation Tools PRD's Section 2 with no open row.
 
@@ -134,10 +134,34 @@ Three things settled on 09-12-26 after the Phase 2 close-out, none of them a pha
 
 **Two of the three things the first kickoff named as waiting are done**, both by that session: the colour picker's Saved row (commit `0832db3`, General UI PRD 2.29, Section 11.1) and the Tool Options Bar's overflow, rebuilt as a popover under a "More…" button because Qt's extension button never opened for the widget actions the bar is built from (commit `923d8d7`, General UI PRD 2.30, Sections 5, 14, 15.1). Both are display checks now, not code questions. The third, Alt plus a mouse button never reaching the canvas on this desktop, is unchanged and is why decision 4's second route exists.
 
+## 8. Display checks
+
+Run by Doug on 09-12-26 between 18:39 and 18:51 UTC from a checklist page whose marks were read back, against the working tree at commit `7ab3bf2`. **Ten checks, ten as described, none failed and no note left on any.** Seven belong to Phases 1 and 2; two belong to another session's work of the same day and were run in the same sitting; the tenth is the setup the rest depend on.
+
+| # | Check | Owns it | Result |
+|---|---|---|---|
+| 0 | The application starts from this working tree and the canvas is there | setup | As described |
+| 1 | Shift makes the rectangle a square, with the pressed corner staying put; the Idle hint reads as 5.7 words it | 2.3, 5.7, Section 12 | As described |
+| 2 | Shift makes the ellipse a circle; the Idle hint reads as 6.7 words it | 2.3, 6.2, 6.7, Section 12 | As described |
+| 3 | Ctrl grows the rectangle from the press point, and Shift with Ctrl gives a square centred there | 2.3, decision 4 | As described |
+| 4 | A freehand stroke is squiggle, then one dead-straight Shift-held run that replaces itself, then squiggle; the Idle hint reads as 9.11 words it | 9.5, 9.11, Section 12 | As described |
+| 5 | Escape during a drag drops the shape at once, and the release that follows creates nothing | 2.3's Escape row | As described |
+| 6 | A tool switch during a drag leaves no shape on the canvas and nothing on the command stack | 2.1, Technical Architecture PRD 3.3 | As described |
+| 7 | A locked layer refuses the drag with "Rectangle needs an unlocked active layer." and draws nothing | 2.1, General UI PRD 1.3, Section 12 | As described |
+| 8 | The colour picker's Saved row: the empty slot's tooltip, a click filling it, and the swatch keeping the colour after the popover closes | General UI PRD 11.1 (another session) | As described |
+| 9 | The Tool Options Bar's "More…" popover appears as the window narrows, holds working controls, keeps a value, and goes when the window widens | General UI PRD 5, 14, 15.1 (another session) | As described |
+
+Checks 1 to 4 are the first display evidence that 2.3 and 9.5 exist at all: before Phase 2 the Rectangle and the Ellipse read no modifier, and the centre-draw modifier had no reachable key on this desktop. Checks 5 to 7 are the first display evidence for Phase 1, all three of whose probes had been failures against the code.
+
+**What the run did not settle.** Alt was deliberately not tested: Cinnamon's window manager takes Alt plus a mouse button, so it cannot reach the canvas, and decision 4's second route is the reason check 3 passes. The Blur tool's own **Fill:** swatch — the narrowed fault behind the Basic Shape remainder work's Solid Fill check, which `tools/blur_tool.py` still builds directly with `ColorPicker` rather than through the Tool Options Bar's shared control path — was not among these nine; check 8 exercised the Rectangle's Stroke swatch, which the earlier run had already shown to work. The General UI notes record that the Blur tool's Solid Fill path was verified correct headlessly when the Saved row was built, so the Solid Fill display check is worth re-running and may now pass, but this run is not evidence for it.
+
+**Still owed by this work**, all of it from phases not yet built: the dimension tooltip at each of the seven tools, the tooltip near a viewport edge, the guide lines to the rulers, the preview at 70 percent opacity, and three shapes drawn in succession without touching anything between them.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.4 | 09-12-26 14:51 | Claude (Claude Code) | Section 8, the display run of 09-12-26: ten checks, ten as described, none failed. The seven this work owed are answered — the modifiers of 2.3 and 9.5, the Escape and tool-switch lifecycle of 2.1 and 2.3, and the locked-layer refusal — and the two the other session owed pass in the same sitting. What the run did not settle is named: Alt, which cannot reach the canvas, and the Blur tool's own Fill swatch, which was not among the checks. Basic Shape PRD 1.16, General UI PRD 2.31, General UI notes 1.40. |
 | 1.3 | 09-12-26 14:14 | Claude (Claude Code) | Section 7 with three things settled after the Phase 2 close-out: this work's own suite failure and its fix, the General UI PRD's version collision with a parallel session, and the two works that session finished. The next required step names the continuation kickoff, `docs/Basic-Shape-Shared-Drawing-Phase-3-Kickoff-Prompt.md` (revision 1.0). General UI PRD 2.30. |
 | 1.2 | 09-12-26 12:50 | Claude (Claude Code) | Phase 2 done: Section 6 with the modifiers built and the five silences found while building — the Arc's centre-draw reading, 9.5's "last direction change point" read as where Shift was pressed, the Shift segment keeping the cursor's distance, the square taking the longer axis, and the Arc's curvature step measuring from the item — Section 6.1's measured cost per Shift move before and after the snapshot, 6.2's tests, and 6.3's close-out; the phase-table row done. Basic Shape PRD 1.15, General UI PRD 2.28. |
 | 1.1 | 09-12-26 12:34 | Claude (Claude Code) | Phase 1 done: Section 3's step 2 with the shared drawing lifecycle on `BaseTool` and the six silences found while building, Section 4's tests and targeted run, Section 5's phase close-out and the next required step; the phase-table row done. Basic Shape PRD 1.14, Blur PRD 1.16, General UI PRD 2.27, Technical Architecture PRD 1.39. |

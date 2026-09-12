@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.30</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.31</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.30</dd>
-    <dt>Last Updated</dt>    <dd>09-12-26 14:26</dd>
+    <dt>Document version</dt><dd>2.31</dd>
+    <dt>Last Updated</dt>    <dd>09-12-26 14:51</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.31</td>
+        <td class="nowrap">09-12-26 14:51</td>
+        <td>Doug Bower</td>
+        <td>Display run of 09-12-26: 11.1's colour picker and 15.1's Tool Options Bar overflow both pass, closing the two findings Doug's run of the same day opened.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.30</td>
         <td class="nowrap">09-12-26 13:34</td>
@@ -367,6 +374,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-12-26 14:51</td>
+        <td>1.3, 5, 11.1, 14, 15.1</td>
+        <td>Verified</td>
+        <td>Display run by Doug on 09-12-26 against the working tree at commit <code>7ab3bf2</code>, both checks as described (shape tools' shared drawing notes, Section 8). <strong>11.1's colour picker</strong> answers the finding of earlier the same day, "When I pick a color, there is no button to save it, and if I click off the color is not selected": resting the pointer on an empty slot of the Saved row shows "Empty slot — click to save the colour above here", a click fills that slot with the colour chosen in the square above, and clicking away from the popover closes it with the Stroke Color swatch showing the chosen colour. The 2.29 row's two halves — the save gesture made discoverable, and the live apply confirmed correct — both hold on the display. <strong>15.1's overflow</strong> answers the finding "When I press B, the cursor goes to a cross to drag, but there are no properties to select the mode, or shape": narrowing the window raises a "More…" button at the right-hand end of the Tool Options Bar, its popover holds the controls that no longer fit as working controls rather than greyed-out rows, a value set in the popover survives the popover closing, and the button goes and the controls return when the window widens. The 2.30 row's departure — a popover under a button rather than 15.1's "overflow menu", because a QMenu cannot host a live slider or colour swatch — is confirmed to behave as that row describes. <strong>1.3</strong> is verified on a third path the same run: a drag refused on a locked layer shows the never-disabled message "Rectangle needs an unlocked active layer." and no control is greyed out. Not settled by this run: the Blur tool's own Fill swatch, which its tool builds directly rather than through the Tool Options Bar's shared control path and which is the narrowed fault behind the Blur PRD's Solid Fill display check; the run exercised the Rectangle's Stroke swatch, which an earlier run had already shown to work.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-12-26 14:26</td>
         <td>—</td>

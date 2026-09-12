@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Basic Shape Annotation Tools</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.15</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.16</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Line · Arrow · Rectangle · Ellipse · Arc · Polygon · Freehand / Pen</dd>
-    <dt>Document version</dt><dd>1.15</dd>
-    <dt>Last Updated</dt>    <dd>09-12-26 12:50</dd>
+    <dt>Document version</dt><dd>1.16</dd>
+    <dt>Last Updated</dt>    <dd>09-12-26 14:51</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.16</td>
+        <td class="nowrap">09-12-26 14:51</td>
+        <td>Doug Bower</td>
+        <td>Display run of 09-12-26: the Section 12 rows for Shift, the centre-draw modifier, the Freehand's straight segments, Escape, and the locked-layer refusal all pass on the real display.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.15</td>
         <td class="nowrap">09-12-26 12:50</td>
@@ -177,6 +184,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-12-26 14:51</td>
+        <td>2.1, 2.3, 5.7, 6.7, 9.5, 9.11, 12</td>
+        <td>Verified</td>
+        <td>Display run by Doug on 09-12-26, seven checks against the working tree at commit <code>7ab3bf2</code>, all seven as described with no note left on any (notes Section 8). Every render check in Phases 1 and 2 is a pixel or geometry test on the offscreen platform, so this is the first evidence on a real display for any of it. <strong>Section 12, Rectangle:</strong> "Shift constrains to a perfect square" passes, with the pressed corner staying put and the square following the drag's longer axis; "Alt draws from center" passes through Ctrl, the second route of this document's 2.3 as decision 4 added it, and Shift with Ctrl gives a square centred on the press point. Alt itself was deliberately not tested: Cinnamon's window manager takes Alt plus a mouse button as its window-move gesture, so it cannot reach the canvas on that desktop, which is why the second route exists. <strong>Section 12, Ellipse:</strong> "Shift constrains to a perfect circle" passes. <strong>Section 12, Freehand:</strong> "Shift during drawing constrains to straight horizontal, vertical, or 45-degree segments" passes, and the stroke reads as one stroke of squiggle, then a single dead-straight run that replaces itself as the cursor moves rather than a staircase of segments, then squiggle — which is the reading 9.5's "last direction change point" was given in the 1.15 row. <strong>2.3's Escape row</strong> passes: the shape is dropped while the mouse button is still down, and the release that follows creates nothing. <strong>2.1's press guard and the Section 12 Shared Behavior row</strong> "All shape tools respect the active layer: they cannot draw on locked or hidden layers. A status bar warning is shown" passes, with the message reading "Rectangle needs an unlocked active layer." as General UI PRD 1.3's never-disabled route words it and no rectangle drawn. <strong>2.1's preview</strong> passes: a tool switch during a drag leaves no shape on the canvas and nothing on the command stack, where before this work the preview was stranded in no layer and behind no command. <strong>The Idle rows of 5.7, 6.7, and 9.11</strong> were read off the status bar and match their tables word for word. The rows of Section 2 still owed a display check belong to phases not yet built: 2.4's dimension tooltip, constrain icon, centre marker, 70 percent preview, and guide lines, and 2.5's rapid drawing.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-12-26 12:50</td>
         <td>2.3, 5.7, 6.7, 9.5, 9.11, 12</td>
