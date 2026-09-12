@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.27</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.30</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.27</dd>
-    <dt>Last Updated</dt>    <dd>09-12-26 13:34</dd>
+    <dt>Document version</dt><dd>2.30</dd>
+    <dt>Last Updated</dt>    <dd>09-12-26 14:26</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -32,10 +32,17 @@
     </thead>
     <tbody>
       <tr>
-        <td>2.27</td>
+        <td>2.30</td>
         <td class="nowrap">09-12-26 13:34</td>
         <td>Doug Bower</td>
         <td>The Tool Options Bar owns its overflow: the controls that do not fit move into a popover, where before they were hidden behind a Qt extension button whose popup never opened.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
+      <tr>
+        <td>2.29</td>
+        <td class="nowrap">09-12-26 12:23</td>
+        <td>Doug Bower</td>
+        <td>The colour picker's Saved row explains itself: a click on an empty slot saves the colour, and every swatch says in its tooltip what a click does.</td>
         <td><span class="status open">Pending</span></td>
       </tr>
       <tr>
@@ -50,13 +57,6 @@
         <td class="nowrap">09-12-26 12:34</td>
         <td>Doug Bower</td>
         <td>1.3's never-disabled message is the route for the shape tools' locked and hidden layer refusal, which their own PRD words as a status bar warning; 12.2's Alt keeps its drawing meaning.</td>
-        <td><span class="status open">Pending</span></td>
-      </tr>
-      <tr>
-        <td>2.26</td>
-        <td class="nowrap">09-12-26 12:23</td>
-        <td>Doug Bower</td>
-        <td>The colour picker's Saved row explains itself: a click on an empty slot saves the colour, and every swatch says in its tooltip what a click does.</td>
         <td><span class="status open">Pending</span></td>
       </tr>
       <tr>
@@ -367,6 +367,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-12-26 14:26</td>
+        <td>—</td>
+        <td>Correction</td>
+        <td>Two revision-control rows renumbered. Two sessions edited this document in parallel on 09-12-26 and each took the next free version for itself, so 2.26 and 2.27 were both used twice: by the shape tools' shared drawing work at 12:01 and 12:34, and by the colour picker's Saved row at 12:23 and the Tool Options Bar's overflow at 13:34. The two later rows are renumbered 2.29 and 2.30 and the document now stands at 2.30. The earlier numbers are left where they are because implementation notes, PRD rows, and commit messages already cite them; the consequence is that 2.29 carries an earlier timestamp than 2.28, and the revision-control table is read in version order rather than strictly by the clock. No requirement changed.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-12-26 13:34</td>
         <td>5, 14, 15.1</td>
