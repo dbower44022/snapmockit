@@ -1,6 +1,6 @@
 # The Shape Tools' Shared Drawing Behaviour — Implementation Notes
 
-Last Updated: 09-12-26 12:01 · Revision 1.0
+Last Updated: 09-12-26 12:34 · Revision 1.1
 
 Implements the open rows of the Basic Shape Annotation Tools PRD's Section 2, Shared Shape Behavior (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.12 at the start), and the per-tool Drawing hints that go with them, with the General UI PRD (version 2.25) and Technical Architecture PRD (version 1.37) rows they own, in the five phases and the close-out defined by `docs/Basic-Shape-Shared-Drawing-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2. Finishing this work leaves the Basic Shape Annotation Tools PRD's Section 2 with no open row.
 
@@ -16,7 +16,7 @@ The rest of the starting state, read from the code: no tool draws its preview at
 
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
-| 1 | The drawing lifecycle (2.1, 2.3's Escape, Section 12): the decisions and these notes; the press guard, the preview's life, `cancel`, `is_active_operation`, Escape; close-out | Step 1 done | this commit |
+| 1 | The drawing lifecycle (2.1, 2.3's Escape, Section 12): the decisions and these notes; the press guard, the preview's life, `cancel`, `is_active_operation`, Escape; close-out | Done | ea4f535, 1e71cd0, then this close-out commit |
 | 2 | The modifiers (2.3, 9.5): Shift squaring and circling, the centre-draw modifier, the two together, the Freehand's straight segments | Not started | |
 | 3 | The dimension tooltip (2.4): the tooltip, the constrain icon, the centre marker | Not started | |
 | 4 | The preview and the hints (2.4, 3.7, 4.8, 5.7, 6.7, 9.11): the 70 percent preview, the guide lines, the Drawing hints | Not started | |
@@ -59,12 +59,38 @@ Each decided as the kickoff recommended, on 09-12-26, with the detail the readin
 
 ## 3. What Phase 1 built
 
-Step 1, this commit: the decisions of Section 2.1, the silences of 2.2, and the corrections of 2.3; Basic Shape PRD 1.13, Blur PRD 1.15, General UI PRD 2.26, Technical Architecture PRD 1.38.
+Step 1, ea4f535: the decisions of Section 2.1, the silences of 2.2, and the corrections of 2.3; Basic Shape PRD 1.13, Blur PRD 1.15, General UI PRD 2.26, Technical Architecture PRD 1.38.
 
-**Next required step:** Phase 1 step 2, the press guard and the preview's life — the locked and hidden layer check of 2.1 with its General UI PRD 1.3 message in one `BaseTool` helper; `cancel` dropping a drawing operation and removing the preview and `is_active_operation` true while a drag lasts, on every shape tool; and Escape reaching the tool through `handle_escape`. Tests: a drag refused on a locked layer and on a hidden one with the message, a tool switch and a focus loss during a drag leaving nothing in the scene, Escape during a drag leaving nothing, and the Space-bar pan and the momentary eyedropper standing down while a drag lasts.
+Step 2, 1e71cd0: the shared drawing lifecycle, in `tools/base_tool.py` and the nine tools that draw.
+
+`BaseTool.layer_allows_drawing` is the press guard of 2.1: the active layer must be visible and unlocked, and a press that fails is refused with the never-disabled message of General UI PRD 1.3 through `check_requirements`, which names exactly which of the two requirements is missing. The seven shape tools, the Blur tool (its own PRD's 8.1 row), and the Highlighter call it from `mouse_press`; the Numbered Step tool's `_layer_allows_placing` now delegates to it and its own copy of the rule is gone.
+
+`BaseTool._start_preview` and `_end_preview` hold the drawing preview, so `cancel` drops it and `is_active_operation` is true for as long as a drag lasts. `handle_escape` cancels a drawing operation, which is 2.3's Escape row, reached from the window through the Edit > Deselect shortcut. The five drag-drawn shape tools — Rectangle, Ellipse, Line, Arrow, Freehand — no longer keep the preview in an attribute of their own; each reads it back through a typed `_item` property, so there is one store and not two that can disagree. The Arc, Polygon, Blur, and Highlighter tools already tracked their own step or item and keep their overrides.
+
+Silences found while building, decided as the code says:
+
+- The attribute is `_preview_item`, not `_preview`: the Eyedropper tool already has a `_preview` method, and mypy strict refuses the clash.
+- `handle_escape` and `is_active_operation` on `BaseTool` consult the preview alone, so the eleven tools that keep an operation of their own are untouched: the attribute is None for them, `is_active_operation` still reads False, and Edit > Deselect still runs on Escape. Making the base cancel every operation would have changed the Crop, Raster Selection, Lasso, Text, Callout, Pan, Zoom, Stamp, Emoji, and Numbered Step tools, none of which this work owns.
+- The Blur tool's guard runs when a region is begun, not on each stroke that continues one already painted (2.3's brush): a stroke that adds to a region already in progress is not a new press in 2.1's sense. The same reading gives the Polygon tool its guard on the first press only, since the clicks that follow place vertices in a shape already begun.
+- The action name in the message is the tool's own display name. That reproduces the Numbered Step tool's existing wording exactly — "Numbered Step needs an unlocked active layer." — so that tool's copy could be deleted rather than left beside the shared rule.
+- `is_active_operation` was already right for the Arc, Polygon, Blur, and Highlighter tools; only the five drag-drawn tools reported False throughout a drag, which is what let the Space-bar pan, the momentary Alt eyedropper, a focus loss, and the undo guard take a drag away mid-way.
+- A press refused by the guard returns True, consuming the event, so the scene's own handling does not run behind the message.
+
+## 4. Tests
+
+Phase 1: `tests/test_shape_drawing_lifecycle.py` (37). The press guard: each of the five drag-drawn tools refused on a locked layer and on a hidden one with its message, both requirements named together when both are unmet, the Highlighter and the Blur tool making the same check through the window, and an unlocked visible layer drawing with no message at all. The preview's life: the drag reported as an active operation from the press to the release, and `cancel`, Escape, a tool switch, and a focus loss each leaving nothing in the scene and nothing on the command stack; the Space-bar pan and the momentary Alt eyedropper standing down while a drag lasts; and the Highlighter reporting its drag as it did before. The `unmet_messages` fixture captures the never-disabled message, so no test opens a real dialog.
+
+A targeted run over twenty-five modules at the step 2 commit passed 378 tests with one deselected and one failure, `tests/test_tools/test_zoom_tool.py::test_alt_at_the_press_alone_zooms_out`, of the same timing-sensitive family as the pre-existing one; all five Zoom tool tests pass alone in 2.6 seconds and nothing in that tool was touched. The run took 20 minutes.
+
+## 5. Phase 1 close-out
+
+The press guard of 2.1 and the Section 12 Shared Behavior row on locked and hidden layers are built, and 2.3's Escape row is built for every shape tool. 2.1's mouse-press list is met but for its preview wording, which is the silence of Section 2.2 and not a behaviour: the preview is a scene item and never joins the active layer's item list. 2.1's mouse-release list still has its last step open — the new item is selected and the tool switches away — which is Phase 5's.
+
+**Next required step:** Phase 2, the modifiers (2.3, 9.5) — Shift squaring the Rectangle and circling the Ellipse from the press point; the centre-draw modifier of decision 4, Alt or Ctrl, on the Rectangle, the Ellipse, and the Arc; the two together; and Shift holding a Freehand stroke to horizontal, vertical, and 45-degree segments from the last direction change. Tests: each modifier on each tool by geometry, both together, a modifier pressed and released mid-drag taking effect from that moment, and a Freehand stroke mixing a curve and a straight segment.
 
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.1 | 09-12-26 12:34 | Claude (Claude Code) | Phase 1 done: Section 3's step 2 with the shared drawing lifecycle on `BaseTool` and the six silences found while building, Section 4's tests and targeted run, Section 5's phase close-out and the next required step; the phase-table row done. Basic Shape PRD 1.14, Blur PRD 1.16, General UI PRD 2.27, Technical Architecture PRD 1.39. |
 | 1.0 | 09-12-26 12:01 | Claude (Claude Code) | Initial notes: the starting state at commit 0313e27 with the kickoff's three probes, the phase table, the four decisions (1 A, 2 A, 3 A, 4 B) and the kickoff's eight silences as chosen 09-12-26, and three corrections to the kickoff found in the reading — five tools' Idle hints differ from their tables and omit the Alt clause, General UI PRD 6.6's forbidden-cursor row names a locked item and not a locked layer, and the Blur tool switches to the Select tool from three release paths. Basic Shape PRD 1.13, Blur PRD 1.15, General UI PRD 2.26, Technical Architecture PRD 1.38. |

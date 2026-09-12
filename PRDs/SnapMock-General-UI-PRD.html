@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.26</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.27</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.26</dd>
-    <dt>Last Updated</dt>    <dd>09-12-26 12:23</dd>
+    <dt>Document version</dt><dd>2.27</dd>
+    <dt>Last Updated</dt>    <dd>09-12-26 12:34</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.27</td>
+        <td class="nowrap">09-12-26 12:34</td>
+        <td>Doug Bower</td>
+        <td>1.3's never-disabled message is the route for the shape tools' locked and hidden layer refusal, which their own PRD words as a status bar warning; 12.2's Alt keeps its drawing meaning.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.26</td>
         <td class="nowrap">09-12-26 12:23</td>
@@ -346,6 +353,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-12-26 12:34</td>
+        <td>1.3, 9, 12.2</td>
+        <td>Built</td>
+        <td>The shape tools' shared drawing behaviour, Phase 1 (09-12-26; notes in <code>docs/Basic-Shape-Shared-Drawing-Implementation.md</code>, Section 3). <strong>1.3:</strong> the Basic Shape PRD's 2.1 asks for a status bar warning when a drawing tool is pressed on a locked or hidden layer; it is built as this section's never-disabled message instead, through <code>check_requirements</code>, so the refusal reads the way every other unmet requirement in the application reads and names exactly which of the two requirements is missing. Nine tools now share one rule and one wording: the seven shape tools, the Blur tool, and the Highlighter, with the Numbered Step tool's own copy replaced by it. No control is disabled and nothing is greyed out; a refused press consumes the event so nothing runs behind the message. <strong>Section 9:</strong> the status bar's tool hint zone is unchanged by this phase; the hint tables' Drawing rows are Phase 4's. <strong>12.2:</strong> the Space-bar temporary pan and the momentary Alt eyedropper now both stand down for the five drag-drawn shape tools while a drag lasts, because those tools report an active operation for the first time; the conventions themselves are unchanged, and this closes the gap that let either take a shape drag away mid-way.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-12-26 12:23</td>
         <td>11.1</td>
