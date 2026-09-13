@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.45</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.46</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.45</dd>
-    <dt>Last Updated</dt>    <dd>09-13-26 14:22</dd>
+    <dt>Document version</dt><dd>1.46</dd>
+    <dt>Last Updated</dt>    <dd>09-13-26 14:36</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.46</td>
+        <td class="nowrap">09-13-26 14:36</td>
+        <td>Doug Bower</td>
+        <td>Freehand remainder Phase 4 built: Section 3.9's first item painting a part of itself from the repaint's own rectangle, and Section 8's 60 FPS met for a travelling long stroke and recorded for a scribbled one; no new module.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.45</td>
         <td class="nowrap">09-13-26 14:22</td>
@@ -441,6 +448,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-13-26 14:36</td>
+        <td>3.9, 8, 10</td>
+        <td>Built</td>
+        <td>Freehand remainder Phase 4 built (09-13-26; notes in <code>docs/Freehand-Remainder-Implementation.md</code>, Section 7; Basic Shape PRD 1.25). Section 3.9: <code>FreehandItem</code> is the first item whose <code>paint</code> reads the repaint's own rectangle (<code>ItemUsesExtendedStyleOption</code>, <code>option.exposedRect</code>) and paints a part of itself: while a stroke over 2000 raw points is drawn it strokes only the 500-point pieces of its preview that the rectangle touches, joined as one path, and it asks the view for a patch-sized repaint on each added point rather than a whole-item one, its declared bounding rectangle reaching 256 px past the stroke so <code>prepareGeometryChange</code> runs once per 256 px of travel. A placed stroke paints whole as every item does. Section 8's "Canvas interaction 60 FPS" is met for a travelling stroke of 5000 points at 1 ms per move on this machine and recorded as unmet for a stroke scribbled over one spot past about 3000 points, 27 ms per move, which is what it cost before. Section 10 is unchanged: no module is added, and the work of the four phases lands in <code>items/freehand_item.py</code>, <code>core/path_utils.py</code>, <code>tools/freehand_tool.py</code>, and <code>ui/cursors.py</code>, as the 1.43 row expected.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-13-26 14:22</td>
         <td>8, 10</td>

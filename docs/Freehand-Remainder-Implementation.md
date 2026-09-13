@@ -1,6 +1,6 @@
 # The Freehand Tool's Remaining Rows — Implementation Notes
 
-Last Updated: 09-13-26 14:22 · Revision 1.2
+Last Updated: 09-13-26 14:36 · Revision 1.3
 
 Implements the last open rows of the Basic Shape Annotation Tools PRD (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.21 at the start), all of them Section 9's, the Freehand / Pen tool: 9.2's brush-tip cursor and 9.10's two performance rows, with the Section 12 Freehand row they own and the General UI PRD (version 2.32) and Technical Architecture PRD (version 1.42) rows, in the four phases and the close-out defined by `docs/Freehand-Remainder-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2. Finishing this work leaves the Basic Shape Annotation Tools PRD with no open row except what the document itself reserves.
 
@@ -13,8 +13,8 @@ Starting state, verified at commit d88f041 on 09-13-26 (the kickoff names 13d005
 | 1 | The decisions and the measurements: these notes, the three probes re-measured, the PRD rows the decisions imply | Done | this commit |
 | 2 | The brush-tip cursor (9.1, 9.2; General UI PRD 6.6) | Done | 6d6a789, then this close-out commit |
 | 3 | The fit within 50 ms (9.3, 9.10) | Done | 483e387, 54e62da, then this close-out commit |
-| 4 | The long-stroke preview (9.10) | Not started | |
-| Close-out | PRD rows, the notes complete with the measurements before and after, the pointers in the Basic Shape remainder notes (Section 10), the shared drawing notes (Section 12.2), and the General UI notes (Section 26), the display checks owed, what remains of the Basic Shape PRD | Not started | |
+| 4 | The long-stroke preview (9.10) | Done | dca9a9c, then this close-out commit |
+| Close-out | PRD rows, the notes complete with the measurements before and after, the pointers in the Basic Shape remainder notes (Section 10), the shared drawing notes (Section 12.2), and the General UI notes (Section 26), the display checks owed, what remains of the Basic Shape PRD | Done but for the final suite run, recorded when it lands | this commit |
 
 ## 2. Decisions
 
@@ -146,10 +146,81 @@ Against Section 3: 5000 smooth points fell from 85 to 100 ms to 12 to 16 ms at e
 
 **Next required step:** Phase 4, the long-stroke preview (9.10), per decision 3's option B: the preview kept in 500-point pieces past 2000 points, each move repainting only the new segment's patch, only the pieces that touch the patch stroked and joined as one path, the full path on release. Tests: the paint cost per move at 2000 and 5000 points under a loose ceiling, the stroke looking the same on screen before and after the change at a fixed point count, the full path painted on release, and the Shift segments, `preview_snapshot`, and `restore_preview` over a stroke longer than 2000 points.
 
+## 7. What Phase 4 built
+
+One commit, dca9a9c, decision 3's option B.
+
+`FreehandItem` keeps a long stroke's preview in pieces while it is drawn. `add_point` appends each point to the whole preview path as before and to the tail piece's own path, tracks the tail's bounds as four floats, and every `PREVIEW_PIECE_POINTS` (500) points closes the tail into the piece lists (`_piece_paths`, `_piece_rects`) and starts the next piece at the node between the last two points, where the quadratic preview passes, so consecutive pieces share their end. Past `LONG_STROKE_POINTS` (2000) the item is a long stroke (`_long_stroke`): its `boundingRect` is a declared rectangle `PREVIEW_BOUNDS_MARGIN` (256 px) past the stroke, so `prepareGeometryChange` and the whole repaint it costs happen once per 256 px of travel and not on every move, and each added point calls `update` on the patch its last three points cover (`_patch_of`, through `_cover`: the stroke's margin, the hit band's minimum, and the shadow's reach). The item sets `ItemUsesExtendedStyleOption`, so `paint` reads the repaint's own rectangle in `option.exposedRect` and strokes only the pieces whose cover meets it (`_pieces_touching`), consecutive pieces joined as one subpath with `connectPath` (`_preview_path_for`), the tail ending at the last point as the whole preview does; when every piece is touched it paints the stored whole path instead of rejoining the pieces. The shadow is painted for the same pieces, chosen with their shadow's reach, so within the patch it is the shadow the whole stroke would cast. `preview_snapshot` returns the pieces with the points and the preview (`PreviewSnapshot`), and `restore_preview` puts them back and repaints only the patch the dropped points covered. `smooth`, a set of `bezier_segments`, or a restore below the threshold ends the long stroke: `_rebuild_path` drops the declared rectangle and repaints whole. `scale_geometry` rebuilds the pieces from the points.
+
+Silences found while building, decided as the code says:
+
+- **The pieces are joined with `connectPath`**, which turns the next piece's opening move into a zero-length line at the shared node; Qt's stroker ignores it, and the pixel tests show the joined path identical to the single path across a piece boundary. A run of pieces is therefore one subpath and shows no seam at any opacity or cap.
+- **When every piece touches the patch the stored whole path is painted**, so a stroke scribbled over one spot costs what it did before this work and nothing more: the pieces bound the travelling stroke, as decision 3 said, and not the scribble (Section 7.1).
+- **A shadowed long stroke paints the shadow of the touched pieces**, which within the patch is the whole stroke's shadow, since a piece whose shadow reaches the patch is touched by the reach test; the shadow's own cost, the outline stroking and the signature walk of its cache key, is paid on those pieces and is not this work's.
+- **Loading a stored long stroke passes through the long-stroke state** while its raw points are replayed through `add_point`, and leaves it when the stored segments are set; a test holds the loaded item's bounds tight.
+- **A Shift segment across a long stroke repaints the patch of the points it drops and the patch of the point it adds**, each the straight segment's own bounding rectangle, so a long straight run across the stroke touches the pieces it spans and costs accordingly; the cost decision 3 named.
+- **The constants live in `items/freehand_item.py`**, as Section 2.2 decided, and the tool reads none of them.
+
+### 7.1 The cost per move
+
+Measured on 09-13-26 at dca9a9c with a scratch script, on the offscreen platform while the Phase 3 full suite shared the machine (load average 1.6 to 1.9), the median of 40 moves: a move is `add_point` and the paint of the item onto a 1400 by 400 px image, antialiased, with a 6 px stroke. "Whole" paints the item with no exposed rectangle, which is the whole preview as one path and is what every move painted before this work; "patch" paints with the move's own patch as the exposed rectangle and the clip, which is what the view asks for now. The travelling stroke is a sine across the image; the scribble runs back and forth over one 200 by 100 px spot.
+
+| Stroke, points | Whole, no shadow | Patch, no shadow | Whole, shadow | Patch, shadow | Pieces per patch |
+|---|---|---|---|---|---|
+| travelling, 2100 | 6.3 ms | 0.25 ms | 26 ms | 2.8 ms | 1 |
+| travelling, 5000 | 21.7 ms | 1.0 ms | 67 ms | 9.5 ms | 1 |
+| scribble, 2100 | 12.3 ms | 11.8 ms | 33 ms | 42 ms | 5 of 5 |
+| scribble, 5000 | 27.1 ms | 26.9 ms | 76 ms | 95 ms | 10 of 10 |
+
+The travelling stroke's move falls from over a frame at 5000 points to a twentieth of one, and a shadowed one from four frames to under one. The scribble touches every piece on every move and paints the whole path as before; at 5000 points that is 27 ms, over 9.10's frame from about 3000 points on this machine, as it was at the start (Section 3's 20 ms on a wider image without the item's own overhead). The shadowed scribble's patch figure is higher than its whole figure because the whole figure is painted with no clip, which the real view never does; both are the shadow's own cost. The kickoff's first cost measurement, `item.path_points`, copies every point and took 3.9 ms of a 5000-point move by itself; the tool reads it once on release and never per move.
+
+### 7.2 Tests
+
+`tests/test_freehand_preview.py` (8): a 3000-point stroke painting the same pixels as the single quadratic path when every piece is painted, when the exposed rectangle is the whole image, when it is a patch around the pointer (the tail alone), when it is a patch in the middle (two pieces), and when it spans a piece boundary (two pieces as one subpath, no seam); a stroke at the threshold unchanged, with its tight bounds, and long one point later; the release painting the fitted path whole with the tight bounds back; the snapshot carrying the pieces over a long stroke, restored twice from one snapshot as the Shift move does, and a restore below the threshold leaving a short stroke; on a real view, sixty moves each exposing only their own patch (under 120 px, against the view's one whole first paint), and 600 px of travel growing the declared bounds once or twice; the Shift segments through the tool over a 2300-point stroke, one segment replaced on every move, freehand resuming after it, and the release fitting the stroke; the cost per move at 2100 and 5000 points under a frame; and a stored long stroke loading with its tight bounds. Targeted runs at dca9a9c: the preview, pipeline, modifier, point-edit, fit, cursor, lifecycle, feedback, and resize modules, 146 passed. Ruff and mypy are clean.
+
+### 7.3 Phase 4 close-out
+
+9.10's long-stroke rule is met in its purpose and departed from in its letter, as decision 3 put it: nothing vanishes, and a move's cost is bounded by the pieces near the pointer. Section 12's Freehand row "real-time drawing maintains 60 frames per second for strokes up to 5000 raw points" is met by tests for a travelling stroke and recorded as unmet for a stroke scribbled over one spot past about 3000 points. Basic Shape PRD 1.25 and Technical Architecture PRD 1.46 carry the rows. The display check this phase owes: a long slow stroke of several thousand points staying smooth and wholly visible while it is drawn.
+
+## 8. Close-out of the work
+
+Every phase is done. The PRDs stand at Basic Shape Annotation Tools PRD 1.25, General UI PRD 2.34, and Technical Architecture PRD 1.46. The Basic Shape remainder notes' Section 10 (1.9), the shared drawing notes' Section 12.2 (1.14), and the General UI notes' Section 26 (1.42) point here. No module was added; Technical Architecture PRD Section 10 is unchanged.
+
+### 8.1 What remains of the Basic Shape Annotation Tools PRD
+
+**No row of the document is open** except what the document itself reserves and records:
+
+- **9.2's and 9.4's pressure data**, reserved by the PRD for a future version and stored as null.
+- **The three Open Issues of Section 14** — the tool count and section range in Section 2's first paragraph, the undated early versions, and the approval status — which are records for Doug and change no requirement. A fourth record of the same kind, found by this work: the document's contents list numbers the acceptance criteria as Section 13, and every row and every notes document calls them Section 12 (Section 2.3 here).
+- **Departures recorded with their rows and not open:** 9.3's fitting error never below the stroke's noise floor (1.24); 9.10's long-stroke rule met in its purpose by pieces and a targeted repaint rather than by painting the last 500 points alone (1.25), with a stroke scribbled over one spot past about 3000 points still over a frame; the 0.5 px floors of the 1.11 row; the Line tool on `L` (1.5); and the departures the earlier rows carry.
+
+### 8.2 Display checks owed
+
+This work's own, none of them run, since every check in Phases 2 to 4 is a geometry, pixel, or timing test on the offscreen platform:
+
+1. The brush-tip cursor at a thin and a thick stroke, in two colours, at 100 and 400 percent zoom, and the dot crosshair between strokes.
+2. A long slow stroke of several thousand points staying smooth and wholly visible while it is drawn, twenty seconds or more of continuous dragging.
+3. The snap on release of that stroke at 0, 50, and 100 percent smoothing feeling immediate, and the 0 percent result reading as the stroke drawn rather than as its jitter.
+
+Owed by other works and not this one's: a blur region in Solid Fill, whose Fill swatch on the Blur tool's own bar has never been exercised on the display; a highlight in Multiply over dark text; the painted and the erased blur regions; the Whole Layer region and its source modes; and the Eyedropper and Blur performance work's three, blocked on 09-12-26 by the Eyedropper not activating from `I`.
+
+### 8.3 What remains elsewhere
+
+- **The Blur tool's brush cursor does not follow the zoom** (Section 2.3): it belongs to the Blur, Highlighter, and Eyedropper Tools PRD, and the Freehand's `zoom_changed` connection is the pattern for it.
+- **The Zoom tool's Alt+click and the blur brush's Alt+paint eraser** have no second route on a desktop whose window manager takes Alt plus a mouse button; the Navigation and Raster Operations PRD and the Blur PRD.
+- **The Windows capture backend** (`docs/Windows-Backend-Kickoff-Prompt.md`) waits for a Windows machine, and the macOS backend is deferred with no Mac available.
+
+### 8.4 The suite
+
+The full suite at the Phase 3 close-out commit (e6d3701) was started at 14:22 from a scratch worktree and is recorded in 8.5 when it lands; the full suite at the last commit of this work follows it, one run at a time.
+
+**Next required step:** Doug's display run of the three checks in 8.2, and the two suite results recorded here. After that, the Blur brush cursor's zoom gap is a one-line change in its own PRD's terms; nothing else in the Basic Shape Annotation Tools PRD is left to build.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.3 | 09-13-26 14:36 | Claude (Claude Code) | Phase 4 done and the work closed out: Section 7 with the pieces, the declared bounds, the targeted repaint, and the six silences found while building, 7.1's cost per move before and after, 7.2's tests, and 7.3's close-out; Section 8 with what remains of the Basic Shape PRD (nothing open but what it reserves), the display checks owed, what remains elsewhere, and the suite runs pending; the phase-table rows done. Basic Shape PRD 1.25, Technical Architecture PRD 1.46; Basic Shape remainder notes 1.9, shared drawing notes 1.14, General UI notes 1.42. |
 | 1.2 | 09-13-26 14:22 | Claude (Claude Code) | Phase 3 done: Section 2.5 with option B refined on the measurement and chosen; Section 6 with the vectorised simplification, the shared Bernstein rows, the noise measure and the floor at every smoothing, the four silences found while building, 6.1's measurements after against Section 3, 6.2's tests, and 6.3's close-out; Section 5.1 with the Phase 2 full-suite run (1616 passed); the phase-table row done. Basic Shape PRD 1.24, Technical Architecture PRD 1.45. |
 | 1.1 | 09-13-26 10:42 | Claude (Claude Code) | Phase 2 done: Section 5 with the two cursors, the four silences found while building, 5.1's tests and targeted runs, and 5.2's close-out; the phase-table row done. Basic Shape PRD 1.23, General UI PRD 2.34, Technical Architecture PRD 1.44. |
 | 1.0 | 09-13-26 10:30 | Claude (Claude Code) | Initial notes: the starting state at commit d88f041, the phase table, the three decisions (1 A, 2 the A-then-B rule, 3 B) and the kickoff's seven silences as chosen 09-13-26, five corrections to the kickoff found in the reading, four findings decided with the decisions, the three probes re-measured with the script described, the next required step. Basic Shape PRD 1.22, General UI PRD 2.33, Technical Architecture PRD 1.43. |

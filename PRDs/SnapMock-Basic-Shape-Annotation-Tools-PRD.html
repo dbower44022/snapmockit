@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Basic Shape Annotation Tools</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.24</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.25</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Line · Arrow · Rectangle · Ellipse · Arc · Polygon · Freehand / Pen</dd>
-    <dt>Document version</dt><dd>1.24</dd>
-    <dt>Last Updated</dt>    <dd>09-13-26 14:22</dd>
+    <dt>Document version</dt><dd>1.25</dd>
+    <dt>Last Updated</dt>    <dd>09-13-26 14:36</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.25</td>
+        <td class="nowrap">09-13-26 14:36</td>
+        <td>Doug Bower</td>
+        <td>Freehand remainder Phase 4 built: 9.10's long-stroke preview kept whole on screen in 500-point pieces with a targeted repaint, a move of a travelling 5000-point stroke down from 22 ms to 1 ms; a stroke scribbled over one spot recorded as still over a frame. No row of the document is open but what it reserves.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.24</td>
         <td class="nowrap">09-13-26 14:22</td>
@@ -240,6 +247,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-13-26 14:36</td>
+        <td>9.10, 12</td>
+        <td>Built</td>
+        <td>Freehand remainder Phase 4 built (09-13-26; notes in <code>docs/Freehand-Remainder-Implementation.md</code>, Section 7), as decision 3 (option B) put it. <strong>9.10's long-stroke rule is met in its purpose and departed from in its letter.</strong> The rule says that past 2000 raw points only the most recent 500 are rendered while drawing and the full path on release, which makes the start of a long stroke vanish while the user is still drawing it. Instead the preview is kept in pieces of 500 points; each move repaints only the patch its newest point changed, the item's declared bounding rectangle reaching 256 px past the stroke so the whole stroke repaints once per 256 px of travel rather than on every move; the paint reads the repaint's own rectangle and strokes only the pieces whose stroke or shadow meets it, consecutive pieces joined as one path so the 70 percent preview of 2.4 shows no seam; and on release the fitted path is painted whole, as before. The whole stroke stays on screen throughout. Measured on this machine on the offscreen platform: a move of a 5000-point stroke travelling across the canvas falls from 21.7 ms, over a frame, to 1.0 ms, and with a shadow from 67 ms to 9.5 ms; a 2100-point stroke from 6.3 ms to 0.25 ms. <strong>A stroke scribbled back and forth over one spot is not bounded:</strong> every piece lies under the pointer, the whole path is painted as before, and at 5000 points a move costs 27 ms, over 9.10's frame from about 3000 points on this machine, which is what it cost at the start; recorded as a departure from Section 12's 60 frames a second for that stroke alone. The 2000-point threshold and the 500-point piece are 9.10's values. Silences decided: the pieces are joined with a zero-length line at their shared node, which the stroker ignores; when every piece is touched the stored whole path is painted; a shadowed long stroke paints the shadow of the touched pieces, which within the patch is the whole stroke's shadow, at the shadow's own cost; a Shift segment across a long stroke repaints what it spans; a stored long stroke passes through the long-stroke state while it loads and leaves it when its segments are set. 9.4's quadratic preview and 9.5's Shift segments are unchanged in what they draw. Section 12's Freehand row "real-time drawing maintains 60 frames per second for strokes up to 5000 raw points" is met by a test holding a frame per move on a travelling stroke, with the measured figures in the notes. <strong>With this row no row of this document is open</strong> except the pressure data 9.2 and 9.4 reserve and the three Open Issues of Section 14; the display checks owed are the brush tip at a thin and a thick stroke in two colours at 100 and 400 percent zoom, a long slow stroke of several thousand points staying smooth and wholly visible while drawn, and the snap on release of that stroke at 0, 50, and 100 percent feeling immediate.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-13-26 14:22</td>
         <td>9.3, 9.10, 12</td>

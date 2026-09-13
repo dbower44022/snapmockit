@@ -1,6 +1,6 @@
 # Basic Shape Remainder and Blur Modes Implementation Notes
 
-Last Updated: 09-12-26 16:01 · Revision 1.8
+Last Updated: 09-13-26 14:36 · Revision 1.9
 
 Implements the remainder of the Basic Shape Annotation Tools PRD (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.8 at the start) and the Blur / Pixelate tool of the Blur, Highlighter, and Eyedropper Tools PRD (version 1.4), with the General UI PRD (version 2.16) and Technical Architecture PRD (version 1.28) rows they own, in the five phases and the close-out defined by `docs/Basic-Shape-Remainder-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2.
 
@@ -181,10 +181,13 @@ The older checks the Vector Item Properties notes list are answered there.
 
 **Section 2 of the Basic Shape PRD is closed** by `docs/Basic-Shape-Shared-Drawing-Implementation.md` (09-12-26): the rows the 1.12 row left open in Section 2 — the dimension tooltip and constrain icon of 2.4 and the not-auto-selected rule of 2.5 — are built there, with the Freehand tool's Shift straight segments of 9.5. The shape tools this work built now stay active after a shape is made and draw a 70 percent preview with a tooltip beside the cursor. What remains of the Basic Shape PRD outside Section 2 is named in that work's Section 12.
 
+**Section 9's last rows are closed** by `docs/Freehand-Remainder-Implementation.md` (09-13-26): 9.2's brush-tip cursor, and 9.10's fitting budget and long-stroke preview. Two things there reach back into this work. The Freehand pipeline this work built in Phase 2 is faster with its result unchanged, and its fitting error now has a noise floor below 50 percent smoothing, so the 0.5 px floor of the 1.11 row and the 630 ms figure of Section 4 are superseded (that work's Section 6); and the 9.2 cursor this work's Phase 2 left unbuilt is built (its Section 5). No row of the Basic Shape Annotation Tools PRD is open except the pressure data it reserves and the Open Issues of its Section 14.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.9 | 09-13-26 14:36 | Claude (Claude Code) | Section 10: the pointer to the Freehand remainder work, which closes Section 9's last rows and supersedes this work's 0.5 px fitting floor and 630 ms figure. |
 | 1.8 | 09-12-26 16:01 | Claude (Claude Code) | Section 10: the pointer to the shared drawing work, which closes the Basic Shape PRD's Section 2 and 9.5. |
 | 1.7 | 09-12-26 10:35 | Claude (Claude Code) | Section 10: the second display run of 09-12-26. Gaussian Blur and Pixelate pass; Solid Fill stays blocked, narrowed from the shared colour picker (which the same run proved works) to the Blur tool's own Fill swatch, whose signal wiring is sound headlessly, leaving the popover interaction as the fault |
 | 1.6 | 09-12-26 09:58 | Claude (Claude Code) | Section 10: the display checks Doug ran on 09-12-26, quoted. Six of the seven pass — the curved and elbow arrows, the freehand handles, the three arc types, the star polygon, and the individual corner radii. The blur modes stay owed, Solid Fill blocked by a colour picker that does not commit a pick. |

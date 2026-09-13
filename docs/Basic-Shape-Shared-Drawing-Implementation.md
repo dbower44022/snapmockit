@@ -1,6 +1,6 @@
 # The Shape Tools' Shared Drawing Behaviour — Implementation Notes
 
-Last Updated: 09-13-26 09:47 · Revision 1.13
+Last Updated: 09-13-26 14:36 · Revision 1.14
 
 Implements the open rows of the Basic Shape Annotation Tools PRD's Section 2, Shared Shape Behavior (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.12 at the start), and the per-tool Drawing hints that go with them, with the General UI PRD (version 2.25) and Technical Architecture PRD (version 1.37) rows they own, in the five phases and the close-out defined by `docs/Basic-Shape-Shared-Drawing-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2. Finishing this work leaves the Basic Shape Annotation Tools PRD's Section 2 with no open row.
 
@@ -311,6 +311,8 @@ Outside Section 2, read against the code on 09-12-26:
 
 The Line tool on `L` rather than `U` is a settled departure (1.5 row), not an open row.
 
+**The three Freehand rows above are closed** by `docs/Freehand-Remainder-Implementation.md` (09-13-26): the brush-tip cursor (its Section 5), the fit inside 50 ms at 5000 points on every stroke measured (Section 6), and the long-stroke preview kept whole on screen with a bounded cost per move (Section 7). What remains of the Basic Shape Annotation Tools PRD is that work's Section 8.1: nothing but the pressure data the PRD reserves and the Open Issues of its Section 14.
+
 ### 12.3 Display checks owed
 
 This work's own, none of them run, since every check in Phases 3 to 5 is a geometry, text, or pixel test on the offscreen platform:
@@ -342,6 +344,7 @@ Run alone from a scratch worktree between 16:48 and 18:22: **1604 passed, 1 fail
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.14 | 09-13-26 14:36 | Claude (Claude Code) | Section 12.2: the three Freehand rows are closed by the Freehand remainder work, with the pointer to its notes. |
 | 1.13 | 09-13-26 09:47 | Claude (Claude Code) | Section 12.4's next required step names the Freehand remainder kickoff, `docs/Freehand-Remainder-Kickoff-Prompt.md` (revision 1.0). |
 | 1.12 | 09-13-26 01:45 | Claude (Claude Code) | Section 12.4: the Stamp tool's timer is fixed, with its record in the marker tools notes' Section 9. |
 | 1.11 | 09-13-26 01:35 | Claude (Claude Code) | Section 8.2, the retest of step 7.3: 23 of 25 steps as described, the two problems explained by the Blur tool's saved Opacity of 50 percent and reproduced on Doug's own canvas, the More… popover ruled out, and every check of Section 12.3 passing. Basic Shape PRD 1.21. |
