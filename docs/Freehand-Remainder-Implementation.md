@@ -1,6 +1,6 @@
 # The Freehand Tool's Remaining Rows — Implementation Notes
 
-Last Updated: 09-13-26 10:42 · Revision 1.1
+Last Updated: 09-13-26 14:22 · Revision 1.2
 
 Implements the last open rows of the Basic Shape Annotation Tools PRD (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.21 at the start), all of them Section 9's, the Freehand / Pen tool: 9.2's brush-tip cursor and 9.10's two performance rows, with the Section 12 Freehand row they own and the General UI PRD (version 2.32) and Technical Architecture PRD (version 1.42) rows, in the four phases and the close-out defined by `docs/Freehand-Remainder-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2. Finishing this work leaves the Basic Shape Annotation Tools PRD with no open row except what the document itself reserves.
 
@@ -12,7 +12,7 @@ Starting state, verified at commit d88f041 on 09-13-26 (the kickoff names 13d005
 |---|---|---|---|
 | 1 | The decisions and the measurements: these notes, the three probes re-measured, the PRD rows the decisions imply | Done | this commit |
 | 2 | The brush-tip cursor (9.1, 9.2; General UI PRD 6.6) | Done | 6d6a789, then this close-out commit |
-| 3 | The fit within 50 ms (9.3, 9.10) | Not started | |
+| 3 | The fit within 50 ms (9.3, 9.10) | Done | 483e387, 54e62da, then this close-out commit |
 | 4 | The long-stroke preview (9.10) | Not started | |
 | Close-out | PRD rows, the notes complete with the measurements before and after, the pointers in the Basic Shape remainder notes (Section 10), the shared drawing notes (Section 12.2), and the General UI notes (Section 26), the display checks owed, what remains of the Basic Shape PRD | Not started | |
 
@@ -57,6 +57,10 @@ Each decided as the kickoff recommended, on 09-13-26, with the detail the readin
 - `ToolOptionsBar` calls `on_option_changed(key, value)` on the active tool for every shared control, so the Freehand tool learns of a stroke width, colour, or opacity change through the route the Blur tool already uses for its brush size; the same route serves a preset applied while the tool is active.
 - The shadow of a stroke being drawn is painted from `paint_shadow`'s blurred image cache, keyed by the path's signature, so it is rebuilt on every added point; under decision 3 the shadow during a long stroke is decided in Phase 4 and recorded there.
 
+### 2.5 Decision 2's option B, refined on the measurement (09-13-26)
+
+Presented to Doug after step 1 of Phase 3 and chosen ("b"). Option A left 5000 jittery points at 0 percent at 1.2 to 1.5 s, so the rule reached B, and measuring B as approved found three things. The median point-to-point deviation alone changes nothing: on the jittery stroke it is 0.26 px, under the 0.5 px floor already there, and the floor that meets the budget is about 1.2 px, or 1.5 px on a stroke of whole-pixel mouse coordinates, which every stroke at 100 percent zoom is. A floor at 0 percent only puts a cliff at 1 percent, since every level from 0 to 16 percent already resolves to the 0.5 px error, so the floor applies at every smoothing: the error is the larger of the slider's value and the floor. The lower half of the slider then becomes one level on the noisiest strokes, with the floor capped at 1.5 px so the upper half keeps its meaning; on a smooth stroke the floor is near zero and nothing changes. The measure is the median jump between consecutive points' deviations from their neighbours' chord, times three (Section 6). The alternative, option D, A alone with 0 percent recorded as a departure, would have left every mouse stroke at 30 percent or below paying about 50 ms per 200 points on release. The cost taken: the pipeline test's strict ordering between 0 and 30 percent on its 0.8 px alternating wave becomes non-strict, and a stroke saved at low smoothing before this work re-fits to fewer segments when re-smoothed, never on load.
+
 ## 3. The measurements at the starting commit
 
 Taken on 09-13-26 at commit d88f041 with a scratch script, on the offscreen platform, with no other run sharing the machine (load average 0.8): an Intel Core i7-11700K, sixteen threads, Python 3.12.3, NumPy 2.4.2, PyQt6 6.10.2 on Qt 6.10.0. The stroke is a sine wave 2800 px across with a 150 px amplitude, `y = 200 + 150 sin(x / 60)`, sampled at N points spaced evenly in x; the jittery variant adds a uniform random offset between −0.5 and +0.5 px to both axes of every point (seed 1), a pixel of jitter peak to peak. The fit is `FreehandItem.smooth` on an item built through `add_point`, the median of three; the preview paint is `FreehandItem.paint` of the quadratic preview, antialiased, onto a 2800 by 400 pixel ARGB32 image, the median of five; `add_point` is the whole build divided by the count.
@@ -91,7 +95,7 @@ Silences found while building, decided as the code says:
 
 ### 5.1 Tests
 
-`tests/test_freehand_cursor.py` (7): the idle cursor's pixmap, hotspot, dot, arm, gap, and cache, and the tool returning it; the brush tip's size and hotspot following the diameter, its fill following the colour and the alpha, the cache keyed by both, the 4 px minimum, the 128 px ceiling, the outline, and the halo; the viewport showing the tip from the press to the release at the stroke's width and colour and the crosshair after; the tip following the zoom mid-drag through the view's own `set_zoom`, to the ceiling at 3200 percent; the bar's width, colour, and opacity changes reaching the tip while the stroke is drawn; a cancel and a tool switch putting the crosshair back, with the zoom connection following a re-activation; and a locked layer leaving the crosshair alone with the press refused. Targeted runs at 6d6a789: the cursor, pipeline, modifier, and blur brush modules, 57 passed; the lifecycle, post-creation, feedback, tooltip, Freehand point-edit, and accessibility modules, 158 passed; `tests/test_tools` with the options bar, presets, and status bar modules, 117 passed. Ruff and mypy are clean.
+`tests/test_freehand_cursor.py` (7): the idle cursor's pixmap, hotspot, dot, arm, gap, and cache, and the tool returning it; the brush tip's size and hotspot following the diameter, its fill following the colour and the alpha, the cache keyed by both, the 4 px minimum, the 128 px ceiling, the outline, and the halo; the viewport showing the tip from the press to the release at the stroke's width and colour and the crosshair after; the tip following the zoom mid-drag through the view's own `set_zoom`, to the ceiling at 3200 percent; the bar's width, colour, and opacity changes reaching the tip while the stroke is drawn; a cancel and a tool switch putting the crosshair back, with the zoom connection following a re-activation; and a locked layer leaving the crosshair alone with the press refused. Targeted runs at 6d6a789: the cursor, pipeline, modifier, and blur brush modules, 57 passed; the lifecycle, post-creation, feedback, tooltip, Freehand point-edit, and accessibility modules, 158 passed; `tests/test_tools` with the options bar, presets, and status bar modules, 117 passed. Ruff and mypy are clean. The full suite at the Phase 2 close-out commit (c1ee66c), run alone from a scratch worktree between 10:42 and 12:16 while the Phase 3 work's targeted runs and measurements shared the machine: **1616 passed, 0 failed, 13 skipped, 1 deselected, in 1 hour 34 minutes.**
 
 ### 5.2 Phase 2 close-out
 
@@ -99,9 +103,53 @@ Silences found while building, decided as the code says:
 
 **Next required step:** Phase 3, the fit within 50 ms (9.3, 9.10), per decision 2's rule: profile first, then `simplify_rdp` vectorised with NumPy over each span, then the fit's per-piece work, measured at 5000 smooth and 5000 jittery points at 0, 50, and 100 percent; the 0 percent noise floor only if the jittery case is still over 50 ms, with the strokes on which the result differs named in the row. Tests: the fit's cost under a loose ceiling with the measured figure in these notes, and the fitted segments before and after the change agreeing on the strokes the existing tests use.
 
+## 6. What Phase 3 built
+
+Step 1, 483e387, decision 2's option A: the pipeline faster with its result unchanged. `simplify_rdp` in `core/path_utils.py` reads the points into two NumPy arrays once and, for each span on its stack, measures every interior point's distance to the chord in one NumPy pass when the span has 24 interior points or more (`_RDP_NUMPY_SPAN`) and in a plain loop over Python floats below that, where NumPy's per-call cost outweighs the loop; the profile had shown the old loop, a `QPointF` method call and a `math.hypot` per point per span, at 82 to 115 ms of a 5000-point stroke's 90 to 1900 ms. The fit builds each piece's four Bernstein rows once (`_bernstein`) and shares them between the least-squares solve, the error, and the Newton reparameterization, which takes the points it has already evaluated rather than evaluating them again. The arithmetic is written as before, expression for expression, so the segments are the ones the old fit gave: a first version that folded the outer products into dot products moved a control point by 1.2 px on the 5000-point sawtooth stroke the pipeline test uses, through an ill-conditioned piece's Newton steps, and was taken out.
+
+Step 2, 54e62da, decision 2's option B as refined on 09-13-26 (Section 2.5). `stroke_noise` in `core/path_utils.py` measures how much of a stroke's wobble is noise: each interior point's signed distance from the chord through its two neighbours is a deviation, a curve's deviations change slowly, noise makes them jump, and the measure is the median jump between consecutive deviations. `FreehandItem.noise_floor` is that noise times `NOISE_FLOOR_FACTOR` (3), never past `NOISE_FLOOR_MAX_PX` (1.5 px, the error of 50 percent smoothing); `FreehandItem.fit_error` is the slider's error, never below `MIN_FIT_ERROR_PX` and never below the noise floor, at every smoothing; `fit_segments` uses it. Stage 1's tolerance is untouched.
+
+Silences found while building, decided as the code says:
+
+- **The floor is measured on the raw points**, `path_points`, not the simplified ones, so a re-smooth from the Property Panel reads the same floor the release did.
+- **The measure ignores a zero-length chord**, two neighbours at the same point, by taking the deviation as the cross product over a length of one; such a point contributes its offset and no division by zero.
+- **A fast, tightly wiggled stroke sampled sparsely reads as noisy** (about 0.7 px on a wave of 30 px amplitude sampled every 5 px), since its deviations change from point to point as the curvature does; its floor rises to the cap and the wiggles are fitted within 1.5 px rather than 0.5. Recorded, not corrected: the fit cannot tell undersampling from noise, and 1.5 px on a 30 px wiggle keeps its shape.
+- **Fewer than four points have no noise**: the measure needs two deviations to see a jump.
+
+### 6.1 The measurements after
+
+Taken on 09-13-26 at commit 54e62da with the script of Section 3 extended by a third stroke, the sine rounded to whole pixels as a mouse at 100 percent zoom gives it, on the idle machine (load average 0.6 to 1.2), the median of three. The floor column is the item's `noise_floor`.
+
+| Stroke, points | Floor | Fit at 0 percent | Fit at 50 percent | Fit at 100 percent |
+|---|---|---|---|---|
+| smooth, 500 | 0.10 | 11 ms, 93 segments | 6 ms, 46 | 6 ms, 43 |
+| smooth, 2000 | 0.00 | 13 ms, 93 | 8 ms, 48 | 8 ms, 43 |
+| smooth, 5000 | 0.00 | 16 ms, 100 | 12 ms, 49 | 12 ms, 43 |
+| jittery, 500 | 1.43 | 9 ms, 60 | 7 ms, 51 | 7 ms, 45 |
+| jittery, 2000 | 1.33 | 21 ms, 57 | 9 ms, 50 | 7 ms, 43 |
+| jittery, 5000 | 1.36 | 28 ms, 56 | 15 ms, 52 | 12 ms, 43 |
+| whole-pixel, 500 | 1.50 | 10 ms, 56 | 8 ms, 50 | 8 ms, 44 |
+| whole-pixel, 2000 | 1.50 | 17 ms, 60 | 12 ms, 51 | 11 ms, 42 |
+| whole-pixel, 5000 | 1.50 | 40 ms, 59 | 14 ms, 52 | 15 ms, 44 |
+
+Against Section 3: 5000 smooth points fell from 85 to 100 ms to 12 to 16 ms at every smoothing, and 5000 jittery points at 0 percent from 1899 ms and 1388 segments to 28 ms and 56. The whole-pixel stroke, which Section 3 did not measure, is the slowest case left, 40 ms at 5000 points at 0 percent, inside 9.10's 50 ms with the least margin; the segments and the time at 50 and 100 percent are unchanged on every stroke, since those errors are above every floor. Between step 1 and step 2, with only option A, the same stroke at 0 percent took 1.2 to 1.5 s while the Phase 2 suite shared the machine, which is what sent decision 2's rule to B. The Section 3 sine gives a floor of 0.10 at 500 points and 0.00 at 2000 and 5000: at 500 points the samples are 5.6 px apart and the wave's curvature changes visibly between them.
+
+### 6.2 Tests
+
+`tests/test_freehand_fit.py` (7). The reference pipeline, the `simplify_rdp` and `fit_cubic_beziers` of commit c1ee66c with their helpers, is kept in the module: the faster simplification keeps the same points on the pipeline's wave, circle, and line, on the jittery and whole-pixel sines, on twelve random walks, and on a zero-length chord, at four tolerances; the faster fit gives the same segments, within a millionth of a pixel, on the wave at three smoothings, the circle, the line, the 5000-point sawtooth, the three sines, and six random walks. The cost: 5000 smooth points at 0, 50, and 100 percent, and 5000 jittery and 5000 whole-pixel points at the same three, each under a ceiling of 200 ms, four times 9.10's 50 ms for a machine shared with a full-suite run, against 12 to 40 ms measured alone. The noise measure reads near zero on the smooth sine, the circle, and a line, zero on three points, 0.3 to 0.6 px on the jittery sine, 0.6 to 0.9 on the whole-pixel one, and over 1 px on the pipeline test's alternating wave; the floor is zero on a smooth stroke, three times the measure on a jittery one and shared by every level below it, capped at 1.5 px on a whole-pixel stroke with 51 percent above it, and gives tens of segments where there were a thousand.
+
+`tests/test_freehand_pipeline.py`: the segment-count ordering on the 0.8 px alternating wave is `>=` between 0 and 30 percent, both at the 1.5 px floor, and strict on a circle at the 0.5 px floor. Targeted runs at 54e62da: the fit, pipeline, point-edit, modifier, property panel, resize, presets, and options bar modules, 110 passed with the environmental deselection failing as it always does on this machine. Ruff and mypy are clean.
+
+### 6.3 Phase 3 close-out
+
+9.10's fitting budget is met on every stroke measured, 9.3's pipeline is unchanged at 50 percent and above and departs below it by the noise floor, and Section 12's "Path smoothing completes within 50 milliseconds on release" is met by tests. Basic Shape PRD 1.24 and Technical Architecture PRD 1.45 carry the rows. The display check this phase owes: the snap on release of a long slow stroke at 0, 50, and 100 percent smoothing feeling immediate, and the 0 percent result reading as the stroke drawn rather than as its jitter.
+
+**Next required step:** Phase 4, the long-stroke preview (9.10), per decision 3's option B: the preview kept in 500-point pieces past 2000 points, each move repainting only the new segment's patch, only the pieces that touch the patch stroked and joined as one path, the full path on release. Tests: the paint cost per move at 2000 and 5000 points under a loose ceiling, the stroke looking the same on screen before and after the change at a fixed point count, the full path painted on release, and the Shift segments, `preview_snapshot`, and `restore_preview` over a stroke longer than 2000 points.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.2 | 09-13-26 14:22 | Claude (Claude Code) | Phase 3 done: Section 2.5 with option B refined on the measurement and chosen; Section 6 with the vectorised simplification, the shared Bernstein rows, the noise measure and the floor at every smoothing, the four silences found while building, 6.1's measurements after against Section 3, 6.2's tests, and 6.3's close-out; Section 5.1 with the Phase 2 full-suite run (1616 passed); the phase-table row done. Basic Shape PRD 1.24, Technical Architecture PRD 1.45. |
 | 1.1 | 09-13-26 10:42 | Claude (Claude Code) | Phase 2 done: Section 5 with the two cursors, the four silences found while building, 5.1's tests and targeted runs, and 5.2's close-out; the phase-table row done. Basic Shape PRD 1.23, General UI PRD 2.34, Technical Architecture PRD 1.44. |
 | 1.0 | 09-13-26 10:30 | Claude (Claude Code) | Initial notes: the starting state at commit d88f041, the phase table, the three decisions (1 A, 2 the A-then-B rule, 3 B) and the kickoff's seven silences as chosen 09-13-26, five corrections to the kickoff found in the reading, four findings decided with the decisions, the three probes re-measured with the script described, the next required step. Basic Shape PRD 1.22, General UI PRD 2.33, Technical Architecture PRD 1.43. |

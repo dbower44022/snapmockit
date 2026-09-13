@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Basic Shape Annotation Tools</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.23</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.24</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Line · Arrow · Rectangle · Ellipse · Arc · Polygon · Freehand / Pen</dd>
-    <dt>Document version</dt><dd>1.23</dd>
-    <dt>Last Updated</dt>    <dd>09-13-26 10:42</dd>
+    <dt>Document version</dt><dd>1.24</dd>
+    <dt>Last Updated</dt>    <dd>09-13-26 14:22</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.24</td>
+        <td class="nowrap">09-13-26 14:22</td>
+        <td>Doug Bower</td>
+        <td>Freehand remainder Phase 3 built: 9.10's 50 ms fit met at 5000 points on every stroke measured, the simplification vectorised and the fit's work shared with its result unchanged, and a departure from 9.3 below 50 percent smoothing: the fitting error never below the stroke's own noise floor, capped at 1.5 px.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.23</td>
         <td class="nowrap">09-13-26 10:42</td>
@@ -233,6 +240,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-13-26 14:22</td>
+        <td>9.3, 9.10, 12</td>
+        <td>Built</td>
+        <td>Freehand remainder Phase 3 built (09-13-26; notes in <code>docs/Freehand-Remainder-Implementation.md</code>, Section 6). <strong>9.10's fitting budget is met:</strong> simplification and fitting on release complete inside 50 ms for strokes up to 5000 raw points on every stroke measured, on this machine alone: 12 to 16 ms for a smooth stroke at every smoothing, 12 to 28 ms for a stroke jittered by half a pixel, 14 to 40 ms for a stroke of whole-pixel mouse coordinates, where at the start the smooth stroke took 85 to 100 ms and the jittery one 1.9 s at 0 percent with a segment per point. Two changes. First, with the result unchanged (decision 2, option A): stage 1's Ramer-Douglas-Peucker simplification measures each span's points in one NumPy pass, and stage 2's fit builds each piece's Bernstein rows once and shares them between the solve, the error, and the reparameterization, with the arithmetic kept expression for expression so a re-smooth gives the segments it always gave; shown by tests against a copy of the old pipeline. Second, <strong>a departure from 9.3 below 50 percent smoothing</strong> (decision 2, option B, refined on the measurement and chosen by Doug on 09-13-26): stage 2's fitting error is never below the stroke's own noise floor, three times the median jump between consecutive points' deviations from their neighbours' chord, capped at 1.5 px, the error of 50 percent; the 0.5 px floor of the 1.11 row stays beneath it. On a smooth stroke the floor is near zero and every level fits as before. On a stroke of whole-pixel mouse coordinates, which is every stroke drawn at 100 percent zoom, the floor is 1.5 px, so the levels from 0 to 50 percent give one fit, tens of segments rather than a thousand, and the levels above 50 keep their meaning; 9.3's "at 0% smoothing, the Bezier curves closely follow the original points, giving a nearly raw path" now reads as following the stroke to within its own noise rather than a segment per point. A floor at 0 percent alone was rejected because every level from 0 to 16 percent already resolves to the same 0.5 px error, so 1 percent would have stayed slow and raw beside a fast 0 percent. The consequence for saved strokes: a stroke fitted below 50 percent before this version re-fits to fewer segments when re-smoothed from the Property Panel, never on load, since the file carries its segments. The consequence for the tests: the pipeline test's strict ordering of segment counts between 0 and 30 percent on a wave with 0.8 px of alternating jitter, which the floor treats as noise, is now non-strict, and the strict ordering is asserted on a circle. A fast, tightly wiggled stroke sampled sparsely reads as noisy to the measure and is fitted within 1.5 px at every level below 50 percent; recorded, not corrected. Section 12's Freehand row "Path smoothing completes within 50 milliseconds on release" is met by tests holding a 200 ms ceiling on a machine shared with a full-suite run, with the measured figures in the notes. The display check owed: the snap on release of a long slow stroke at 0, 50, and 100 percent feeling immediate, and the 0 percent result reading as the stroke drawn rather than as its jitter.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-13-26 10:42</td>
         <td>9.1, 9.2</td>

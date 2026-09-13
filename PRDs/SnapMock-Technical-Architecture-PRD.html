@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.44</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.45</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.44</dd>
-    <dt>Last Updated</dt>    <dd>09-13-26 10:42</dd>
+    <dt>Document version</dt><dd>1.45</dd>
+    <dt>Last Updated</dt>    <dd>09-13-26 14:22</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.45</td>
+        <td class="nowrap">09-13-26 14:22</td>
+        <td>Doug Bower</td>
+        <td>Freehand remainder Phase 3 built: Section 8's item-creation row met by the Freehand tool at 5000 raw points on every stroke measured; stroke_noise joins core/path_utils.py.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.44</td>
         <td class="nowrap">09-13-26 10:42</td>
@@ -434,6 +441,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-13-26 14:22</td>
+        <td>8, 10</td>
+        <td>Built</td>
+        <td>Freehand remainder Phase 3 built (09-13-26; notes in <code>docs/Freehand-Remainder-Implementation.md</code>, Section 6; Basic Shape PRD 1.24). Section 8's "Item creation (single annotation) &lt; 50ms from mouse release to rendered" now holds for the Freehand tool at the Basic Shape PRD's 5000 raw points on every stroke measured: the simplification and fit on release take 12 to 40 ms on this machine, against 85 ms to 1.9 s at the 1.43 row. <code>core/path_utils.py</code> gains <code>stroke_noise</code>, the measure behind the noise floor, beside the vectorised <code>simplify_rdp</code> and the shared Bernstein rows of the fit; Section 10's row for the module is unchanged in wording, since it already names simplification and smoothing. The measurement method is the notes' Section 3 script, a sine wave at 500, 2000, and 5000 points, smooth, jittered, and rounded to whole pixels, on the offscreen platform with the machine named; a test holds a ceiling of four times the target for a machine shared with a full-suite run.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-13-26 10:42</td>
         <td>3.3</td>
