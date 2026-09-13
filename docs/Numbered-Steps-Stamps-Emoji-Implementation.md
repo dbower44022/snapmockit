@@ -1,6 +1,6 @@
 # Numbered Steps, Stamps, and Emoji Implementation Notes
 
-Last Updated: 09-12-26 09:58 · Revision 1.6
+Last Updated: 09-13-26 01:45 · Revision 1.7
 
 Implements the SnapMock Numbered Steps, Stamps & Emoji product requirements document (version 1.3 at the start of the work, `PRDs/SnapMock-Numbered-Steps-Stamps-Emoji-PRD.html`) in the three phases defined by `docs/Numbered-Steps-Stamps-Emoji-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2 that this work extends.
 
@@ -111,10 +111,23 @@ The accessibility audit (`tests/test_accessibility.py`) passes over every new ba
 
 Still owed from elsewhere: the Zoom tool display check of the General UI notes' Section 19.2 (row 20), whose Alt+click half was answered on 09-12-26 — "Alt still does not work" — and whose right-click half is still unanswered.
 
+## 9. The placement-hint timer after its window is gone
+
+Fixed on 09-13-26, after the shapes' shared drawing work traced the timing-sensitive Zoom tool failure of every full-suite run to it (`docs/Basic-Shape-Shared-Drawing-Implementation.md`, Sections 9.2 and 12.4).
+
+**The fault.** The Stamp, Emoji, and Numbered Step tools each show "Placed …" for `PLACEMENT_HINT_MS` (2 seconds) after a placement and then put the Idle hint back from a parentless `QTimer` (Phases 1 to 3). When a window is torn down within those 2 seconds without its tool being deactivated, the timer still fires, `_push_hint` calls `_window`, and `BaseTool._view` called `views()` on the deleted scene: `RuntimeError: wrapped C/C++ object of type SnapScene has been deleted`. A test's teardown does exactly that, and pytest-qt charged the exception to whichever later test was running the event loop — in file order, a Zoom tool test. Verified by running `tests/test_tools/test_stamp_tool.py` and `tests/test_tools/test_zoom_tool.py` together: one Zoom tool test failed every time with that traceback.
+
+**Not reachable in the application.** Checked with a probe on 09-13-26: closing a document within 2 seconds of placing a stamp re-activates the tool on the new scene, so the timer fires harmlessly and no exception is raised. Only a teardown that deletes the scene while the tool still holds it, which no user path does today, reaches the fault.
+
+**The fix.** `BaseTool._view` returns None once its scene has been deleted (`sip.isdeleted`), so the timer's `_push_hint` finds no window and does nothing. One guard in the base class rather than one per tool: all three tools share the same timer, and any later tool with a deferred callback gets the same protection. The timers themselves are unchanged. No PRD row changes: no requirement's behaviour moved.
+
+**Tests.** `tests/test_placement_hint_timers.py` (4): for each of the three tools, a marker placed and the window deleted within the hint's 2 seconds, then the timer's own callback run — which raised before the fix and now leaves the hint timer stopped; and a tool whose scene is deleted reporting no view. All four fail with the guard removed and pass with it. `tests/test_tools` with the new module, this work's editing module, and the shared drawing lifecycle module passed 143 tests, the Zoom tool's included.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.7 | 09-13-26 01:45 | Claude (Claude Code) | Section 9: the placement-hint timer that raised after its window was torn down, which was the timing-sensitive Zoom tool failure of the full suite; the guard in `BaseTool._view`, the probe showing the application never reaches it, and the regression tests. |
 | 1.6 | 09-12-26 09:58 | Claude (Claude Code) | Section 8: the display checks Doug ran on 09-12-26, quoted. All three this work owed pass — the badge shapes and label at three sizes, the recoloured and imported stamps, and the emoji picker's skin tone, with the emoji rendering in colour. |
 | 1.5 | 09-11-26 13:05 | Claude (Claude Code) | Section 6: the shadow-for-three-items and the three-opacity-controls deviations closed by the Vector Item Properties work. |
 | 1.4 | 09-11-26 10:56 | Claude (Claude Code) | Next step points at `docs/Vector-Item-Properties-Kickoff-Prompt.md`. |

@@ -5,6 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
+from PyQt6 import sip
 from PyQt6.QtCore import QPointF, QRectF, Qt
 from PyQt6.QtGui import QContextMenuEvent, QCursor, QKeyEvent, QMouseEvent
 
@@ -261,8 +262,15 @@ class BaseTool(ABC):
 
     @property
     def _view(self) -> SnapView | None:
-        """Convenience accessor for the first view attached to the scene."""
-        if self._scene is not None and self._scene.views():
+        """Convenience accessor for the first view attached to the scene.
+
+        None once the scene itself has been deleted: a placement-hint timer of the
+        Stamp, Emoji, or Numbered Step tool can fire after its window is torn down
+        without the tool being deactivated, and must find no view rather than raise.
+        """
+        if self._scene is None or sip.isdeleted(self._scene):
+            return None
+        if self._scene.views():
             return self._scene.views()[0]  # type: ignore[return-value]
         return None
 
