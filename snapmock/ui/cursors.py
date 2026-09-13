@@ -3,8 +3,8 @@
 Each cursor is a 24 px pixmap with a white halo under a black glyph so it reads on
 any canvas content, and a hotspot on the point the glyph indicates. The glyph
 cursors reuse the vendored Tabler files under ``resources/icons/tabler/``; the
-raster-selection, numbered-step, brush, marker-tip, and text-hover cursors are drawn here
-because no glyph matches.
+raster-selection, numbered-step, brush, marker-tip, text-hover, dot-crosshair, and
+brush-tip cursors are drawn here because no glyph matches.
 Cursors are built on first use (a QCursor needs the application) and cached.
 """
 
@@ -208,6 +208,72 @@ def brush_cursor(diameter: int) -> QCursor:
     painter.drawPoint(centre)
     painter.setPen(QPen(_GLYPH, 1))
     painter.drawPoint(centre)
+    painter.end()
+    cursor = QCursor(pixmap, mid, mid)
+    _cache[key] = cursor
+    return cursor
+
+
+def dot_crosshair_cursor() -> QCursor:
+    """The Freehand / Pen tool's idle cursor, "Crosshair, small dot variant" (Basic Shape
+    PRD 9.1): the gapped crosshair with a dot at its centre; the hotspot is the dot."""
+    cached = _cache.get("dot-crosshair")
+    if cached is not None:
+        return cached
+    size = CURSOR_SIZE
+    mid = size // 2
+    pixmap = QPixmap(size, size)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+    for pen in (_halo_pen(3), QPen(_GLYPH, 1)):
+        painter.setPen(pen)
+        painter.drawLine(mid, 1, mid, mid - 4)
+        painter.drawLine(mid, mid + 4, mid, size - 2)
+        painter.drawLine(1, mid, mid - 4, mid)
+        painter.drawLine(mid + 4, mid, size - 2, mid)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+    centre = QPointF(mid + 0.5, mid + 0.5)
+    painter.setPen(_halo_pen(1))
+    painter.setBrush(_HALO)
+    painter.drawEllipse(centre, 2.0, 2.0)
+    painter.setPen(Qt.PenStyle.NoPen)
+    painter.setBrush(_GLYPH)
+    painter.drawEllipse(centre, 1.5, 1.5)
+    painter.end()
+    cursor = QCursor(pixmap, mid, mid)
+    _cache["dot-crosshair"] = cursor
+    return cursor
+
+
+def brush_tip_cursor(diameter: int, color: QColor) -> QCursor:
+    """The Freehand / Pen tool's brush tip while a stroke is drawn (Basic Shape PRD 9.2):
+    a filled circle *diameter* screen pixels across in *color*, the stroke colour at the
+    stroke opacity, over a white halo ring with a black outline so a light colour on a
+    light screenshot still reads; the hotspot is the centre.
+
+    Never under 4 px, so a thin stroke still has a tip the eye can find, and never over
+    :data:`BRUSH_CURSOR_MAX`, as the Blur tool's brush is. Cached by size and colour.
+    """
+    size = max(4, min(int(diameter), BRUSH_CURSOR_MAX))
+    key = f"brush-tip-{size}-{color.rgba():08x}"
+    cached = _cache.get(key)
+    if cached is not None:
+        return cached
+    extent = size + 6
+    mid = extent // 2
+    pixmap = QPixmap(extent, extent)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+    radius = size / 2.0
+    centre = QPointF(mid, mid)
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    painter.setPen(_halo_pen(3))
+    painter.drawEllipse(centre, radius, radius)
+    painter.setPen(QPen(_GLYPH, 1))
+    painter.setBrush(QColor(color))
+    painter.drawEllipse(centre, radius, radius)
     painter.end()
     cursor = QCursor(pixmap, mid, mid)
     _cache[key] = cursor

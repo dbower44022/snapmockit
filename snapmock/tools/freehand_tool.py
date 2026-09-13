@@ -5,14 +5,19 @@ Color and Fill Opacity since a closed stroke fills (9.8), the Smoothing slider, 
 tool's own Stroke Cap toggles and Close Path toggle. On release the two-stage pipeline of
 9.3 runs on the raw points (Basic Shape remainder decision 2, option A), and Close Path
 joins the last point to the first.
+
+The cursor (Freehand remainder decision 1, option A): 9.1's crosshair with a centre dot
+while idle, and from the press to the release 9.2's brush tip, a filled circle at the
+stroke's width times the zoom in the stroke's colour at its opacity, which follows the
+bar and the zoom while the stroke is drawn.
 """
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from PyQt6.QtCore import QPointF, QRectF, Qt
-from PyQt6.QtGui import QColor, QIcon, QMouseEvent, QPainterPath
+from PyQt6.QtGui import QColor, QCursor, QIcon, QMouseEvent, QPainterPath
 from PyQt6.QtWidgets import QButtonGroup, QLabel, QToolBar, QToolButton
 
 from snapmock.commands.add_item import AddItemCommand
@@ -25,8 +30,14 @@ from snapmock.config.constants import (
 )
 from snapmock.core.path_utils import constrain_angle
 from snapmock.items.freehand_item import FreehandItem
+from snapmock.items.vector_item import with_alpha
 from snapmock.tools.base_tool import BaseTool
 from snapmock.tools.highlight_tool import cap_icon
+from snapmock.ui.cursors import brush_tip_cursor, dot_crosshair_cursor
+
+if TYPE_CHECKING:
+    from snapmock.core.scene import SnapScene
+    from snapmock.core.selection_manager import SelectionManager
 
 _CAP_STYLES: tuple[tuple[StrokeCap, str, str], ...] = (
     (StrokeCap.FLAT, "Flat", "Flat cap: the stroke ends at its endpoints"),
@@ -41,6 +52,8 @@ DRAWING_STATE = "Drawing…"
 same, so the tooltip and the hint agree (notes Section 9)."""
 STRAIGHT_SEGMENT_DEGREES = 45.0
 """9.5: a Shift-held segment follows horizontal, vertical, or 45-degree diagonal lines."""
+_CURSOR_KEYS = ("stroke_width", "stroke_color", "stroke_opacity")
+"""The creation defaults the brush-tip cursor is drawn from (9.2)."""
 
 
 class FreehandTool(BaseTool):
@@ -66,6 +79,8 @@ class FreehandTool(BaseTool):
         self._straight_from: tuple[list[QPointF], QPainterPath] | None = None
         self._straight_anchor: QPointF | None = None
         self._close_button: QToolButton | None = None
+        # The view whose zoom_changed the cursor follows while the tool is active
+        self._zoom_view: Any = None
         self._creation_defaults = {
             "stroke_color": QColor(DEFAULT_STROKE_COLOR),
             "fill_color": QColor(DEFAULT_FILL_COLOR),
@@ -90,8 +105,50 @@ class FreehandTool(BaseTool):
         return "Freehand"
 
     @property
-    def cursor(self) -> Qt.CursorShape:
-        return Qt.CursorShape.CrossCursor
+    def cursor(self) -> QCursor:
+        """9.1's dot-variant crosshair while idle; 9.2's brush tip while a stroke is drawn:
+        a filled circle ``stroke_width`` times the zoom across, in ``stroke_color`` at
+        ``stroke_opacity`` (General UI PRD 6.6; Freehand remainder decision 1)."""
+        if self._item is None:
+            return dot_crosshair_cursor()
+        view = self._view
+        zoom = (view.zoom_percent / 100.0) if view is not None else 1.0
+        width = float(self._creation_defaults.get("stroke_width", DEFAULT_STROKE_WIDTH))
+        color = QColor(self._creation_defaults.get("stroke_color", DEFAULT_STROKE_COLOR))
+        opacity = float(self._creation_defaults.get("stroke_opacity", 1.0))
+        return brush_tip_cursor(round(width * zoom), with_alpha(color, opacity))
+
+    def _refresh_cursor(self) -> None:
+        """Put the tool's cursor back on the viewport: at the press, at the end of the
+        stroke, and when the bar or the zoom changes the brush tip's size or colour."""
+        view = self._view
+        if view is not None:
+            view.set_hover_cursor(self.cursor)
+
+    def _on_zoom_changed(self, _percent: int) -> None:
+        if self._item is not None:
+            self._refresh_cursor()
+
+    def activate(self, scene: SnapScene, selection_manager: SelectionManager) -> None:
+        super().activate(scene, selection_manager)
+        view = self._view
+        if view is not None:
+            view.zoom_changed.connect(self._on_zoom_changed)
+            self._zoom_view = view
+
+    def deactivate(self) -> None:
+        if self._zoom_view is not None:
+            try:
+                self._zoom_view.zoom_changed.disconnect(self._on_zoom_changed)
+            except (TypeError, RuntimeError):
+                pass  # the view is gone, or was never connected
+            self._zoom_view = None
+        super().deactivate()
+
+    def _end_preview(self) -> None:
+        """The stroke is over, by a release, a cancel, or Escape: the crosshair comes back."""
+        super()._end_preview()
+        self._refresh_cursor()
 
     @property
     def status_hint(self) -> str:
@@ -169,6 +226,8 @@ class FreehandTool(BaseTool):
     def on_option_changed(self, key: str, value: Any) -> None:
         if key in ("stroke_cap", "close_path"):
             self._sync_buttons()
+        elif key in _CURSOR_KEYS and self._item is not None:
+            self._refresh_cursor()
 
     # ------------------------------------------------------------ drawing
 
@@ -206,6 +265,7 @@ class FreehandTool(BaseTool):
         self._straight_from = None
         self._straight_anchor = None
         self._start_preview(item)
+        self._refresh_cursor()  # 9.2: the brush tip from the press
         return True
 
     def mouse_move(self, event: QMouseEvent) -> bool:
