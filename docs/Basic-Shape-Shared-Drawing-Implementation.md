@@ -1,6 +1,6 @@
 # The Shape Tools' Shared Drawing Behaviour — Implementation Notes
 
-Last Updated: 09-13-26 00:49 · Revision 1.10
+Last Updated: 09-13-26 01:35 · Revision 1.11
 
 Implements the open rows of the Basic Shape Annotation Tools PRD's Section 2, Shared Shape Behavior (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.12 at the start), and the per-tool Drawing hints that go with them, with the General UI PRD (version 2.25) and Technical Architecture PRD (version 1.37) rows they own, in the five phases and the close-out defined by `docs/Basic-Shape-Shared-Drawing-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2. Finishing this work leaves the Basic Shape Annotation Tools PRD's Section 2 with no open row.
 
@@ -182,6 +182,17 @@ What was checked on 09-13-26, after the run:
 
 **What the run did not settle.** Alt was again not tested, for the reason Section 8 gives; Ctrl stood in for it. The Arrow's status bar rows were not read, only its tooltip; the Line's, which share their wording, were. The Blur tool's own Solid Fill swatch, still owed by the Basic Shape remainder work, was not among these steps.
 
+### 8.2 The retest of step 7.3
+
+Run by Doug on 09-13-26 between 01:19 and 01:35, from three sections added to the same checklist page. **25 steps: 23 as described, 2 problems, and both problems explained.**
+
+- **Section 8, the drag with Shape: on the bar (7 steps).** The region was created — the Edit menu's top row read "Undo Add BlurItem" — but steps 4 and 5 were marked problems with the note: "It just looks like a light gray filled rectangle with about 50% transparency. Pixelate, gaussian do not work."
+- **The cause, found in the settings and reproduced in code.** The Blur tool's creation defaults in `~/.config/snapmock/tool_state.json` held `opacity` 0.5, where the tool's own default is 1.0 (`tools/blur_tool.py`). A region at 50 percent opacity draws its blurred copy at half strength over the sharp original, so the text stays legible under a grey haze. Doug's canvas, `Capture_2026-09-12_13-28-10.smk`, copied to the scratch directory and rendered offscreen with this work's code, shows exactly that on its three regions. When the setting was changed is not known; nothing in this work writes a creation default. It is a saved user setting, not a fault.
+- **Section 8a, Opacity back to 100 percent (8 steps).** All as described: the new region hid the text under it.
+- **Section 9, the drag through the More… popover (10 steps).** All as described: with Rectangle chosen inside the popover and the drag begun while the popover was open, the region was created, and the Undo row read "Undo Add BlurItem". The popover does not swallow the press, so the first of Section 8.1's two explanations is ruled out.
+
+**So step 7.3 of the first run failed for the second of Section 8.1's reasons:** the region was made, and at 50 percent opacity over thin outlines it was nearly invisible. Check 7 passes whole, and with it every check of Section 12.3. Basic Shape PRD 1.21.
+
 ## 9. What Phase 3 built
 
 One commit, the build and its close-out together, as the Eyedropper and Blur performance work's later phases were: the rows and the code touch the same measurements.
@@ -321,7 +332,7 @@ Owed by other works and not this one's: a blur region in Solid Fill, worth re-ru
 - **The Zoom tool's Alt+click and the blur brush's Alt+paint eraser** have no second route on a desktop whose window manager takes Alt plus a mouse button. They belong to the Navigation and Raster Operations PRD and the Blur PRD.
 - **The Windows capture backend** (`docs/Windows-Backend-Kickoff-Prompt.md`) waits for a Windows machine, and the macOS backend is deferred with no Mac available.
 
-**Next required step:** Doug's display run of the eight checks in 12.3 — done 09-13-26 and recorded in Section 8.1: 45 of 46 marked steps as described, the one problem the Blur tool's rectangle drag in step 7.3, not reproduced in code and waiting on Doug's answer. After it, the most valuable code work on this machine is the Freehand tool's rows of 12.2 — the brush-tip cursor and the two 9.10 performance rows — or the Stamp tool's timer fix, which is a one-commit follow-up; neither has a kickoff prompt yet, and one can be written on request.
+**Next required step:** Doug's display run of the eight checks in 12.3 — done 09-13-26 and recorded in Sections 8.1 and 8.2: every check passes on the display. The one problem of the first run, the Blur tool's rectangle in step 7.3, was the Blur tool's saved Opacity of 50 percent, not a fault. After it, the most valuable code work on this machine is the Freehand tool's rows of 12.2 — the brush-tip cursor and the two 9.10 performance rows — or the Stamp tool's timer fix, which is a one-commit follow-up; neither has a kickoff prompt yet, and one can be written on request.
 
 ### 12.5 The Phase 5 full-suite run
 
@@ -331,6 +342,7 @@ Run alone from a scratch worktree between 16:48 and 18:22: **1604 passed, 1 fail
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.11 | 09-13-26 01:35 | Claude (Claude Code) | Section 8.2, the retest of step 7.3: 23 of 25 steps as described, the two problems explained by the Blur tool's saved Opacity of 50 percent and reproduced on Doug's own canvas, the More… popover ruled out, and every check of Section 12.3 passing. Basic Shape PRD 1.21. |
 | 1.10 | 09-13-26 00:49 | Claude (Claude Code) | Section 8.1, the display run of 09-13-26: 45 of 46 marked steps as described and every check of Section 12.3 passing but the Blur tool's half of check 7; the headless reproduction that creates the region through real mouse events, and the two unverified explanations waiting on Doug. Basic Shape PRD 1.20. |
 | 1.9 | 09-12-26 18:25 | Claude (Claude Code) | Section 12.5: the full-suite run at the Phase 5 commit, 1604 passed with the one timing-sensitive Zoom tool failure, confirming that no test relied on the switch to the Select tool. |
 | 1.8 | 09-12-26 16:48 | Claude (Claude Code) | Close-out: Section 12 with the full-suite run at the Phase 3 commit (1547 passed, the one timing-sensitive Zoom tool failure), what remains of the Basic Shape PRD outside Section 2, which has no open row, the eight display checks this work owes and the ones other works still owe, what remains elsewhere, and the next required step; the phase-table close-out row done. General UI notes 1.41, Basic Shape remainder notes 1.8. |

@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Basic Shape Annotation Tools</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.20</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.21</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Line · Arrow · Rectangle · Ellipse · Arc · Polygon · Freehand / Pen</dd>
-    <dt>Document version</dt><dd>1.20</dd>
-    <dt>Last Updated</dt>    <dd>09-13-26 00:49</dd>
+    <dt>Document version</dt><dd>1.21</dd>
+    <dt>Last Updated</dt>    <dd>09-13-26 01:35</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.21</td>
+        <td class="nowrap">09-13-26 01:35</td>
+        <td>Doug Bower</td>
+        <td>Retest of 09-13-26: the Blur step the 1.20 row left open passes; the Blur tool's saved Opacity of 50% explained it, and no code was at fault.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.20</td>
         <td class="nowrap">09-13-26 00:49</td>
@@ -212,6 +219,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-13-26 01:35</td>
+        <td>2.5, 12</td>
+        <td>Verified</td>
+        <td>Retest by Doug between 01:19 and 01:35 on 09-13-26, three sections added to the same checklist page (notes Section 8.2). The Blur step the 1.20 row carried open is closed, and it was not a fault in this work or in the Blur tool. The Blur tool's creation default for Opacity had been saved at 50% (<code>~/.config/snapmock/tool_state.json</code>; the tool's own default is 100%), so every new region drew its blurred copy at half strength over the sharp original and read as a light grey translucent box with the text still legible; rendering Doug's own canvas in code reproduced that look exactly. With Opacity set back to 100% on the Blur tool's bar, a new region hides the text under it. The drag creates a region both with Shape: on the bar and with Rectangle chosen inside the More… popover and the drag begun while that popover was open, so the popover does not swallow a press on the canvas; the Edit menu's Undo row read Undo Add BlurItem after each. Every check of the 1.20 row now passes on the display, including 2.5's post-creation rule for the Blur tool.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-13-26 00:49</td>
         <td>2.1, 2.4, 2.5, 3.7, 4.8, 5.7, 6.7, 7.7, 8.7, 9.11, 12</td>
