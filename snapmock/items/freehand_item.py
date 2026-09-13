@@ -17,7 +17,7 @@ from typing import Any
 from PyQt6.QtCore import QPointF, QRectF, Qt
 from PyQt6.QtGui import QPainter, QPainterPath, QPainterPathStroker
 
-from snapmock.core.path_utils import BezierSegment, fit_cubic_beziers, simplify_rdp
+from snapmock.core.path_utils import BezierSegment, fit_cubic_beziers, simplify_rdp, stroke_noise
 from snapmock.items.vector_item import VectorItem, _clamp_unit
 
 SMOOTHING_TOLERANCE_PX = 5.0
@@ -33,6 +33,18 @@ every pixel of the stroke."""
 MIN_TOLERANCE_PX = 0.5
 """Stage 1's tolerance at 0 percent: points within half a pixel of the simplified line
 are dropped, where 9.3 drops none, so a long stroke fits in tens of milliseconds."""
+
+NOISE_FLOOR_FACTOR = 3.0
+"""The fitting error is never below this many times the stroke's own noise
+(:func:`stroke_noise`), at every smoothing, so the fit never chases the whole-pixel
+rounding of mouse coordinates or a shaky hand with a segment per point: on such a stroke
+the two-stage pipeline took over a second at 5000 points against 9.10's 50 ms (Freehand
+remainder decision 2, option B). A smooth stroke's noise is near zero, so its fit is the
+one it always was."""
+
+NOISE_FLOOR_MAX_PX = 1.5
+"""The noise floor never rises past the fitting error of 50 percent smoothing, so the
+upper half of the Smoothing slider keeps its meaning on the noisiest stroke."""
 
 DEFAULT_SMOOTHING = 0.5
 
@@ -165,6 +177,17 @@ class FreehandItem(VectorItem):
         self._preview = QPainterPath(preview)
         self._rebuild_path()
 
+    def noise_floor(self) -> float:
+        """The least fitting error the raw points allow: their noise times
+        :data:`NOISE_FLOOR_FACTOR`, never past :data:`NOISE_FLOOR_MAX_PX`."""
+        return min(NOISE_FLOOR_FACTOR * stroke_noise(self._path_points), NOISE_FLOOR_MAX_PX)
+
+    def fit_error(self, smoothing: float) -> float:
+        """Stage 2's fitting error at *smoothing* (9.3): smoothing times 3 px, never below
+        half a pixel and never below the stroke's noise floor."""
+        smoothing = _clamp_unit(smoothing, DEFAULT_SMOOTHING)
+        return max(smoothing * SMOOTHING_ERROR_PX, MIN_FIT_ERROR_PX, self.noise_floor())
+
     def fit_segments(self, smoothing: float) -> list[BezierSegment]:
         """The segments the two stages of 9.3 give for the raw points at *smoothing*."""
         smoothing = _clamp_unit(smoothing, DEFAULT_SMOOTHING)
@@ -172,7 +195,7 @@ class FreehandItem(VectorItem):
         simplified = simplify_rdp(self._path_points, tolerance)
         if len(simplified) < 2:
             return []
-        return fit_cubic_beziers(simplified, max(smoothing * SMOOTHING_ERROR_PX, MIN_FIT_ERROR_PX))
+        return fit_cubic_beziers(simplified, self.fit_error(smoothing))
 
     def smooth(self, smoothing: float | None = None) -> None:
         """Run the pipeline from the raw points and paint its segments (9.3, 9.7)."""

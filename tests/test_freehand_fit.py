@@ -14,8 +14,13 @@ import numpy as np
 from PyQt6.QtCore import QPointF
 from PyQt6.QtWidgets import QApplication
 
-from snapmock.core.path_utils import BezierSegment, fit_cubic_beziers, simplify_rdp
-from snapmock.items.freehand_item import FreehandItem
+from snapmock.core.path_utils import BezierSegment, fit_cubic_beziers, simplify_rdp, stroke_noise
+from snapmock.items.freehand_item import (
+    MIN_FIT_ERROR_PX,
+    NOISE_FLOOR_FACTOR,
+    NOISE_FLOOR_MAX_PX,
+    FreehandItem,
+)
 
 FIT_CEILING_MS = 200.0
 """Four times 9.10's 50 ms, for a machine shared with a full-suite run; measured alone,
@@ -279,10 +284,50 @@ def test_the_fit_of_5000_smooth_points_is_inside_the_budget(qapp: QApplication) 
         assert ms < FIT_CEILING_MS, f"{ms:.1f} ms at {smoothing:.0%} smoothing"
 
 
-def test_the_fit_of_5000_jittery_points_is_inside_the_budget_at_the_default_and_above(
+def test_the_fit_of_5000_jittery_points_is_inside_the_budget_at_every_smoothing(
     qapp: QApplication,
 ) -> None:
+    """Decision 2, option B: without the noise floor the 0 percent case took 1.2 to 1.9 s."""
     for stroke in (_sine(5000, jitter=True), _sine(5000, quantise=True)):
-        for smoothing in (0.5, 1.0):
+        for smoothing in (0.0, 0.5, 1.0):
             ms = min(_fit_ms(stroke, smoothing) for _ in range(2))
             assert ms < FIT_CEILING_MS, f"{ms:.1f} ms at {smoothing:.0%} smoothing"
+
+
+# ---------------------------------------------------------------- the noise floor
+
+
+def test_the_noise_measure_reads_noise_and_not_curve() -> None:
+    assert stroke_noise(_sine(5000)) < 0.01
+    assert stroke_noise(_circle()) < 0.01
+    assert stroke_noise([QPointF(x, 0) for x in range(0, 100, 5)]) == 0.0
+    assert stroke_noise([QPointF(1, 1), QPointF(2, 5), QPointF(9, 2)]) == 0.0  # too few
+    assert 0.3 < stroke_noise(_sine(5000, jitter=True)) < 0.6
+    assert 0.6 < stroke_noise(_sine(5000, quantise=True)) < 0.9
+    assert stroke_noise(_wavy()) > 1.0  # 0.8 px alternating on every point
+
+
+def test_the_noise_floor_applies_at_every_smoothing_and_is_capped(qapp: QApplication) -> None:
+    smooth = FreehandItem()
+    for p in _sine(2000):
+        smooth.add_point(p)
+    assert smooth.noise_floor() < 0.03
+    assert smooth.fit_error(0.0) == MIN_FIT_ERROR_PX
+    assert smooth.fit_error(0.5) == 1.5 and smooth.fit_error(1.0) == 3.0
+
+    noisy = FreehandItem()
+    for p in _sine(2000, jitter=True):
+        noisy.add_point(p)
+    floor = noisy.noise_floor()
+    assert floor == NOISE_FLOOR_FACTOR * stroke_noise(noisy.path_points)
+    assert 1.0 < floor < NOISE_FLOOR_MAX_PX
+    assert noisy.fit_error(0.0) == noisy.fit_error(0.3) == floor  # the lower levels share it
+    assert noisy.fit_error(1.0) == 3.0  # the upper levels keep their meaning
+    assert len(noisy.fit_segments(0.0)) < 200  # tens of segments, not one per point
+
+    mouse = FreehandItem()
+    for p in _sine(2000, quantise=True):
+        mouse.add_point(p)
+    assert mouse.noise_floor() == NOISE_FLOOR_MAX_PX  # the cap, the 50 percent error
+    assert mouse.fit_error(0.0) == mouse.fit_error(0.5) == NOISE_FLOOR_MAX_PX
+    assert mouse.fit_error(0.51) > NOISE_FLOOR_MAX_PX

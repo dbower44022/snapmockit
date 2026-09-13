@@ -67,7 +67,15 @@ def _render(item: FreehandItem) -> QImage:
 def test_the_fitted_path_has_fewer_segments_as_smoothing_rises(qapp: QApplication) -> None:
     item = _item(_wavy())
     counts = [len(item.fit_segments(s)) for s in (0.0, 0.3, 1.0)]
-    assert counts[0] > counts[1] >= counts[2] >= 1
+    # The wave's 0.8 px of alternating jitter is noise the fit no longer chases: 0 and 30
+    # percent share the noise floor of 1.5 px (Freehand remainder decision 2, option B),
+    # so the count does not fall between them; it falls on a smooth stroke, below
+    assert counts[0] >= counts[1] >= counts[2] >= 1
+    assert item.fit_error(0.0) == item.fit_error(0.3) == 1.5
+    circle = _item(_circle())
+    smooth_counts = [len(circle.fit_segments(s)) for s in (0.0, 0.3, 1.0)]
+    assert smooth_counts[0] > smooth_counts[1] >= smooth_counts[2] >= 1
+    assert circle.fit_error(0.0) == 0.5  # no noise, no floor
     item.smooth(0.5)
     segments = item.bezier_segments
     assert segments[0][0] == item.path_points[0]

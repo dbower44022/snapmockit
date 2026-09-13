@@ -269,6 +269,30 @@ def fit_cubic_beziers(points: list[QPointF], error: float) -> list[BezierSegment
     ]
 
 
+def stroke_noise(points: list[QPointF]) -> float:
+    """How much of a stroke's point-to-point wobble is noise rather than curve, in pixels
+    (Basic Shape PRD 9.3, 9.10; Freehand remainder decision 2, option B).
+
+    Each interior point's signed distance from the chord through its two neighbours is a
+    deviation. A curve's deviations change slowly from one point to the next; noise, the
+    whole-pixel rounding of mouse coordinates or a shaky hand, makes them jump. The
+    measure is the median jump between consecutive deviations: near zero for a smooth
+    stroke or a circle, about 0.45 px for half a pixel of jitter on both axes, about
+    0.75 px for a stroke rounded to whole pixels. Fewer than four points have no noise.
+    """
+    if len(points) < 4:
+        return 0.0
+    a = np.array([[p.x(), p.y()] for p in points], dtype=float)
+    before, at, after = a[:-2], a[1:-1], a[2:]
+    chord = after - before
+    length = np.hypot(chord[:, 0], chord[:, 1])
+    length[length == 0.0] = 1.0
+    deviation = (
+        (at[:, 0] - before[:, 0]) * chord[:, 1] - (at[:, 1] - before[:, 1]) * chord[:, 0]
+    ) / length
+    return float(np.median(np.abs(np.diff(deviation))))
+
+
 def moving_average(points: list[QPointF], window: int) -> list[QPointF]:
     """*points* smoothed by a moving average over the last *window* points (Blur PRD 3.2).
 
