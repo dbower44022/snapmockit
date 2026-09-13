@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Basic Shape Annotation Tools</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.19</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.20</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Line · Arrow · Rectangle · Ellipse · Arc · Polygon · Freehand / Pen</dd>
-    <dt>Document version</dt><dd>1.19</dd>
-    <dt>Last Updated</dt>    <dd>09-12-26 15:59</dd>
+    <dt>Document version</dt><dd>1.20</dd>
+    <dt>Last Updated</dt>    <dd>09-13-26 00:49</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.20</td>
+        <td class="nowrap">09-13-26 00:49</td>
+        <td>Doug Bower</td>
+        <td>Display run of 09-13-26: 2.4's tooltip, constrain icon, centre marker, 70 percent preview, and guide lines, 2.5's rapid drawing, and the Drawing and Idle hint rows all pass on the real display; one Blur tool step is open.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.19</td>
         <td class="nowrap">09-12-26 15:59</td>
@@ -205,6 +212,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-13-26 00:49</td>
+        <td>2.1, 2.4, 2.5, 3.7, 4.8, 5.7, 6.7, 7.7, 8.7, 9.11, 12</td>
+        <td>Verified</td>
+        <td>Display run by Doug between 00:21 and 00:48 on 09-13-26, from a checklist page whose marks were read back: 48 steps, 46 marked, 45 as described, 1 problem (notes Section 8.1). Every render check in Phases 3 to 5 had been a geometry, text, or pixel test on the offscreen platform, so this is the first display evidence for any of it. 2.4 passes whole: the preview is visibly paler while dragged and full strength when released; the dimension tooltip sits below and right of the cursor with the Rectangle's width and height, the Ellipse's width and height and its Shift-held diameter, the Line's and the Arrow's length and angle, the Freehand's state, the Arc's chord and then its arc length and bulge, and the Polygon's vertex count; it moves to the cursor's left at the right edge and above it at the bottom edge; the padlock appears with Shift; the crosshair sits on the press point with Ctrl, and no crosshair appears for the Line; the four dashed guide lines run to the rulers while the rulers are shown and none appear with the rulers hidden. 2.5 passes: three rectangles drawn in succession with nothing between them, no selection handles on any, and three Ctrl+Z presses taking them away one at a time; the Arc and the Polygon also stay active after confirming. The Drawing rows of 3.7, 5.7, 6.7 (both), and 9.11 and the Idle rows of 3.7, 5.7, 6.7, 7.7, and 8.7 read on the status bar as written. The Highlighter stays active after a stroke. The one problem is the Blur tool's: a rectangle dragged with the Blur tool after choosing Rectangle under Shape: did not appear. A headless reproduction through real mouse events on the canvas view at the saved Blur settings (Gaussian, radius 35, opacity 50 percent) creates the region, changes the pixels under it during the drag and after the release, and leaves the Blur tool active, so the fault is not reproduced in code; it is carried as open in the notes, not as a departure.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-12-26 15:59</td>
         <td>2.1, 2.5, 12</td>

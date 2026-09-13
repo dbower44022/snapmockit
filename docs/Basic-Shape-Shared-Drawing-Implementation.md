@@ -1,6 +1,6 @@
 # The Shape Tools' Shared Drawing Behaviour — Implementation Notes
 
-Last Updated: 09-12-26 18:25 · Revision 1.9
+Last Updated: 09-13-26 00:49 · Revision 1.10
 
 Implements the open rows of the Basic Shape Annotation Tools PRD's Section 2, Shared Shape Behavior (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.12 at the start), and the per-tool Drawing hints that go with them, with the General UI PRD (version 2.25) and Technical Architecture PRD (version 1.37) rows they own, in the five phases and the close-out defined by `docs/Basic-Shape-Shared-Drawing-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2. Finishing this work leaves the Basic Shape Annotation Tools PRD's Section 2 with no open row.
 
@@ -157,6 +157,31 @@ Checks 1 to 4 are the first display evidence that 2.3 and 9.5 exist at all: befo
 
 **Still owed by this work**, all of it from phases not yet built: the dimension tooltip at each of the seven tools, the tooltip near a viewport edge, the guide lines to the rulers, the preview at 70 percent opacity, and three shapes drawn in succession without touching anything between them.
 
+### 8.1 The second run: Phases 3 to 5
+
+Run by Doug on 09-13-26 between 00:21 and 00:47 from the checklist page `SnapMock Drawing Feedback Checks`, whose marks were read back, against the working tree at commit `6052285`. **48 steps: the two terminal steps were not marked, and the Line tool's new Idle row two steps later confirms the new build was running; 45 as described; 1 problem.** No note was left on any passing step.
+
+| # | Check (Section 12.3) | Steps | Result |
+|---|---|---|---|
+| 1 | The dimension tooltip with each of the seven tools | 2.3; 6.2 to 6.20 | As described |
+| 2 | The tooltip at the right and the bottom edges | 4.1 to 4.3 | As described |
+| 3 | The padlock with Shift, the crosshair on the press point with Ctrl, and none for the Line | 2.4, 2.5, 6.3, 6.6 | As described |
+| 4 | The paler preview while dragging, full strength when released | 2.3, 2.6 | As described |
+| 5 | The four guide lines to the rulers, gone on release, none with the rulers hidden | 5.1 to 5.7 | As described |
+| 6 | Three rectangles in succession, no handles, three undos one at a time; the Arc and the Polygon also staying active | 3.1 to 3.5; 6.15, 6.20 | As described |
+| 7 | The Blur tool and the Highlighter staying active after drawing | 7.1 to 7.5 | **Highlighter as described; Blur, step 7.3, a problem** |
+| 8 | The status bar's Drawing rows and the Idle rows coming back | 2.1 to 2.6; 6.1 to 6.20 | As described |
+
+**The one problem.** Step 7.3 — with the Blur tool, and Rectangle chosen under Shape:, drag a rectangle over a shape and release — was marked a problem with the note: "Doesn't drag to create a rectangle." Step 7.2, just before it, passed, so the Blur tool was active with the Rectangle shape and its Idle hint showing. Step 7.4 and 7.5, just after, passed, so the Highlighter drew normally in the same window.
+
+What was checked on 09-13-26, after the run:
+
+- **The saved Blur settings** in `~/.config/snapmock/tool_state.json` are Gaussian Blur, radius 35, the Rectangle shape, and opacity 50 percent. Nothing there makes a region invisible.
+- **A headless reproduction through real mouse events** — `QTest` press, ten moves, and release on the canvas view's viewport of a `MainWindow`, at those settings, over a rectangle's outline — creates the region, changes 4800 pixels around the outline during the drag and the same after the release, and leaves the Blur tool active. So the drag reaches the tool, the region is made and painted, and Phase 5's change to the Blur tool's release path does what it should. **The fault is not reproduced in code.**
+- **Two explanations remain, neither verified.** First, if Shape: sat behind the Tool Options Bar's "More…" popover, the Rectangle button was clicked inside that popover. The popover is a Qt popup window (`Qt.WindowType.Popup`), and the press that closes a popup is commonly consumed rather than passed to the canvas, so the drag would begin with no press the Blur tool ever saw. Second, a Gaussian region at 50 percent opacity over a thin outline or blank canvas changes little that the eye would call a rectangle, and the Blur tool draws no outline of its own while dragging. Doug's answer to which applied decides whether there is a bug.
+
+**What the run did not settle.** Alt was again not tested, for the reason Section 8 gives; Ctrl stood in for it. The Arrow's status bar rows were not read, only its tooltip; the Line's, which share their wording, were. The Blur tool's own Solid Fill swatch, still owed by the Basic Shape remainder work, was not among these steps.
+
 ## 9. What Phase 3 built
 
 One commit, the build and its close-out together, as the Eyedropper and Blur performance work's later phases were: the rows and the code touch the same measurements.
@@ -296,7 +321,7 @@ Owed by other works and not this one's: a blur region in Solid Fill, worth re-ru
 - **The Zoom tool's Alt+click and the blur brush's Alt+paint eraser** have no second route on a desktop whose window manager takes Alt plus a mouse button. They belong to the Navigation and Raster Operations PRD and the Blur PRD.
 - **The Windows capture backend** (`docs/Windows-Backend-Kickoff-Prompt.md`) waits for a Windows machine, and the macOS backend is deferred with no Mac available.
 
-**Next required step:** Doug's display run of the eight checks in 12.3, recorded in this document as Section 8's run was. After it, the most valuable code work on this machine is the Freehand tool's rows of 12.2 — the brush-tip cursor and the two 9.10 performance rows — or the Stamp tool's timer fix, which is a one-commit follow-up; neither has a kickoff prompt yet, and one can be written on request.
+**Next required step:** Doug's display run of the eight checks in 12.3 — done 09-13-26 and recorded in Section 8.1: 45 of 46 marked steps as described, the one problem the Blur tool's rectangle drag in step 7.3, not reproduced in code and waiting on Doug's answer. After it, the most valuable code work on this machine is the Freehand tool's rows of 12.2 — the brush-tip cursor and the two 9.10 performance rows — or the Stamp tool's timer fix, which is a one-commit follow-up; neither has a kickoff prompt yet, and one can be written on request.
 
 ### 12.5 The Phase 5 full-suite run
 
@@ -306,6 +331,7 @@ Run alone from a scratch worktree between 16:48 and 18:22: **1604 passed, 1 fail
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.10 | 09-13-26 00:49 | Claude (Claude Code) | Section 8.1, the display run of 09-13-26: 45 of 46 marked steps as described and every check of Section 12.3 passing but the Blur tool's half of check 7; the headless reproduction that creates the region through real mouse events, and the two unverified explanations waiting on Doug. Basic Shape PRD 1.20. |
 | 1.9 | 09-12-26 18:25 | Claude (Claude Code) | Section 12.5: the full-suite run at the Phase 5 commit, 1604 passed with the one timing-sensitive Zoom tool failure, confirming that no test relied on the switch to the Select tool. |
 | 1.8 | 09-12-26 16:48 | Claude (Claude Code) | Close-out: Section 12 with the full-suite run at the Phase 3 commit (1547 passed, the one timing-sensitive Zoom tool failure), what remains of the Basic Shape PRD outside Section 2, which has no open row, the eight display checks this work owes and the ones other works still owe, what remains elsewhere, and the next required step; the phase-table close-out row done. General UI notes 1.41, Basic Shape remainder notes 1.8. |
 | 1.7 | 09-12-26 15:59 | Claude (Claude Code) | Phase 5 done: Section 11 with no auto-selection and no switch to the Select tool in the seven shape tools, the Blur tool's three release paths, and the Highlighter; `_switch_to_select` removed; the three silences — the Idle hint after a confirmed arc or polygon, no existing test needing a rewrite, and the Phase 4 status bar test tightened — 11.1's tests, and 11.2's close-out; the phase-table row done. Basic Shape PRD 1.19, Blur PRD 1.17, Technical Architecture PRD 1.42. |
