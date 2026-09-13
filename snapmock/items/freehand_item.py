@@ -8,6 +8,12 @@ paints the raw points joined by quadratic curves (9.4); on release the two-stage
 of 9.3 runs (Ramer-Douglas-Peucker simplification, then least-squares cubic fitting) and
 the segments are painted from then on. Re-smoothing starts again from the raw points, so it
 never loses the stroke; a hand edit of the segments is replaced by a re-smooth.
+
+A long stroke (9.10; Freehand remainder decision 3, option B): past 2000 raw points the
+preview is kept in pieces of 500 points, each added point repaints only the patch it
+changed, and the paint strokes only the pieces that touch the patch, joined as one path,
+so the cost of a move is bounded by the pieces near the pointer and the whole stroke stays
+on screen. On release the fitted path is painted whole, as for any stroke.
 """
 
 from __future__ import annotations
@@ -16,6 +22,7 @@ from typing import Any
 
 from PyQt6.QtCore import QPointF, QRectF, Qt
 from PyQt6.QtGui import QPainter, QPainterPath, QPainterPathStroker
+from PyQt6.QtWidgets import QGraphicsItem
 
 from snapmock.core.path_utils import BezierSegment, fit_cubic_beziers, simplify_rdp, stroke_noise
 from snapmock.items.vector_item import VectorItem, _clamp_unit
@@ -51,6 +58,24 @@ DEFAULT_SMOOTHING = 0.5
 HIT_MIN_WIDTH = 8.0
 """The narrowest hit band (9.9): a thin stroke is still easy to click."""
 
+LONG_STROKE_POINTS = 2000
+"""9.10: a stroke over this many raw points is a long stroke while it is drawn, and the
+item paints only the pieces of its preview that a repaint touches (Freehand remainder
+decision 3, option B)."""
+
+PREVIEW_PIECE_POINTS = 500
+"""9.10's 500 points: the size of each piece of a long stroke's preview, which is the most
+one move has to stroke while the stroke travels."""
+
+PREVIEW_BOUNDS_MARGIN = 256.0
+"""How far past the stroke a long stroke's bounding rectangle reaches, so the rectangle
+grows, and the whole stroke is repainted, once every 256 px of travel and not on every
+move."""
+
+PreviewSnapshot = tuple[list[QPointF], QPainterPath, tuple[Any, ...]]
+"""What :meth:`FreehandItem.preview_snapshot` returns: the raw points, the preview path,
+and the long stroke's bookkeeping, restored together by :meth:`FreehandItem.restore_preview`."""
+
 
 def _point(raw: object) -> QPointF | None:
     if isinstance(raw, dict) and "x" in raw and "y" in raw:
@@ -83,6 +108,16 @@ class FreehandItem(VectorItem):
         self._is_closed: bool = False
         self._preview = QPainterPath()
         self._path = QPainterPath()
+        # The long stroke's pieces (9.10): the bounds and the path of each completed
+        # 500-point piece, the tail's path and bounds as floats, and the bounding
+        # rectangle declared while the stroke is long, None otherwise
+        self._piece_rects: list[QRectF] = []
+        self._piece_paths: list[QPainterPath] = []
+        self._tail_path = QPainterPath()
+        self._tail_box: list[float] | None = None
+        self._preview_bounds: QRectF | None = None
+        # option.exposedRect is the repaint's own patch, which the long stroke's paint reads
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemUsesExtendedStyleOption, True)
 
     # ------------------------------------------------------------ properties
 
@@ -145,37 +180,187 @@ class FreehandItem(VectorItem):
 
     def add_point(self, point: QPointF) -> None:
         """Append a raw point while the stroke is drawn; the preview joins the points by
-        quadratic curves through their midpoints (9.4)."""
+        quadratic curves through their midpoints (9.4). Past :data:`LONG_STROKE_POINTS`
+        only the patch the point changed is repainted (9.10)."""
         p = QPointF(point)
         self._path_points.append(p)
         count = len(self._path_points)
         if count == 1:
             self._preview = QPainterPath()
             self._preview.moveTo(p)
+            self._reset_pieces()
+            self._tail_path.moveTo(p)
+            self._tail_box = [p.x(), p.y(), p.x(), p.y()]
         else:
             prev = self._path_points[-2]
+            node = _mid(prev, p)
             if count == 2:
-                self._preview.lineTo(_mid(prev, p))
+                self._preview.lineTo(node)
+                self._tail_path.lineTo(node)
             else:
-                self._preview.quadTo(prev, _mid(prev, p))
-        self._rebuild_path()
+                self._preview.quadTo(prev, node)
+                self._tail_path.quadTo(prev, node)
+            self._grow_tail_box(p)
+            if (count - 1) % PREVIEW_PIECE_POINTS == 0:
+                self._complete_piece(prev, p, node)
+        if not self._long_stroke():
+            self._rebuild_path()
+            return
+        if self._preview_bounds is None:
+            # The stroke has just become long: one whole repaint, then patches
+            self._preview_bounds = self._tight_bounding_rect().adjusted(
+                -PREVIEW_BOUNDS_MARGIN,
+                -PREVIEW_BOUNDS_MARGIN,
+                PREVIEW_BOUNDS_MARGIN,
+                PREVIEW_BOUNDS_MARGIN,
+            )
+            self._rebuild_path()
+            return
+        self._rebuild_path(patch=self._patch_of(self._path_points[-3:]))
 
-    def preview_snapshot(self) -> tuple[list[QPointF], QPainterPath]:
-        """The raw points and the preview path as they stand, to be restored later.
+    # ------------------------------------------------------------ the long stroke's pieces
+
+    def _long_stroke(self) -> bool:
+        """Whether the item is a long stroke being drawn (9.10): raw points past the
+        threshold and no fitted segments yet."""
+        return not self._segments and len(self._path_points) > LONG_STROKE_POINTS
+
+    def _reset_pieces(self) -> None:
+        self._piece_rects = []
+        self._piece_paths = []
+        self._tail_path = QPainterPath()
+        self._tail_box = None
+        self._preview_bounds = None
+
+    def _grow_tail_box(self, p: QPointF) -> None:
+        box = self._tail_box
+        if box is None:
+            self._tail_box = [p.x(), p.y(), p.x(), p.y()]
+            return
+        box[0] = min(box[0], p.x())
+        box[1] = min(box[1], p.y())
+        box[2] = max(box[2], p.x())
+        box[3] = max(box[3], p.y())
+
+    def _complete_piece(self, prev: QPointF, p: QPointF, node: QPointF) -> None:
+        """The tail has reached a piece boundary at *p*: keep its path and bounds, and start
+        the next piece at the node between *prev* and *p*, where the path passes."""
+        box = self._tail_box or [p.x(), p.y(), p.x(), p.y()]
+        self._piece_rects.append(QRectF(QPointF(box[0], box[1]), QPointF(box[2], box[3])))
+        self._piece_paths.append(QPainterPath(self._tail_path))
+        self._tail_path = QPainterPath()
+        self._tail_path.moveTo(node)
+        self._tail_box = [
+            min(prev.x(), p.x()),
+            min(prev.y(), p.y()),
+            max(prev.x(), p.x()),
+            max(prev.y(), p.y()),
+        ]
+
+    def _rebuild_pieces(self) -> None:
+        """Recompute the pieces from the raw points (after a scale)."""
+        points = self._path_points
+        self._reset_pieces()
+        for index, p in enumerate(points):
+            if index == 0:
+                self._tail_path.moveTo(p)
+                self._tail_box = [p.x(), p.y(), p.x(), p.y()]
+                continue
+            prev = points[index - 1]
+            node = _mid(prev, p)
+            if index == 1:
+                self._tail_path.lineTo(node)
+            else:
+                self._tail_path.quadTo(prev, node)
+            self._grow_tail_box(p)
+            if index % PREVIEW_PIECE_POINTS == 0:
+                self._complete_piece(prev, p, node)
+
+    def _cover(self, rect: QRectF) -> QRectF:
+        """The pixels a piece of geometry within *rect* can touch: its stroke, its hit
+        band's minimum, and its shadow."""
+        margin = max(self.stroke_margin(), HIT_MIN_WIDTH / 2.0) + 2.0
+        body = rect.adjusted(-margin, -margin, margin, margin)
+        return body.united(self.shadow_rect(body))
+
+    def _patch_of(self, points: list[QPointF]) -> QRectF:
+        xs = [p.x() for p in points]
+        ys = [p.y() for p in points]
+        return self._cover(QRectF(QPointF(min(xs), min(ys)), QPointF(max(xs), max(ys))))
+
+    def _pieces_touching(self, exposed: QRectF | None) -> list[tuple[int, int]]:
+        """The runs of consecutive pieces, as (first, last) piece indexes with the tail as
+        the last index, whose cover meets *exposed*; every piece when *exposed* is None."""
+        count = len(self._piece_paths)
+        tail_box = self._tail_box or [0.0, 0.0, 0.0, 0.0]
+        tail_rect = QRectF(QPointF(tail_box[0], tail_box[1]), QPointF(tail_box[2], tail_box[3]))
+        rects = [*self._piece_rects, tail_rect]
+        runs: list[tuple[int, int]] = []
+        for index in range(count + 1):
+            if exposed is not None and not self._cover(rects[index]).intersects(exposed):
+                continue
+            if runs and runs[-1][1] == index - 1:
+                runs[-1] = (runs[-1][0], index)
+            else:
+                runs.append((index, index))
+        return runs
+
+    def _preview_path_for(self, exposed: QRectF | None) -> QPainterPath:
+        """The preview's pieces that meet *exposed*, consecutive pieces joined as one
+        subpath so the stroke shows no seam where they meet, the tail ending at the last
+        point as the whole preview does."""
+        count = len(self._piece_paths)
+        runs = self._pieces_touching(exposed)
+        if runs == [(0, count)]:
+            # Every piece: the whole preview, already built, rather than the pieces rejoined
+            return QPainterPath(self._path)
+        path = QPainterPath()
+        for first, last in runs:
+            for index in range(first, last + 1):
+                piece = self._piece_paths[index] if index < count else self._tail_path
+                if index == first:
+                    path.addPath(piece)
+                else:
+                    path.connectPath(piece)
+            if last == count and len(self._path_points) > 1:
+                path.lineTo(self._path_points[-1])
+        return path
+
+    def preview_snapshot(self) -> PreviewSnapshot:
+        """The raw points, the preview path, and the long stroke's pieces as they stand,
+        to be restored later.
 
         Shift's straight segments (9.5) replace the segment being drawn on every move
         rather than appending to it. The tool takes one snapshot when Shift is first
         held and restores it before each move, which costs a list copy rather than a
         replay of every point through :meth:`add_point`.
         """
-        return ([QPointF(p) for p in self._path_points], QPainterPath(self._preview))
+        pieces = (
+            list(self._piece_rects),
+            list(self._piece_paths),
+            QPainterPath(self._tail_path),
+            list(self._tail_box) if self._tail_box is not None else None,
+            QRectF(self._preview_bounds) if self._preview_bounds is not None else None,
+        )
+        return ([QPointF(p) for p in self._path_points], QPainterPath(self._preview), pieces)
 
-    def restore_preview(self, snapshot: tuple[list[QPointF], QPainterPath]) -> None:
-        """Put the stroke back to a :meth:`preview_snapshot`; the snapshot stays usable."""
-        points, preview = snapshot
+    def restore_preview(self, snapshot: PreviewSnapshot) -> None:
+        """Put the stroke back to a :meth:`preview_snapshot`; the snapshot stays usable.
+        A long stroke repaints only the patch the dropped points covered."""
+        points, preview, pieces = snapshot
+        dropped = self._path_points[max(len(points) - 2, 0) :]
         self._path_points = list(points)
         self._preview = QPainterPath(preview)
-        self._rebuild_path()
+        rects, paths, tail_path, tail_box, bounds = pieces
+        self._piece_rects = list(rects)
+        self._piece_paths = list(paths)
+        self._tail_path = QPainterPath(tail_path)
+        self._tail_box = list(tail_box) if tail_box is not None else None
+        self._preview_bounds = QRectF(bounds) if bounds is not None else None
+        if self._long_stroke() and self._preview_bounds is not None and dropped:
+            self._rebuild_path(patch=self._patch_of(dropped))
+        else:
+            self._rebuild_path()
 
     def noise_floor(self) -> float:
         """The least fitting error the raw points allow: their noise times
@@ -204,7 +389,10 @@ class FreehandItem(VectorItem):
         self._segments = self.fit_segments(self._smoothing)
         self._rebuild_path()
 
-    def _rebuild_path(self) -> None:
+    def _rebuild_path(self, *, patch: QRectF | None = None) -> None:
+        """Rebuild the painted path. With *patch*, a long stroke's move, only that patch is
+        repainted and the declared bounding rectangle grows when the patch leaves it;
+        without it the geometry changed and the whole item repaints."""
         path = QPainterPath()
         if self._segments:
             path.moveTo(self._segments[0][0])
@@ -217,7 +405,22 @@ class FreehandItem(VectorItem):
         if self._is_closed and path.elementCount() > 1:
             path.closeSubpath()
         self._path = path
-        self._geometry_changed()
+        if not self._long_stroke():
+            self._preview_bounds = None
+        bounds = self._preview_bounds
+        if patch is None or bounds is None:
+            self._geometry_changed()
+            return
+        if not bounds.contains(patch):
+            self._preview_bounds = bounds.united(patch).adjusted(
+                -PREVIEW_BOUNDS_MARGIN,
+                -PREVIEW_BOUNDS_MARGIN,
+                PREVIEW_BOUNDS_MARGIN,
+                PREVIEW_BOUNDS_MARGIN,
+            )
+            self._geometry_changed()
+            return
+        self.update(patch)
 
     # ------------------------------------------------------------ geometry
 
@@ -240,12 +443,16 @@ class FreehandItem(VectorItem):
             else:
                 prev = self._path_points[i - 1]
                 self._preview.quadTo(prev, _mid(prev, p))
+        self._rebuild_pieces()
         self._rebuild_path()
 
+    def _tight_bounding_rect(self) -> QRectF:
+        return self._cover(self._path.boundingRect())
+
     def boundingRect(self) -> QRectF:
-        margin = max(self.stroke_margin(), HIT_MIN_WIDTH / 2.0) + 2.0
-        body = self._path.boundingRect().adjusted(-margin, -margin, margin, margin)
-        return body.united(self.shadow_rect(body))
+        if self._preview_bounds is not None and self._long_stroke():
+            return QRectF(self._preview_bounds)
+        return self._tight_bounding_rect()
 
     def shape(self) -> QPainterPath:
         """The stroke's band, stroke width plus 4 px and never under 8 px, and the inside
@@ -259,6 +466,17 @@ class FreehandItem(VectorItem):
 
     def paint(self, painter: QPainter | None, option: Any, widget: Any = None) -> None:
         if painter is None:
+            return
+        if self._long_stroke():
+            # 9.10: only the pieces the repaint touches, as one path (decision 3, option B)
+            exposed = option.exposedRect if option is not None else None
+            path = self._preview_path_for(exposed)
+            self._apply_flip(painter)
+            self.paint_shadow(painter, self.shadow_path(path, closed=False))
+            painter.setPen(self.pen())
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawPath(path)
+            self._end_flip(painter)
             return
         self._apply_flip(painter)
         self.paint_shadow(painter, self.shadow_path(self._path, closed=self._is_closed))

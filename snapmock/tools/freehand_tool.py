@@ -17,7 +17,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from PyQt6.QtCore import QPointF, QRectF, Qt
-from PyQt6.QtGui import QColor, QCursor, QIcon, QMouseEvent, QPainterPath
+from PyQt6.QtGui import QColor, QCursor, QIcon, QMouseEvent
 from PyQt6.QtWidgets import QButtonGroup, QLabel, QToolBar, QToolButton
 
 from snapmock.commands.add_item import AddItemCommand
@@ -29,7 +29,7 @@ from snapmock.config.constants import (
     StrokeCap,
 )
 from snapmock.core.path_utils import constrain_angle
-from snapmock.items.freehand_item import FreehandItem
+from snapmock.items.freehand_item import FreehandItem, PreviewSnapshot
 from snapmock.items.vector_item import with_alpha
 from snapmock.tools.base_tool import BaseTool
 from snapmock.tools.highlight_tool import cap_icon
@@ -76,7 +76,7 @@ class FreehandTool(BaseTool):
         self._cap_buttons: dict[StrokeCap, QToolButton] = {}
         # 9.5: the stroke as it stood when Shift was first held, and the point the
         # straight segment runs from. None while the stroke follows the cursor freehand
-        self._straight_from: tuple[list[QPointF], QPainterPath] | None = None
+        self._straight_from: PreviewSnapshot | None = None
         self._straight_anchor: QPointF | None = None
         self._close_button: QToolButton | None = None
         # The view whose zoom_changed the cursor follows while the tool is active
