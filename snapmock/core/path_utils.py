@@ -62,10 +62,19 @@ def constrained_rect(
     return QRectF(origin, QPointF(origin.x() + dx, origin.y() + dy)).normalized()
 
 
+_RDP_NUMPY_SPAN = 24
+"""A span with fewer interior points than this is measured in Python: below it NumPy's
+per-call cost outweighs the loop, and a long stroke's simplification is mostly short
+spans (Freehand remainder notes, Section 6)."""
+
+
 def simplify_rdp(points: list[QPointF], epsilon: float = 2.0) -> list[QPointF]:
     """Simplify a polyline using the Ramer-Douglas-Peucker algorithm.
 
     Iterative, so a stroke of thousands of points cannot exhaust the recursion limit.
+    Each span's distances are measured in one NumPy pass once the span is long enough
+    for that to pay, and in a plain loop below that, so a 5000-point stroke simplifies
+    in a few milliseconds (Basic Shape PRD 9.10; Freehand remainder decision 2).
 
     Parameters
     ----------
@@ -79,20 +88,50 @@ def simplify_rdp(points: list[QPointF], epsilon: float = 2.0) -> list[QPointF]:
     list[QPointF]
         The simplified polyline.
     """
-    if len(points) <= 2:
+    count = len(points)
+    if count <= 2:
         return list(points)
-    keep = [False] * len(points)
+    xs = np.fromiter((p.x() for p in points), dtype=float, count=count)
+    ys = np.fromiter((p.y() for p in points), dtype=float, count=count)
+    xl: list[float] = xs.tolist()
+    yl: list[float] = ys.tolist()
+    keep = [False] * count
     keep[0] = keep[-1] = True
-    stack = [(0, len(points) - 1)]
+    stack = [(0, count - 1)]
     while stack:
         first, last = stack.pop()
-        max_dist = 0.0
-        max_idx = first
-        for i in range(first + 1, last):
-            d = _perpendicular_distance(points[i], points[first], points[last])
-            if d > max_dist:
-                max_dist = d
-                max_idx = i
+        if last - first < 2:
+            continue
+        sx, sy = xl[first], yl[first]
+        dx = xl[last] - sx
+        dy = yl[last] - sy
+        length_sq = dx * dx + dy * dy
+        if last - first - 1 < _RDP_NUMPY_SPAN:
+            max_dist = 0.0
+            max_idx = first
+            for i in range(first + 1, last):
+                px, py = xl[i], yl[i]
+                if length_sq == 0:
+                    d = math.hypot(px - sx, py - sy)
+                else:
+                    t = ((px - sx) * dx + (py - sy) * dy) / length_sq
+                    t = 0.0 if t < 0.0 else (1.0 if t > 1.0 else t)
+                    d = math.hypot(px - (sx + t * dx), py - (sy + t * dy))
+                if d > max_dist:
+                    max_dist = d
+                    max_idx = i
+        else:
+            px_arr = xs[first + 1 : last]
+            py_arr = ys[first + 1 : last]
+            if length_sq == 0:
+                dist = np.hypot(px_arr - sx, py_arr - sy)
+            else:
+                t_arr = ((px_arr - sx) * dx + (py_arr - sy) * dy) / length_sq
+                np.clip(t_arr, 0.0, 1.0, out=t_arr)
+                dist = np.hypot(px_arr - (sx + t_arr * dx), py_arr - (sy + t_arr * dy))
+            at = int(np.argmax(dist))
+            max_dist = float(dist[at])
+            max_idx = first + 1 + at
         if max_dist > epsilon:
             keep[max_idx] = True
             stack.append((first, max_idx))
@@ -109,19 +148,28 @@ def _normalized(v: np.ndarray) -> np.ndarray:
     return v / length if length > 1e-12 else np.zeros(2)
 
 
+def _bernstein(u: np.ndarray) -> np.ndarray:
+    """The four cubic Bernstein polynomials at the parameters *u*, one row per parameter,
+    built once per piece and shared by the fit, the error, and the reparameterization.
+    The expressions are written as Schneider's fit always wrote them, so the values are
+    the ones the fit produced before the basis was shared."""
+    m = 1.0 - u
+    return np.stack([m**3, 3 * m * m * u, 3 * m * u * u, u**3], axis=1)
+
+
 def _bezier(bez: np.ndarray, u: np.ndarray) -> np.ndarray:
     """Points of the cubic *bez* (4 by 2) at the parameters *u*."""
-    m = 1.0 - u
-    b = np.stack([m**3, 3 * m * m * u, 3 * m * u * u, u**3], axis=1)
-    result: np.ndarray = b @ bez
+    result: np.ndarray = _bernstein(u) @ bez
     return result
 
 
-def _generate_bezier(pts: np.ndarray, u: np.ndarray, t1: np.ndarray, t2: np.ndarray) -> np.ndarray:
-    """The least-squares cubic through *pts* at *u* with end tangents *t1* and *t2*."""
+def _generate_bezier(
+    pts: np.ndarray, basis: np.ndarray, t1: np.ndarray, t2: np.ndarray
+) -> np.ndarray:
+    """The least-squares cubic through *pts* with the Bernstein rows *basis* and the end
+    tangents *t1* and *t2*."""
     first, last = pts[0], pts[-1]
-    m = 1.0 - u
-    b0, b1, b2, b3 = m**3, 3 * m * m * u, 3 * m * u * u, u**3
+    b0, b1, b2, b3 = basis[:, 0], basis[:, 1], basis[:, 2], basis[:, 3]
     a1 = np.outer(b1, t1)
     a2 = np.outer(b2, t2)
     c00 = float(np.sum(a1 * a1))
@@ -140,9 +188,9 @@ def _generate_bezier(pts: np.ndarray, u: np.ndarray, t1: np.ndarray, t2: np.ndar
     return np.array([first, first + t1 * alpha_l, last + t2 * alpha_r, last])
 
 
-def _reparameterize(pts: np.ndarray, u: np.ndarray, bez: np.ndarray) -> np.ndarray:
-    """One Newton-Raphson step toward each point's nearest parameter on *bez*."""
-    q = _bezier(bez, u)
+def _reparameterize(pts: np.ndarray, u: np.ndarray, bez: np.ndarray, q: np.ndarray) -> np.ndarray:
+    """One Newton-Raphson step toward each point's nearest parameter on *bez*, whose
+    points at *u* are already known as *q*."""
     d1 = 3.0 * (bez[1:] - bez[:-1])
     d2 = 2.0 * (d1[1:] - d1[:-1])
     m = 1.0 - u
@@ -185,19 +233,25 @@ def fit_cubic_beziers(points: list[QPointF], error: float) -> list[BezierSegment
             continue
         chords = np.concatenate([[0.0], np.cumsum(np.hypot(*np.diff(piece, axis=0).T))])
         u = chords / chords[-1] if chords[-1] > 0 else np.linspace(0.0, 1.0, len(piece))
-        bez = _generate_bezier(piece, u, t1, t2)
-        dist_sq = np.sum((_bezier(bez, u) - piece) ** 2, axis=1)
-        if float(dist_sq.max()) < error_sq:
+        basis = _bernstein(u)
+        bez = _generate_bezier(piece, basis, t1, t2)
+        q = basis @ bez
+        dist_sq = np.sum((q - piece) ** 2, axis=1)
+        worst = float(dist_sq.max())
+        if worst < error_sq:
             out.append(bez)
             continue
-        if float(dist_sq.max()) < error_sq * 4.0:
+        if worst < error_sq * 4.0:
             for _ in range(20):
-                u = _reparameterize(piece, u, bez)
-                bez = _generate_bezier(piece, u, t1, t2)
-                dist_sq = np.sum((_bezier(bez, u) - piece) ** 2, axis=1)
-                if float(dist_sq.max()) < error_sq:
+                u = _reparameterize(piece, u, bez, q)
+                basis = _bernstein(u)
+                bez = _generate_bezier(piece, basis, t1, t2)
+                q = basis @ bez
+                dist_sq = np.sum((q - piece) ** 2, axis=1)
+                worst = float(dist_sq.max())
+                if worst < error_sq:
                     break
-            if float(dist_sq.max()) < error_sq:
+            if worst < error_sq:
                 out.append(bez)
                 continue
         split = int(np.argmax(dist_sq[1:-1])) + 1
