@@ -1,6 +1,6 @@
 # The Shape Tools' Shared Drawing Behaviour — Implementation Notes
 
-Last Updated: 09-13-26 01:45 · Revision 1.12
+Last Updated: 09-13-26 09:47 · Revision 1.13
 
 Implements the open rows of the Basic Shape Annotation Tools PRD's Section 2, Shared Shape Behavior (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.12 at the start), and the per-tool Drawing hints that go with them, with the General UI PRD (version 2.25) and Technical Architecture PRD (version 1.37) rows they own, in the five phases and the close-out defined by `docs/Basic-Shape-Shared-Drawing-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2. Finishing this work leaves the Basic Shape Annotation Tools PRD's Section 2 with no open row.
 
@@ -332,7 +332,7 @@ Owed by other works and not this one's: a blur region in Solid Fill, worth re-ru
 - **The Zoom tool's Alt+click and the blur brush's Alt+paint eraser** have no second route on a desktop whose window manager takes Alt plus a mouse button. They belong to the Navigation and Raster Operations PRD and the Blur PRD.
 - **The Windows capture backend** (`docs/Windows-Backend-Kickoff-Prompt.md`) waits for a Windows machine, and the macOS backend is deferred with no Mac available.
 
-**Next required step:** Doug's display run of the eight checks in 12.3 — done 09-13-26 and recorded in Sections 8.1 and 8.2: every check passes on the display. The one problem of the first run, the Blur tool's rectangle in step 7.3, was the Blur tool's saved Opacity of 50 percent, not a fault. After it, the most valuable code work on this machine is the Freehand tool's rows of 12.2 — the brush-tip cursor and the two 9.10 performance rows — or the Stamp tool's timer fix, which is a one-commit follow-up; neither has a kickoff prompt yet, and one can be written on request.
+**Next required step:** Doug's display run of the eight checks in 12.3 — done 09-13-26 and recorded in Sections 8.1 and 8.2: every check passes on the display. The one problem of the first run, the Blur tool's rectangle in step 7.3, was the Blur tool's saved Opacity of 50 percent, not a fault. After it, the most valuable code work on this machine is the Freehand tool's rows of 12.2 — the brush-tip cursor and the two 9.10 performance rows — — now `docs/Freehand-Remainder-Kickoff-Prompt.md` (revision 1.0, starting state at commit 13d0054), written 09-13-26 with the three costs re-measured — or the Stamp tool's timer fix, done 09-13-26 (Section 12.4).
 
 ### 12.5 The Phase 5 full-suite run
 
@@ -342,6 +342,7 @@ Run alone from a scratch worktree between 16:48 and 18:22: **1604 passed, 1 fail
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.13 | 09-13-26 09:47 | Claude (Claude Code) | Section 12.4's next required step names the Freehand remainder kickoff, `docs/Freehand-Remainder-Kickoff-Prompt.md` (revision 1.0). |
 | 1.12 | 09-13-26 01:45 | Claude (Claude Code) | Section 12.4: the Stamp tool's timer is fixed, with its record in the marker tools notes' Section 9. |
 | 1.11 | 09-13-26 01:35 | Claude (Claude Code) | Section 8.2, the retest of step 7.3: 23 of 25 steps as described, the two problems explained by the Blur tool's saved Opacity of 50 percent and reproduced on Doug's own canvas, the More… popover ruled out, and every check of Section 12.3 passing. Basic Shape PRD 1.21. |
 | 1.10 | 09-13-26 00:49 | Claude (Claude Code) | Section 8.1, the display run of 09-13-26: 45 of 46 marked steps as described and every check of Section 12.3 passing but the Blur tool's half of check 7; the headless reproduction that creates the region through real mouse events, and the two unverified explanations waiting on Doug. Basic Shape PRD 1.20. |
