@@ -1,6 +1,6 @@
 # Numbered Steps, Stamps, and Emoji Implementation Notes
 
-Last Updated: 09-13-26 01:45 · Revision 1.7
+Last Updated: 09-13-26 03:19 · Revision 1.8
 
 Implements the SnapMock Numbered Steps, Stamps & Emoji product requirements document (version 1.3 at the start of the work, `PRDs/SnapMock-Numbered-Steps-Stamps-Emoji-PRD.html`) in the three phases defined by `docs/Numbered-Steps-Stamps-Emoji-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2 that this work extends.
 
@@ -123,10 +123,13 @@ Fixed on 09-13-26, after the shapes' shared drawing work traced the timing-sensi
 
 **Tests.** `tests/test_placement_hint_timers.py` (4): for each of the three tools, a marker placed and the window deleted within the hint's 2 seconds, then the timer's own callback run — which raised before the fix and now leaves the hint timer stopped; and a tool whose scene is deleted reporting no view. All four fail with the guard removed and pass with it. `tests/test_tools` with the new module, this work's editing module, and the shared drawing lifecycle module passed 143 tests, the Zoom tool's included.
 
+**The full suite at the fix commit** (`2bce34e`), run alone from a scratch worktree between 01:45 and 03:19: **1609 passed, 0 failed, 13 skipped, 1 deselected, in 1 hour 34 minutes**, with no `RuntimeError` anywhere in the log. It is the first full run with no failure since 09-11-26: the timing-sensitive Zoom tool test was this fault and nothing else.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.8 | 09-13-26 03:19 | Claude (Claude Code) | Section 9: the full suite at the fix commit, 1609 passed and none failed. |
 | 1.7 | 09-13-26 01:45 | Claude (Claude Code) | Section 9: the placement-hint timer that raised after its window was torn down, which was the timing-sensitive Zoom tool failure of the full suite; the guard in `BaseTool._view`, the probe showing the application never reaches it, and the regression tests. |
 | 1.6 | 09-12-26 09:58 | Claude (Claude Code) | Section 8: the display checks Doug ran on 09-12-26, quoted. All three this work owed pass — the badge shapes and label at three sizes, the recoloured and imported stamps, and the emoji picker's skin tone, with the emoji rendering in colour. |
 | 1.5 | 09-11-26 13:05 | Claude (Claude Code) | Section 6: the shadow-for-three-items and the three-opacity-controls deviations closed by the Vector Item Properties work. |
