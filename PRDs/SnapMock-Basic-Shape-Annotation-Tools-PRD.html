@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Basic Shape Annotation Tools</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.22</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.23</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Line · Arrow · Rectangle · Ellipse · Arc · Polygon · Freehand / Pen</dd>
-    <dt>Document version</dt><dd>1.22</dd>
-    <dt>Last Updated</dt>    <dd>09-13-26 10:30</dd>
+    <dt>Document version</dt><dd>1.23</dd>
+    <dt>Last Updated</dt>    <dd>09-13-26 10:42</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.23</td>
+        <td class="nowrap">09-13-26 10:42</td>
+        <td>Doug Bower</td>
+        <td>Freehand remainder Phase 2 built: 9.1's dot-variant crosshair while idle and 9.2's brush-tip circle from the press to the release, following the bar and the zoom.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.22</td>
         <td class="nowrap">09-13-26 10:30</td>
@@ -226,6 +233,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-13-26 10:42</td>
+        <td>9.1, 9.2</td>
+        <td>Built</td>
+        <td>Freehand remainder Phase 2 built (09-13-26; notes in <code>docs/Freehand-Remainder-Implementation.md</code>, Section 5), as decision 1 (option A) put it. 9.1's "Crosshair, small dot variant" is the tool's idle cursor: the gapped crosshair with a black dot on a white halo at its centre, the hotspot on the dot. 9.2's brush tip is the cursor from the press to the release: a filled circle <code>stroke_width</code> times the view's zoom across, in <code>stroke_color</code> at <code>stroke_opacity</code>, with a black outline over a white halo ring so a light colour on a light screenshot still reads, never under 4 px and never over 128 px, the hotspot at the centre. The tip follows the Tool Options Bar's width, colour, and opacity while the stroke is drawn and follows the zoom, which Ctrl+wheel can change during a drag; the crosshair returns on release, on cancel, on Escape, and on a tool switch. A press refused on a locked or hidden layer leaves the crosshair, since the refusal comes first. Silences decided: the crosshair's arms stop 4 px short of the centre so the dot sits clear of them; a bar or zoom change refreshes the cursor only while a stroke is drawn. Met by tests on the offscreen platform; the display checks owed are the tip at a thin and a thick stroke, in two colours, at 100 and 400 percent zoom, and the dot crosshair between strokes. 9.2's pressure data stays null.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-13-26 10:30</td>
         <td>9.1, 9.2, 9.3, 9.10, 12</td>

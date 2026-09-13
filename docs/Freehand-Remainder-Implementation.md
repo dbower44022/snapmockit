@@ -1,6 +1,6 @@
 # The Freehand Tool's Remaining Rows — Implementation Notes
 
-Last Updated: 09-13-26 10:30 · Revision 1.0
+Last Updated: 09-13-26 10:42 · Revision 1.1
 
 Implements the last open rows of the Basic Shape Annotation Tools PRD (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.21 at the start), all of them Section 9's, the Freehand / Pen tool: 9.2's brush-tip cursor and 9.10's two performance rows, with the Section 12 Freehand row they own and the General UI PRD (version 2.32) and Technical Architecture PRD (version 1.42) rows, in the four phases and the close-out defined by `docs/Freehand-Remainder-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2. Finishing this work leaves the Basic Shape Annotation Tools PRD with no open row except what the document itself reserves.
 
@@ -11,7 +11,7 @@ Starting state, verified at commit d88f041 on 09-13-26 (the kickoff names 13d005
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
 | 1 | The decisions and the measurements: these notes, the three probes re-measured, the PRD rows the decisions imply | Done | this commit |
-| 2 | The brush-tip cursor (9.1, 9.2; General UI PRD 6.6) | Not started | |
+| 2 | The brush-tip cursor (9.1, 9.2; General UI PRD 6.6) | Done | 6d6a789, then this close-out commit |
 | 3 | The fit within 50 ms (9.3, 9.10) | Not started | |
 | 4 | The long-stroke preview (9.10) | Not started | |
 | Close-out | PRD rows, the notes complete with the measurements before and after, the pointers in the Basic Shape remainder notes (Section 10), the shared drawing notes (Section 12.2), and the General UI notes (Section 26), the display checks owed, what remains of the Basic Shape PRD | Not started | |
@@ -78,8 +78,30 @@ The decisions of Section 2 are taken and the measurements of Section 3 are recor
 
 **Next required step:** Phase 2, the brush-tip cursor (9.1, 9.2; General UI PRD 6.6), per decision 1: a dot-variant crosshair and a brush-tip disc in `ui/cursors.py`, the disc set through the view's hover cursor at the press and cleared where the preview ends, refreshed on a change of stroke width, colour, or opacity and on `zoom_changed`. Tests: the disc's pixmap size following the stroke width and the zoom, its fill following the stroke colour and opacity, the 4 px minimum and the 128 px ceiling, the cursor changing when the width or the colour changes on the bar and when the zoom changes mid-drag, the crosshair back on release, cancel, and a tool switch, and a locked layer leaving the cursor alone.
 
+## 5. What Phase 2 built
+
+Step 1, 6d6a789. `dot_crosshair_cursor` and `brush_tip_cursor` in `ui/cursors.py`, drawn beside the brush and marker-tip cursors because no glyph matches: the first is the gapped crosshair every drawn crosshair in the module uses with a black dot on a white halo at its centre, 24 px with the hotspot on the dot; the second is a filled circle of the given diameter in the given colour, with a black outline over a 3 px white halo ring, the diameter clamped to 4 px and `BRUSH_CURSOR_MAX`, the hotspot at the centre, cached by size and colour. `FreehandTool.cursor` returns the dot crosshair while no stroke is drawn and the brush tip from the press to the release, at `stroke_width` times the view's zoom, in `stroke_color` at `stroke_opacity` through the same `with_alpha` the pen uses, so the tip and the stroke are one colour. `_refresh_cursor` puts the cursor on the viewport through `SnapView.set_hover_cursor` at the press, when the preview ends (`_end_preview`, which a release, a cancel, Escape, and a tool switch all reach), when the bar changes the width, colour, or opacity (`on_option_changed`), and when the view's zoom changes (`zoom_changed`, connected in `activate` and disconnected in `deactivate`). A locked or hidden layer refuses the press before the cursor changes, so the crosshair stays.
+
+Silences found while building, decided as the code says:
+
+- The dot crosshair's arms stop 4 px short of the centre where the other drawn crosshairs stop 3 px short, so the dot sits clear of the arms.
+- A bar change or a zoom change refreshes the cursor only while a stroke is drawn; at idle the crosshair does not depend on either, and a refresh would only repeat it.
+- The tool's `cursor` is now a `QCursor` in both states, where it was the `Qt.CursorShape` crosshair; the view sets whatever it is given, and nothing else read the shape.
+- At a high zoom the tip reaches the 128 px ceiling early: a 10 px stroke at 1600 percent is 160 screen pixels and draws at 128, as the Blur brush does.
+
+### 5.1 Tests
+
+`tests/test_freehand_cursor.py` (7): the idle cursor's pixmap, hotspot, dot, arm, gap, and cache, and the tool returning it; the brush tip's size and hotspot following the diameter, its fill following the colour and the alpha, the cache keyed by both, the 4 px minimum, the 128 px ceiling, the outline, and the halo; the viewport showing the tip from the press to the release at the stroke's width and colour and the crosshair after; the tip following the zoom mid-drag through the view's own `set_zoom`, to the ceiling at 3200 percent; the bar's width, colour, and opacity changes reaching the tip while the stroke is drawn; a cancel and a tool switch putting the crosshair back, with the zoom connection following a re-activation; and a locked layer leaving the crosshair alone with the press refused. Targeted runs at 6d6a789: the cursor, pipeline, modifier, and blur brush modules, 57 passed; the lifecycle, post-creation, feedback, tooltip, Freehand point-edit, and accessibility modules, 158 passed; `tests/test_tools` with the options bar, presets, and status bar modules, 117 passed. Ruff and mypy are clean.
+
+### 5.2 Phase 2 close-out
+
+9.1's cursor row and 9.2's brush-tip step are built. Basic Shape PRD 1.23, General UI PRD 2.34 (6.6), and Technical Architecture PRD 1.44 (3.3) carry the rows. The display checks this phase owes: the brush tip at a thin and a thick stroke, in two colours, at 100 and 400 percent zoom, and the dot crosshair between strokes.
+
+**Next required step:** Phase 3, the fit within 50 ms (9.3, 9.10), per decision 2's rule: profile first, then `simplify_rdp` vectorised with NumPy over each span, then the fit's per-piece work, measured at 5000 smooth and 5000 jittery points at 0, 50, and 100 percent; the 0 percent noise floor only if the jittery case is still over 50 ms, with the strokes on which the result differs named in the row. Tests: the fit's cost under a loose ceiling with the measured figure in these notes, and the fitted segments before and after the change agreeing on the strokes the existing tests use.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.1 | 09-13-26 10:42 | Claude (Claude Code) | Phase 2 done: Section 5 with the two cursors, the four silences found while building, 5.1's tests and targeted runs, and 5.2's close-out; the phase-table row done. Basic Shape PRD 1.23, General UI PRD 2.34, Technical Architecture PRD 1.44. |
 | 1.0 | 09-13-26 10:30 | Claude (Claude Code) | Initial notes: the starting state at commit d88f041, the phase table, the three decisions (1 A, 2 the A-then-B rule, 3 B) and the kickoff's seven silences as chosen 09-13-26, five corrections to the kickoff found in the reading, four findings decided with the decisions, the three probes re-measured with the script described, the next required step. Basic Shape PRD 1.22, General UI PRD 2.33, Technical Architecture PRD 1.43. |

@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.43</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.44</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.43</dd>
-    <dt>Last Updated</dt>    <dd>09-13-26 10:30</dd>
+    <dt>Document version</dt><dd>1.44</dd>
+    <dt>Last Updated</dt>    <dd>09-13-26 10:42</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.44</td>
+        <td class="nowrap">09-13-26 10:42</td>
+        <td>Doug Bower</td>
+        <td>Freehand remainder Phase 2 built: Section 3.3's Freehand cursor changing during its own operation through the view's hover-cursor route, and the first tool listening to zoom_changed.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.43</td>
         <td class="nowrap">09-13-26 10:30</td>
@@ -427,6 +434,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-13-26 10:42</td>
+        <td>3.3</td>
+        <td>Built</td>
+        <td>Freehand remainder Phase 2 built (09-13-26; notes in <code>docs/Freehand-Remainder-Implementation.md</code>, Section 5; Basic Shape PRD 1.23). Section 3.3's "tool-specific cursors" now has a tool whose cursor changes during its own operation without a tool switch: <code>FreehandTool.cursor</code> returns a drawn crosshair while idle and a drawn brush tip from the press to the release, put on the viewport through <code>SnapView.set_hover_cursor</code>, the route the Blur tool's brush and the Select tool's hover cursors already use, so the view's own <code>_apply_tool_cursor</code> is unchanged. The tool connects to the view's <code>zoom_changed</code> signal in <code>activate</code> and disconnects in <code>deactivate</code>, the first tool to listen to it; the signal already existed for the status bar and the toolbar. The <code>BaseTool</code> interface is unchanged.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-13-26 10:30</td>
         <td>3.3, 3.9, 8</td>
