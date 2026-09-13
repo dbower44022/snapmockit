@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Basic Shape Annotation Tools</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.21</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.22</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Line · Arrow · Rectangle · Ellipse · Arc · Polygon · Freehand / Pen</dd>
-    <dt>Document version</dt><dd>1.21</dd>
-    <dt>Last Updated</dt>    <dd>09-13-26 01:35</dd>
+    <dt>Document version</dt><dd>1.22</dd>
+    <dt>Last Updated</dt>    <dd>09-13-26 10:30</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.22</td>
+        <td class="nowrap">09-13-26 10:30</td>
+        <td>Doug Bower</td>
+        <td>Freehand remainder implementation started: the decisions recorded against 9.1 and 9.2 (the two cursors), 9.3 and 9.10 (the fit's rule and the long-stroke preview), and Section 12's Freehand row.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.21</td>
         <td class="nowrap">09-13-26 01:35</td>
@@ -219,6 +226,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-13-26 10:30</td>
+        <td>9.1, 9.2, 9.3, 9.10, 12</td>
+        <td>Decision</td>
+        <td>Freehand remainder implementation started 09-13-26 (notes in <code>docs/Freehand-Remainder-Implementation.md</code>; kickoff <code>docs/Freehand-Remainder-Kickoff-Prompt.md</code>, revision 1.0). The three decisions, taken with the consequential decision template. <strong>Decision 1, the cursor (9.1, 9.2), option A:</strong> the tool's two cursor rows as written. Idle, 9.1's "Crosshair, small dot variant", a crosshair with a small centre dot, drawn with the white halo every drawn cursor carries. From the press to the release, 9.2's filled circle: the stroke width times the view's zoom across, in the stroke colour at the stroke opacity, over a white halo ring with a black outline, never under 4 px and never over 128 px, since a cursor cannot grow without end; the crosshair back on release, on cancel, on Escape, and on a tool switch; the circle following a change of stroke width, colour, or opacity and a change of zoom, which Ctrl+wheel can make during a drag. A locked or hidden layer does not change the cursor: the press guard's message says what is wrong, and the General UI PRD's forbidden cursor names a locked item. The alternative, the circle shown whenever the tool is active as the Blur brush is, would have departed from 9.1 and from General UI PRD 6.6 at once. <strong>Decision 2, the fit (9.3, 9.10), the rule A then B:</strong> the pipeline is first made faster with its result unchanged, the Ramer-Douglas-Peucker stage vectorised with NumPy over each span and the fit's per-piece work trimmed, and is measured; only if 5000 jittery points at 0 percent still miss 50 ms does the 0 percent fit gain a noise floor, the fitting error never below the stroke's own median point-to-point deviation, so that 9.3's "nearly raw path" is tens of segments rather than one per point. If the floor is built, a stroke drawn at 0 percent before this document's 1.22 re-fits to different segments when re-smoothed and never on load, and the row will name the strokes on which the result differs; the 0.5 px floor of the 1.11 row is otherwise kept. Measured at the start on this machine on a 2800 px sine-wave stroke: 85 to 100 ms at 5000 smooth points at every smoothing, 93 ms at 5000 jittery points at 50 percent, and 1899 ms at 0 percent with 1388 segments. <strong>Decision 3, the long-stroke preview (9.10), option B:</strong> the beginning of a very long stroke stays on screen while it is drawn. 9.10's rule, the most recent 500 points only past 2000, is met in its purpose and departed from in its letter: the preview is kept in pieces of 500 points, each move repaints only the new segment's own patch rather than the whole stroke, and only the pieces that touch the patch are stroked, joined as one path so the 70 percent preview of 2.4 shows no seam; on release the full path is painted as today. The 2000-point threshold and the 500-point piece are the values used. A scroll during the drag or a stroke growing past its bounds repaints the whole stroke once; a stroke scribbled over one spot keeps every piece near the pointer and gains little, and the notes carry both measurements. Measured at the start: the preview's paint costs 4.4 ms at 500 points, 7.8 ms at 2000, and 20 ms at 5000, over the 16.7 ms a frame allows from about 4000 points on this machine. Section 12's Freehand row on 60 frames a second and the 50 ms fit is what Phases 3 and 4 close. 9.2's pressure data stays null, reserved by this document. 9.10's "raw point capture must not drop events" is met by the existing event route and is not changed. Nothing is built by this row.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-13-26 01:35</td>
         <td>2.5, 12</td>

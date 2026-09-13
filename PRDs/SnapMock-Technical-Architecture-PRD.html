@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.42</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.43</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.42</dd>
-    <dt>Last Updated</dt>    <dd>09-12-26 15:59</dd>
+    <dt>Document version</dt><dd>1.43</dd>
+    <dt>Last Updated</dt>    <dd>09-13-26 10:30</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.43</td>
+        <td class="nowrap">09-13-26 10:30</td>
+        <td>Doug Bower</td>
+        <td>Freehand remainder implementation started: Section 8's item-creation row named as the one the Freehand's release misses, the decisions recorded against 3.3 and 3.9; no new module.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.42</td>
         <td class="nowrap">09-12-26 15:59</td>
@@ -420,6 +427,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-13-26 10:30</td>
+        <td>3.3, 3.9, 8</td>
+        <td>Decision</td>
+        <td>Freehand remainder implementation started 09-13-26 (notes in <code>docs/Freehand-Remainder-Implementation.md</code>; Basic Shape PRD 1.22, General UI PRD 2.33). Section 8's "Item creation (single annotation) &lt; 50ms from mouse release to rendered" is the row the Freehand tool's release misses today: measured at the start on this machine, the simplification and fitting of a 5000-point stroke take 85 to 100 ms at every smoothing on a smooth stroke and 1899 ms at 0 percent on a jittery one, and the Basic Shape PRD's 9.10 asks for 50 ms at 5000 points. Decision 2 of that work makes the pipeline faster with its result unchanged first, the Ramer-Douglas-Peucker simplification in <code>core/path_utils.py</code> vectorised with NumPy, and adds a noise floor at 0 percent only if that leaves the jittery case over budget; Section 8 gains no new metric, since the row already names this one, and the measurements are the notes' Section 3. Section 3.3: the Freehand tool's <code>cursor</code> returns a drawn cursor from the press to the release and the crosshair otherwise, set through the view's hover-cursor route the Blur tool already uses, and refreshed on the view's <code>zoom_changed</code> signal, which no tool listened to before. Section 3.9: while a stroke over 2000 points is drawn, <code>FreehandItem</code> repaints only the patch its newest segment covers and strokes only the 500-point pieces that touch it, instead of the whole path on every move (decision 3). Section 10 gains no module; the work lands in <code>items/freehand_item.py</code>, <code>core/path_utils.py</code>, <code>tools/freehand_tool.py</code>, and <code>ui/cursors.py</code>, all of which Section 10 lists. Nothing is built by this row.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-12-26 15:59</td>
         <td>3.3</td>
