@@ -1,6 +1,6 @@
 # Freeform Blur Brush and Highlighter Straightening Implementation Notes
 
-Last Updated: 09-14-26 01:08 · Revision 1.5
+Last Updated: 09-14-26 02:46 · Revision 1.6
 
 Implements the remainder of the Blur / Pixelate tool and the whole of the Highlighter's drawing behaviour from the Blur, Highlighter, and Eyedropper Tools PRD (`PRDs/SnapMock-Blur-Highlighter-Eyedropper-Tools-PRD.html`, version 1.6 at the start), with the General UI PRD (version 2.20) and Technical Architecture PRD (version 1.32) rows they own, in the five phases and the close-out defined by `docs/Freeform-Blur-Highlighter-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2.
 
@@ -175,12 +175,13 @@ The first run's difficulty finding the Blur tool's Mode and Shape controls was n
 
 ## 11. The brush cursor and the zoom
 
-Found by the Freehand remainder work on 09-13-26 and fixed on 09-14-26 (Blur PRD 1.18): the brush cursor of Phase 2 and the brush-editing cursor of Phase 3 are drawn in screen pixels at the brush's size times the zoom, but neither tool listened to the view's `zoom_changed` signal, so a zoom left the circle at its old size until the tool was activated again or its bar changed. The Blur tool now connects to the signal in `activate` and disconnects in `deactivate`, re-drawing the cursor while the region shape is Freeform; the Select tool does the same while a brush-editing session lasts. The pattern is the Freehand tool's (`docs/Freehand-Remainder-Implementation.md`, Section 5). Two tests in `tests/test_blur_brush.py` and `tests/test_blur_brush_edit.py`.
+Found by the Freehand remainder work on 09-13-26 and fixed on 09-14-26 (Blur PRD 1.18): the brush cursor of Phase 2 and the brush-editing cursor of Phase 3 are drawn in screen pixels at the brush's size times the zoom, but neither tool listened to the view's `zoom_changed` signal, so a zoom left the circle at its old size until the tool was activated again or its bar changed. The Blur tool now connects to the signal in `activate` and disconnects in `deactivate`, re-drawing the cursor while the region shape is Freeform; the Select tool does the same while a brush-editing session lasts. The pattern is the Freehand tool's (`docs/Freehand-Remainder-Implementation.md`, Section 5). Two tests in `tests/test_blur_brush.py` and `tests/test_blur_brush_edit.py`. The full suite at the fix's commit (cee0740), run alone from a scratch worktree between 01:08 and 02:45 on 09-14-26: **1634 passed, 0 failed, 13 skipped, 1 deselected, in 1 hour 37 minutes.**
 
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.6 | 09-14-26 02:46 | Claude (Claude Code) | Section 11: the full suite at the fix's commit, 1634 passed, whole. |
 | 1.5 | 09-14-26 01:08 | Claude (Claude Code) | Section 11: the brush and brush-editing cursors follow the zoom. Blur PRD 1.18. |
 | 1.4 | 09-12-26 10:35 | Claude (Claude Code) | Section 10: the second display run of 09-12-26. Every check this work owed now passes — the painted region, Whole Layer, all three source modes, and the freeform highlight's handles joining the marker-tip cursor and the straightened highlight. The erased region is confirmed blocked by Cinnamon's Alt gesture rather than failing, and the Tool Options Bar difficulty is confirmed to have been a layout question, not a missing control |
 | 1.3 | 09-12-26 00:23 | Claude (Claude Code) | Section 10: the kickoff this close-out named is complete, and what it changed here — 2.10 now closes at every radius by a cheaper blur, so the measured figures of Section 9.1 are superseded, and the background thread and progress indicator become a permanent departure; the display checks stay owed, with three of that work's added. |
