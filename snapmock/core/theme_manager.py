@@ -298,7 +298,11 @@ class ThemeManager(QObject):
         app = QApplication.instance()
         if isinstance(app, QApplication):
             app.setPalette(self._build_palette())
-            app.setStyleSheet(self._current.style_sheet)
+            # Setting the application style sheet makes Qt re-polish every live widget
+            # in the process, which costs seconds once many exist; a second window, or a
+            # re-apply of the same theme, leaves the sheet alone (found 09-14-26).
+            if app.styleSheet() != self._current.style_sheet:
+                app.setStyleSheet(self._current.style_sheet)
             self._apply_font()
         self.theme_changed.emit(name)
 

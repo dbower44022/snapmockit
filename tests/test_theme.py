@@ -254,3 +254,30 @@ class TestIcons:
 
         assert plain_label("&Save") == "Save"
         assert plain_label("Fish && Chips") == "Fish & Chips"
+
+
+def test_reapplying_the_same_theme_leaves_the_style_sheet_alone(
+    qapp: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Setting the application style sheet re-polishes every live widget, so a second
+    window or a repeated apply of the same theme must not set it again (09-14-26)."""
+    from PyQt6.QtWidgets import QApplication
+
+    calls: list[str] = []
+    original = QApplication.setStyleSheet
+
+    def counting(self: QApplication, sheet: str) -> None:
+        calls.append(sheet)
+        original(self, sheet)
+
+    monkeypatch.setattr(QApplication, "setStyleSheet", counting)
+    manager = theme_manager()
+    manager.set_mode(ThemeMode.DARK)
+    manager.apply()
+    manager.set_mode(ThemeMode.LIGHT)  # a change of theme sets the sheet
+    after_change = len(calls)
+    manager.apply()
+    manager.apply()
+    assert len(calls) == after_change  # the same sheet again, not set again
+    manager.set_mode(ThemeMode.DARK)
+    assert len(calls) == after_change + 1  # a different theme is set once
