@@ -1,6 +1,6 @@
 # General UI Implementation Notes
 
-Last Updated: 09-14-26 09:50 · Revision 1.43
+Last Updated: 09-14-26 11:57 · Revision 1.44
 
 Implements the SnapMock General User Interface PRD (version 2.4, `PRDs/SnapMock-General-UI-PRD.html`) in the eight phases defined by `docs/General-UI-Implementation-Kickoff-Prompt.md`. A session pasting that prompt starts at the first phase not marked done in Section 1.
 
@@ -710,10 +710,15 @@ The Section 17.2 table gains no walk: no item gains a property. No module is add
 
 Raised by Doug's display run of 09-14-26 (`docs/Freeform-Blur-Highlighter-Implementation.md`, Section 12): after Ctrl+Shift+N, "Layer 1 remained active". Section 7.4 and the Layer menu say only that the new layer goes above the active one. Doug chose activation on 09-14-26: `AddLayerCommand` makes the layer it adds the active one and its undo restores the earlier active layer where it still exists, on every route that pushes the command. General UI PRD 2.36; `tests/test_layer_commands.py`. The Section 17.2 table gains no walk.
 
+The rule reached one existing test: the Layer menu module's pinning test duplicated the Background layer after New Layer Below on it, and under the rule the new layer was the active one, so the duplicate was the wrong layer; the test now sets the active layer back first. Its failure also exposed a gap in that module's window fixture, which never marked the document clean at close, so the failed test hung the run on the unsaved-changes prompt; the fixture now has the bypass the shared fixture has.
+
+The full suite at the commit (3636f52), run from a scratch worktree between 10:14 and 11:55 while targeted runs and measurements shared the machine: **1635 passed, 1 failed, 13 skipped, 1 deselected, in 1 hour 42 minutes**, the longest run yet. The failure, `tests/test_capture/test_main_window.py::test_command_line_capture_as_first_action`, is a 3 second wait for the capture manager's completed signal that timed out; it passes alone and with its module (18 passed in 34 seconds), and nothing in it reads a layer. Read as the load, and the suite is run again at the same commit with nothing else on the machine; recorded below when it lands.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.44 | 09-14-26 11:57 | Claude (Claude Code) | Section 27: the pinning test and the fixture gap the rule reached, and the full suite at 3636f52, 1635 passed with one capture timeout that passes alone; the rerun pending. |
 | 1.43 | 09-14-26 09:50 | Claude (Claude Code) | Section 27: a new layer becomes the active layer, decided 09-14-26. General UI PRD 2.36. |
 | 1.42 | 09-13-26 14:36 | Claude (Claude Code) | Section 26, the Freehand tool's remaining rows: the cursor row 6.6 gains, the zoom_changed listener, and the Blur brush cursor's zoom gap. General UI PRD 2.33 and 2.34. |
 | 1.41 | 09-12-26 16:01 | Claude (Claude Code) | Section 25, the shape tools' shared drawing behaviour: what moves in Sections 1.3, 9, and 12.2, and the switch to the Select tool that is gone. General UI PRD 2.26, 2.27, 2.28, and 2.32. |
