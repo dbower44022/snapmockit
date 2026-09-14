@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.37</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.38</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.37</dd>
-    <dt>Last Updated</dt>    <dd>09-14-26 14:38</dd>
+    <dt>Document version</dt><dd>2.38</dd>
+    <dt>Last Updated</dt>    <dd>09-14-26 15:00</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.38</td>
+        <td class="nowrap">09-14-26 15:00</td>
+        <td>Doug Bower</td>
+        <td>The theme manager sets the application style sheet only when it changes: a main window built in 6 to 13 seconds under the re-polish of every live widget, and now builds in a fraction of a second.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.37</td>
         <td class="nowrap">09-14-26 14:38</td>
@@ -416,6 +423,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-14-26 15:00</td>
+        <td>13, 2</td>
+        <td>Fixed</td>
+        <td><strong>Fixed</strong> (09-14-26): the theme manager no longer sets the application style sheet when the sheet in force is already the resolved theme's. Qt answers <code>QApplication.setStyleSheet</code> by re-polishing every live widget in the process, and every new main window applied the theme on construction, so a second window, or any re-apply of the same theme, paid for every widget that existed: in the test suite, where earlier tests' widgets accumulate, a main window took 6 to 7 seconds to build and up to 13 by the end of a run, which is what timed out a capture test's 3 second wait after the 2.36 row's New Layer activation added a few panel refreshes to the load. A window now builds in a fraction of a second, in the application as in the suite. Section 13's live theme switch is unchanged: a different theme still sets the sheet, once. Found by profiling the window's construction; one test in <code>tests/test_theme.py</code>.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-14-26 14:38</td>
         <td>2.4, 3, 11.6</td>

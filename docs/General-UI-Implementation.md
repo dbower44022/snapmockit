@@ -1,6 +1,6 @@
 # General UI Implementation Notes
 
-Last Updated: 09-14-26 11:57 · Revision 1.44
+Last Updated: 09-14-26 15:00 · Revision 1.45
 
 Implements the SnapMock General User Interface PRD (version 2.4, `PRDs/SnapMock-General-UI-PRD.html`) in the eight phases defined by `docs/General-UI-Implementation-Kickoff-Prompt.md`. A session pasting that prompt starts at the first phase not marked done in Section 1.
 
@@ -712,12 +712,13 @@ Raised by Doug's display run of 09-14-26 (`docs/Freeform-Blur-Highlighter-Implem
 
 The rule reached one existing test: the Layer menu module's pinning test duplicated the Background layer after New Layer Below on it, and under the rule the new layer was the active one, so the duplicate was the wrong layer; the test now sets the active layer back first. Its failure also exposed a gap in that module's window fixture, which never marked the document clean at close, so the failed test hung the run on the unsaved-changes prompt; the fixture now has the bypass the shared fixture has.
 
-The full suite at the commit (3636f52), run from a scratch worktree between 10:14 and 11:55 while targeted runs and measurements shared the machine: **1635 passed, 1 failed, 13 skipped, 1 deselected, in 1 hour 42 minutes**, the longest run yet. The failure, `tests/test_capture/test_main_window.py::test_command_line_capture_as_first_action`, is a 3 second wait for the capture manager's completed signal that timed out; it passes alone and with its module (18 passed in 34 seconds), and nothing in it reads a layer. Read as the load, and the suite is run again at the same commit with nothing else on the machine; recorded below when it lands.
+The full suite at the commit (3636f52), run from a scratch worktree between 10:14 and 11:55 while targeted runs and measurements shared the machine: **1635 passed, 1 failed, 13 skipped, 1 deselected, in 1 hour 42 minutes**, the longest run yet. The failure, `tests/test_capture/test_main_window.py::test_command_line_capture_as_first_action`, is a 3 second wait for the capture manager's completed signal that timed out; it passes alone and with its module (18 passed in 34 seconds), and nothing in it reads a layer. The rerun at the same commit with the machine to itself failed the same test, so it was not the load. Found by running the suite's files up to the capture module at this commit and at the one before, then with the test's wait raised and the capture path stamped, and finally with every main window's construction profiled: the capture path itself takes 0.12 seconds; the time was in `MainWindow.__init__`, 9 of 9.3 seconds inside `QApplication.setStyleSheet`, which the theme manager called on every window's construction and which Qt answers by re-polishing every live widget in the process. Earlier tests' widgets accumulate, so a window cost 6 to 7 seconds before this change and up to 13 by the capture module after it, the activation's panel refreshes having added to the load; the 3 second wait then expired. The theme manager now sets the sheet only when it differs from the one in force (86a4dbc; General UI PRD 2.38), and a window builds in a fraction of a second: the five modules that build the most windows ran in 30 seconds where they had taken minutes. The full suite at that commit is recorded below when it lands.
 
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.45 | 09-14-26 15:00 | Claude (Claude Code) | Section 27: the capture timeout traced to the theme manager re-applying the application style sheet on every window, and fixed (86a4dbc); the suite pending. General UI PRD 2.38. |
 | 1.44 | 09-14-26 11:57 | Claude (Claude Code) | Section 27: the pinning test and the fixture gap the rule reached, and the full suite at 3636f52, 1635 passed with one capture timeout that passes alone; the rerun pending. |
 | 1.43 | 09-14-26 09:50 | Claude (Claude Code) | Section 27: a new layer becomes the active layer, decided 09-14-26. General UI PRD 2.36. |
 | 1.42 | 09-13-26 14:36 | Claude (Claude Code) | Section 26, the Freehand tool's remaining rows: the cursor row 6.6 gains, the zoom_changed listener, and the Blur brush cursor's zoom gap. General UI PRD 2.33 and 2.34. |
