@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Basic Shape Annotation Tools</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.27</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.28</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Line · Arrow · Rectangle · Ellipse · Arc · Polygon · Freehand / Pen</dd>
-    <dt>Document version</dt><dd>1.27</dd>
-    <dt>Last Updated</dt>    <dd>09-13-26 23:07</dd>
+    <dt>Document version</dt><dd>1.28</dd>
+    <dt>Last Updated</dt>    <dd>09-13-26 23:28</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.28</td>
+        <td class="nowrap">09-13-26 23:28</td>
+        <td>Doug Bower</td>
+        <td>Retest of 09-13-26: the shaky circle at 50 and 100 percent passes under 9.3's three stages; every display check of the Freehand remainder work passes.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.27</td>
         <td class="nowrap">09-13-26 23:07</td>
@@ -261,6 +268,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-13-26 23:28</td>
+        <td>9.3, 12</td>
+        <td>Verified</td>
+        <td>Retest by Doug between 23:24 and 23:27 on 09-13-26, from a section added to the same checklist page (notes Section 8.10), against the 1.27 pipeline: seven marked steps, seven as described, no note left. The shaky circle drawn over 15 seconds is clearly smoother at 50 percent, the same size and in the same place; at 100 percent a clean circle with no wobble; and a small circle drawn quickly at 100 percent is a smooth circle a little smaller than drawn, the cost the 1.27 row names. The two problems of the 1.26 row's run are closed. <strong>Every display check the Freehand remainder work owed now passes on the real display:</strong> the two cursors of 9.1 and 9.2, the long stroke of 9.10 staying whole, the release inside its budget at every smoothing, and the Smoothing slider of 9.3 removing a hand's shake at its top while keeping the shape. No row of this document is open but the pressure data of 9.2 and 9.4 and the Open Issues of Section 14.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-13-26 23:07</td>
         <td>9.3, 12</td>

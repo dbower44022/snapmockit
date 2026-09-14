@@ -1,6 +1,6 @@
 # The Freehand Tool's Remaining Rows — Implementation Notes
 
-Last Updated: 09-13-26 23:07 · Revision 1.7
+Last Updated: 09-13-26 23:28 · Revision 1.8
 
 Implements the last open rows of the Basic Shape Annotation Tools PRD (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.21 at the start), all of them Section 9's, the Freehand / Pen tool: 9.2's brush-tip cursor and 9.10's two performance rows, with the Section 12 Freehand row they own and the General UI PRD (version 2.32) and Technical Architecture PRD (version 1.42) rows, in the four phases and the close-out defined by `docs/Freehand-Remainder-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2. Finishing this work leaves the Basic Shape Annotation Tools PRD with no open row except what the document itself reserves.
 
@@ -15,7 +15,7 @@ Starting state, verified at commit d88f041 on 09-13-26 (the kickoff names 13d005
 | 3 | The fit within 50 ms (9.3, 9.10) | Done | 483e387, 54e62da, then this close-out commit |
 | 4 | The long-stroke preview (9.10) | Done | dca9a9c, then this close-out commit |
 | Close-out | PRD rows, the notes complete with the measurements before and after, the pointers in the Basic Shape remainder notes (Section 10), the shared drawing notes (Section 12.2), and the General UI notes (Section 26), the display checks owed, what remains of the Basic Shape PRD | Done | 30090c9, 26272a6 |
-| After the display run | The runaway-handle guard (8.6); decision 4, the Smoothing slider reshaped (2.6, 8.9) | Done but for the suite run and the retest | d4cec30, 16977ea, then this commit |
+| After the display run | The runaway-handle guard (8.6); decision 4, the Smoothing slider reshaped (2.6, 8.9) | Done but for the suite run | d4cec30, 16977ea, 70099ff, then this commit |
 
 ## 2. Decisions
 
@@ -280,16 +280,19 @@ The release at 5000 points, the Section 3 strokes: smooth 22 to 24 ms, jittery 2
 
 Tests: `tests/test_freehand_pipeline.py` asserts the three stages' own guarantees at 50 percent (every averaged point within half a pixel of the kept polyline, every kept point within the error of the curve, the ends kept) in place of the old raw-to-curve bound; `tests/test_freehand_fit.py` gains the top of the slider turning the 8 px tremor circle into a circle of four segments and the size the hand drew, with the tremor kept at 0 percent and mostly gone at 50, and the averaging stage keeping a quick 50 px circle within 3 px of radius at 50 percent and 6 px at 100 and every stroke's ends; the panel's re-smooth test starts at 20 percent so 95 percent has segments to take away. Targeted run at 16977ea over the ten Freehand, point-edit, preview, modifier, cursor, resize, straightening, bar, and preset modules: 117 passed. Ruff and mypy are clean.
 
-### 8.10 The suite after decision 4
+### 8.10 The retest of 09-13-26 and the suite after decision 4
 
-Started at the close-out commit of decision 4; recorded here when it lands, with Doug's retest of the 50 and 100 percent circles.
+**The retest.** Run by Doug between 23:24 and 23:27 from section 6 of the same checklist page, against the working tree at 70099ff: **eight steps, seven marked, seven as described, no problem and no note.** The unmarked step is the relaunch, whose next step depended on it and passed. The shaky circle at 50 percent came out clearly smoother than drawn, the same size and place; at 100 percent a clean circle with no wobble; and a small circle drawn quickly at 100 percent a smooth circle a little smaller than drawn, the cost decision 4 named. Section 5's two problems are closed, and with them every check of Section 8.2 passes on the display. Basic Shape PRD 1.28.
 
-**Next required step:** Doug's retest of the shaky circle at 50 and 100 percent from the checklist page's section 6, and the suite of 8.10 recorded. After that, the Blur brush cursor's zoom gap is a one-line change in its own PRD's terms; nothing else in the Basic Shape Annotation Tools PRD is left to build.
+**The suite** at 70099ff, decision 4's close-out commit, started at 23:07 from a scratch worktree; recorded here when it lands.
+
+**Next required step:** the suite of 8.10 recorded when it lands. After that, the Blur brush cursor's zoom gap is a one-line change in its own PRD's terms; nothing else in the Basic Shape Annotation Tools PRD is left to build.
 
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.8 | 09-13-26 23:28 | Claude (Claude Code) | Section 8.10: the retest of 09-13-26, seven of seven marked steps as described, closing section 5's two problems and every display check of 8.2. Basic Shape PRD 1.28. |
 | 1.7 | 09-13-26 23:07 | Claude (Claude Code) | Section 2.6, decision 4 in its two parts (B, then M over P and S); Section 8.9, the three stages built with the silences, the measurements, and the tests; 8.10, the suite pending; the phase table's post-run row. Basic Shape PRD 1.27, General UI PRD 2.35, Technical Architecture PRD 1.47. |
 | 1.6 | 09-13-26 22:32 | Claude (Claude Code) | Section 8.8: the full suite at the guard commit, 1631 passed, whole. |
 | 1.5 | 09-13-26 20:56 | Claude (Claude Code) | Section 8.5, the display run of 09-13-26: 33 of 35 marked steps as described, checks 1 and 2 passing whole and check 3's timing at every level; 8.6, the fit's runaway handles found by the run's shaky circle and fixed (d4cec30); 8.7, what the Smoothing slider can remove under 9.3's numbers, measured, and the question raised; 8.8, the suite pending. Basic Shape PRD 1.26. |
