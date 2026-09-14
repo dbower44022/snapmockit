@@ -229,6 +229,26 @@ def test_the_brush_cursor_shows_the_brush_size(qtbot: QtBot, scene: SnapScene) -
     assert brush_cursor(30).pixmap().width() == 36
 
 
+def test_the_brush_cursor_follows_the_zoom(qtbot: QtBot, scene: SnapScene) -> None:
+    """The circle is drawn in screen pixels, so a zoom re-draws it at the new size on the
+    viewport without a tool switch or a bar change (found by the Freehand remainder work)."""
+    reset_cursor_cache()
+    view = _view(qtbot, scene)
+    tool = BlurTool()
+    tool.creation_defaults["region_shape"] = BlurRegionShape.FREEFORM
+    tool.creation_defaults["brush_size"] = 20.0
+    tool.activate(scene, SelectionManager(scene))
+    viewport = view.viewport()
+    assert viewport is not None
+    assert viewport.cursor().pixmap().width() == 26
+    view.set_zoom(400)
+    assert viewport.cursor().pixmap().width() == 86
+    view.set_zoom(50)
+    assert viewport.cursor().pixmap().width() == 16
+    tool.deactivate()
+    view.set_zoom(200)  # disconnected: nothing raises and the cursor is not the tool's
+
+
 def test_the_bar_shows_brush_size_only_for_a_freeform_region(main_window: object) -> None:
     tm = main_window.tool_manager  # type: ignore[attr-defined]
     tm.activate("blur")

@@ -1,6 +1,6 @@
 # Freeform Blur Brush and Highlighter Straightening Implementation Notes
 
-Last Updated: 09-12-26 10:35 · Revision 1.4
+Last Updated: 09-14-26 01:08 · Revision 1.5
 
 Implements the remainder of the Blur / Pixelate tool and the whole of the Highlighter's drawing behaviour from the Blur, Highlighter, and Eyedropper Tools PRD (`PRDs/SnapMock-Blur-Highlighter-Eyedropper-Tools-PRD.html`, version 1.6 at the start), with the General UI PRD (version 2.20) and Technical Architecture PRD (version 1.32) rows they own, in the five phases and the close-out defined by `docs/Freeform-Blur-Highlighter-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2.
 
@@ -173,10 +173,15 @@ The first run's difficulty finding the Blur tool's Mode and Shape controls was n
 
 **Next required step:** done. The kickoff this close-out named, `docs/Eyedropper-Blur-Performance-Kickoff-Prompt.md` (revision 1.0), ran on 09-11-26 and 09-12-26 and is complete; its notes are `docs/Eyedropper-Blur-Performance-Implementation.md`. Two things it changed reach back into this work. **2.10 closes at every radius** (its Section 4): the blur itself is cheaper — float32 over all four colour channels in one array, and a direct sum of shifted slices while the box is one or two pixels wide — so a 1000 by 1000 px Gaussian region renders in 55 ms at radius 1 against the 154 ms recorded in Section 9.1 here, and in 11 to 42 ms from radius 4 up against the 34 to 50 ms here. The half-scale capture of decision 4 stays and gains from the same arithmetic. The background thread and the progress indicator past 2000 px are now recorded as a permanent departure rather than a deferral, since the render is fast enough on the main thread at the size 2.10 names and a progress indicator cannot repaint during a synchronous render. Every measured figure in Section 9.1 is therefore superseded by that work's Section 4. **The display checks above are still owed**, and that work adds three of its own: the loupe at each sample size, the loupe near a viewport edge, and the Eyedropper's bar at a narrow window.
 
+## 11. The brush cursor and the zoom
+
+Found by the Freehand remainder work on 09-13-26 and fixed on 09-14-26 (Blur PRD 1.18): the brush cursor of Phase 2 and the brush-editing cursor of Phase 3 are drawn in screen pixels at the brush's size times the zoom, but neither tool listened to the view's `zoom_changed` signal, so a zoom left the circle at its old size until the tool was activated again or its bar changed. The Blur tool now connects to the signal in `activate` and disconnects in `deactivate`, re-drawing the cursor while the region shape is Freeform; the Select tool does the same while a brush-editing session lasts. The pattern is the Freehand tool's (`docs/Freehand-Remainder-Implementation.md`, Section 5). Two tests in `tests/test_blur_brush.py` and `tests/test_blur_brush_edit.py`.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.5 | 09-14-26 01:08 | Claude (Claude Code) | Section 11: the brush and brush-editing cursors follow the zoom. Blur PRD 1.18. |
 | 1.4 | 09-12-26 10:35 | Claude (Claude Code) | Section 10: the second display run of 09-12-26. Every check this work owed now passes — the painted region, Whole Layer, all three source modes, and the freeform highlight's handles joining the marker-tip cursor and the straightened highlight. The erased region is confirmed blocked by Cinnamon's Alt gesture rather than failing, and the Tool Options Bar difficulty is confirmed to have been a layout question, not a missing control |
 | 1.3 | 09-12-26 00:23 | Claude (Claude Code) | Section 10: the kickoff this close-out named is complete, and what it changed here — 2.10 now closes at every radius by a cheaper blur, so the measured figures of Section 9.1 are superseded, and the background thread and progress indicator become a permanent departure; the display checks stay owed, with three of that work's added. |
 | 1.2 | 09-11-26 22:41 | Claude (Claude Code) | The next required step names the kickoff written at Doug's request: `docs/Eyedropper-Blur-Performance-Kickoff-Prompt.md` (revision 1.0). |

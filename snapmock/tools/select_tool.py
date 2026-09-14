@@ -77,6 +77,8 @@ class SelectTool(BaseTool):
         # Brush-editing mode of a freeform blur region (Blur PRD 2.8; freeform blur
         # silence 3): the Select tool's second mode, never live while the first is
         self._brush_session: BlurBrushSession | None = None
+        # The view whose zoom_changed the brush cursor follows while the tool is active
+        self._zoom_view: Any = None
 
     @property
     def tool_id(self) -> str:
@@ -114,6 +116,16 @@ class SelectTool(BaseTool):
         self._update_handles()
         if selection_manager is not None:
             selection_manager.selection_changed.connect(self._on_selection_changed)
+        view = self._view
+        if view is not None:
+            # The brush-editing cursor is drawn in screen pixels, so it follows the zoom
+            # (General UI PRD 6.6; found by the Freehand remainder work, 09-13-26)
+            view.zoom_changed.connect(self._on_zoom_changed)
+            self._zoom_view = view
+
+    def _on_zoom_changed(self, _percent: int) -> None:
+        if self._brush_session is not None:
+            self._refresh_cursor()
 
     def apply_theme(self) -> None:
         """Recolour the transform handles after a theme switch (General UI PRD 13.4)."""
@@ -125,6 +137,12 @@ class SelectTool(BaseTool):
         view = self._view
         if view is not None:
             view.set_hover_cursor(None)
+        if self._zoom_view is not None:
+            try:
+                self._zoom_view.zoom_changed.disconnect(self._on_zoom_changed)
+            except (TypeError, RuntimeError):
+                pass  # the view is gone, or was never connected
+            self._zoom_view = None
         if self._selection_manager is not None:
             try:
                 self._selection_manager.selection_changed.disconnect(self._on_selection_changed)

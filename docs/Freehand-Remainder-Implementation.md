@@ -1,6 +1,6 @@
 # The Freehand Tool's Remaining Rows — Implementation Notes
 
-Last Updated: 09-14-26 00:44 · Revision 1.9
+Last Updated: 09-14-26 01:08 · Revision 1.10
 
 Implements the last open rows of the Basic Shape Annotation Tools PRD (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.21 at the start), all of them Section 9's, the Freehand / Pen tool: 9.2's brush-tip cursor and 9.10's two performance rows, with the Section 12 Freehand row they own and the General UI PRD (version 2.32) and Technical Architecture PRD (version 1.42) rows, in the four phases and the close-out defined by `docs/Freehand-Remainder-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2. Finishing this work leaves the Basic Shape Annotation Tools PRD with no open row except what the document itself reserves.
 
@@ -213,7 +213,7 @@ Owed by other works and not this one's: a blur region in Solid Fill, whose Fill 
 
 ### 8.3 What remains elsewhere
 
-- **The Blur tool's brush cursor does not follow the zoom** (Section 2.3): it belongs to the Blur, Highlighter, and Eyedropper Tools PRD, and the Freehand's `zoom_changed` connection is the pattern for it.
+- **The Blur tool's brush cursor did not follow the zoom** (Section 2.3): fixed on 09-14-26 in both the Blur tool and the Select tool's brush editing, on this work's `zoom_changed` pattern; Blur PRD 1.18, Freeform Blur notes Section 11.
 - **The Zoom tool's Alt+click and the blur brush's Alt+paint eraser** have no second route on a desktop whose window manager takes Alt plus a mouse button; the Navigation and Raster Operations PRD and the Blur PRD.
 - **The Windows capture backend** (`docs/Windows-Backend-Kickoff-Prompt.md`) waits for a Windows machine, and the macOS backend is deferred with no Mac available.
 
@@ -286,12 +286,13 @@ Tests: `tests/test_freehand_pipeline.py` asserts the three stages' own guarantee
 
 **The suite** at 70099ff, decision 4's close-out commit, run alone from a scratch worktree between 23:07 and 00:43: **1633 passed, 0 failed, 13 skipped, 1 deselected, in 1 hour 36 minutes.** The two tests more than the run at 108ed39 are decision 4's own. Five whole passes in a row on this work's commits: c1ee66c, e6d3701, 30090c9, 108ed39, and 70099ff.
 
-**Next required step:** none of this work's. The Blur brush cursor's zoom gap (Section 8.3) is a one-line change in its own PRD's terms; nothing in the Basic Shape Annotation Tools PRD is left to build. After that, the Blur brush cursor's zoom gap is a one-line change in its own PRD's terms; nothing else in the Basic Shape Annotation Tools PRD is left to build.
+**Next required step:** none of this work's; the Blur brush cursor's zoom gap of Section 8.3 is fixed. Nothing in the Basic Shape Annotation Tools PRD is left to build. After that, the Blur brush cursor's zoom gap is a one-line change in its own PRD's terms; nothing else in the Basic Shape Annotation Tools PRD is left to build.
 
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.10 | 09-14-26 01:08 | Claude (Claude Code) | Section 8.3: the Blur brush cursor's zoom gap fixed (Blur PRD 1.18); the next required step is none. |
 | 1.9 | 09-14-26 00:44 | Claude (Claude Code) | Section 8.10: the full suite at the decision 4 commit, 1633 passed, whole; the phase table's last row done; the next required step is none of this work's. |
 | 1.8 | 09-13-26 23:28 | Claude (Claude Code) | Section 8.10: the retest of 09-13-26, seven of seven marked steps as described, closing section 5's two problems and every display check of 8.2. Basic Shape PRD 1.28. |
 | 1.7 | 09-13-26 23:07 | Claude (Claude Code) | Section 2.6, decision 4 in its two parts (B, then M over P and S); Section 8.9, the three stages built with the silences, the measurements, and the tests; 8.10, the suite pending; the phase table's post-run row. Basic Shape PRD 1.27, General UI PRD 2.35, Technical Architecture PRD 1.47. |

@@ -93,6 +93,8 @@ class BlurTool(BaseTool):
         self._straight_bounds = QRectF()
         self._last_point: QPointF | None = None
         self._stroke_start: QPointF | None = None
+        # The view whose zoom_changed the brush cursor follows while the tool is active
+        self._zoom_view: Any = None
         self._groups: dict[str, list[QAction]] = {}
         self._syncing = False
         self._creation_defaults = {
@@ -532,13 +534,29 @@ class BlurTool(BaseTool):
 
     def activate(self, scene: SnapScene, selection_manager: SelectionManager) -> None:
         super().activate(scene, selection_manager)
+        view = self._view
+        if view is not None:
+            # The brush cursor is drawn in screen pixels, so it follows the zoom
+            # (General UI PRD 6.6; found by the Freehand remainder work, 09-13-26)
+            view.zoom_changed.connect(self._on_zoom_changed)
+            self._zoom_view = view
         self._refresh_cursor()
 
     def deactivate(self) -> None:
         """A tool switch finalizes the painted region (2.3)."""
         if self._paint_mask is not None:
             self.finish_freeform()
+        if self._zoom_view is not None:
+            try:
+                self._zoom_view.zoom_changed.disconnect(self._on_zoom_changed)
+            except (TypeError, RuntimeError):
+                pass  # the view is gone, or was never connected
+            self._zoom_view = None
         super().deactivate()
+
+    def _on_zoom_changed(self, _percent: int) -> None:
+        if self.freeform:
+            self._refresh_cursor()
 
     # ------------------------------------------------------------ drawing (2.3)
 

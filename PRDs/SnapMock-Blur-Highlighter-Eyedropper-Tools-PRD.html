@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Blur, Highlighter &amp; Eyedropper Tools</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.17</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.18</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Blur / Pixelate · Highlighter · Eyedropper</dd>
-    <dt>Document version</dt><dd>1.17</dd>
-    <dt>Last Updated</dt>    <dd>09-12-26 15:59</dd>
+    <dt>Document version</dt><dd>1.18</dd>
+    <dt>Last Updated</dt>    <dd>09-14-26 01:08</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.18</td>
+        <td class="nowrap">09-14-26 01:08</td>
+        <td>Doug Bower</td>
+        <td>The brush cursor of 2.6 and the brush-editing cursor of 2.8 follow the zoom, through the view's zoom_changed signal, as the Freehand's brush tip does.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.17</td>
         <td class="nowrap">09-12-26 15:59</td>
@@ -178,6 +185,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-14-26 01:08</td>
+        <td>2.6, 2.8</td>
+        <td>Fixed</td>
+        <td><strong>Fixed:</strong> the brush cursor of 2.6 and the brush-editing cursor of 2.8 now follow the zoom. Both are drawn in screen pixels at the brush's size times the view's zoom, but neither tool listened to the view's <code>zoom_changed</code> signal, so after a Ctrl+wheel or a zoom preset the circle kept its old size until the tool was activated again or its bar changed; found in the reading for the Freehand remainder work (09-13-26; <code>docs/Freehand-Remainder-Implementation.md</code>, Section 2.3), whose own brush-tip cursor set the pattern. The Blur tool connects to the signal in <code>activate</code> and disconnects in <code>deactivate</code>, re-drawing the cursor while the region shape is Freeform; the Select tool does the same while a brush-editing session lasts, and leaves every other hover cursor alone. General UI PRD 6.6's rows for the two cursors are unchanged in wording. Met by tests: the Blur brush at 20 px reading 26, 86, and 16 px on the viewport at 100, 400, and 50 percent, and the brush-editing cursor at 48 px doubling at 200 percent and back.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-12-26 15:59</td>
         <td>2.3, 2.4, 3</td>

@@ -230,6 +230,14 @@ def test_the_brush_cursor_and_the_panel_row_share_one_brush(main_window: object)
     cursor = select.cursor
     assert not isinstance(cursor, Qt.CursorShape)
     assert cursor.pixmap().width() == 48 + 6
+    # The brush-editing cursor follows the zoom on the viewport too
+    view = main_window.view  # type: ignore[attr-defined]
+    viewport = view.viewport()
+    assert viewport is not None
+    view.set_zoom(200)
+    assert viewport.cursor().pixmap().width() == 96 + 6
+    view.set_zoom(100)
+    assert viewport.cursor().pixmap().width() == 48 + 6
 
     panel = window._property_panel  # type: ignore[attr-defined]  # noqa: SLF001
     window.selection_manager.select(item)  # type: ignore[attr-defined]
