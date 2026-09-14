@@ -142,6 +142,11 @@ def simplify_rdp(points: list[QPointF], epsilon: float = 2.0) -> list[QPointF]:
 BezierSegment = tuple[QPointF, QPointF, QPointF, QPointF]
 """One cubic Bezier segment: start, first control point, second control point, end."""
 
+MAX_HANDLE_CHORDS = 2.0
+"""A fitted piece's control handles are never longer than this many times its chord: a
+half circle needs two thirds of a chord, and anything past two chords is the least-squares
+solve running away on a zigzag (Freehand remainder notes, Section 8.6)."""
+
 
 def _normalized(v: np.ndarray) -> np.ndarray:
     length = float(np.hypot(v[0], v[1]))
@@ -183,7 +188,13 @@ def _generate_bezier(
     alpha_l = (x0 * c11 - x1 * c01) / det if abs(det) > 1e-12 else 0.0
     alpha_r = (c00 * x1 - c01 * x0) / det if abs(det) > 1e-12 else 0.0
     epsilon = 1e-6 * seg_length
-    if alpha_l < epsilon or alpha_r < epsilon:
+    # Schneider's fallback for a degenerate solve, and the runaway guard of 09-13-26: a
+    # piece whose points zigzag (a shaky hand through a wide simplification) can solve
+    # to handles thousands of pixels long that still pass every point at its own
+    # parameter, and the curve loops across the canvas between them. Such a piece takes
+    # the chord-third heuristic and is split by the error test like any other miss.
+    runaway = seg_length > 0.0 and max(alpha_l, alpha_r) > MAX_HANDLE_CHORDS * seg_length
+    if alpha_l < epsilon or alpha_r < epsilon or runaway:
         alpha_l = alpha_r = seg_length / 3.0
     return np.array([first, first + t1 * alpha_l, last + t2 * alpha_r, last])
 

@@ -14,7 +14,13 @@ import numpy as np
 from PyQt6.QtCore import QPointF
 from PyQt6.QtWidgets import QApplication
 
-from snapmock.core.path_utils import BezierSegment, fit_cubic_beziers, simplify_rdp, stroke_noise
+from snapmock.core.path_utils import (
+    MAX_HANDLE_CHORDS,
+    BezierSegment,
+    fit_cubic_beziers,
+    simplify_rdp,
+    stroke_noise,
+)
 from snapmock.items.freehand_item import (
     MIN_FIT_ERROR_PX,
     NOISE_FLOOR_FACTOR,
@@ -123,7 +129,7 @@ def _ref_bezier(bez: np.ndarray, u: np.ndarray) -> np.ndarray:
 
 
 def _ref_generate_bezier(
-    pts: np.ndarray, u: np.ndarray, t1: np.ndarray, t2: np.ndarray
+    pts: np.ndarray, u: np.ndarray, t1: np.ndarray, t2: np.ndarray, guard: bool
 ) -> np.ndarray:
     first, last = pts[0], pts[-1]
     m = 1.0 - u
@@ -141,7 +147,10 @@ def _ref_generate_bezier(
     alpha_l = (x0 * c11 - x1 * c01) / det if abs(det) > 1e-12 else 0.0
     alpha_r = (c00 * x1 - c01 * x0) / det if abs(det) > 1e-12 else 0.0
     epsilon = 1e-6 * seg_length
-    if alpha_l < epsilon or alpha_r < epsilon:
+    # `guard` is the runaway-handle guard added on 09-13-26 (notes Section 8.6), so the
+    # agreement tests isolate the speed change and the stray test shows the old fit
+    runaway = guard and seg_length > 0.0 and max(alpha_l, alpha_r) > MAX_HANDLE_CHORDS * seg_length
+    if alpha_l < epsilon or alpha_r < epsilon or runaway:
         alpha_l = alpha_r = seg_length / 3.0
     return np.array([first, first + t1 * alpha_l, last + t2 * alpha_r, last])
 
@@ -163,7 +172,9 @@ def _ref_reparameterize(pts: np.ndarray, u: np.ndarray, bez: np.ndarray) -> np.n
     return result
 
 
-def _ref_fit_cubic_beziers(points: list[QPointF], error: float) -> list[BezierSegment]:
+def _ref_fit_cubic_beziers(
+    points: list[QPointF], error: float, guard: bool = True
+) -> list[BezierSegment]:
     pts = np.array([[p.x(), p.y()] for p in points], dtype=float).reshape(-1, 2)
     if len(pts) > 1:
         moved = np.ones(len(pts), dtype=bool)
@@ -188,7 +199,7 @@ def _ref_fit_cubic_beziers(points: list[QPointF], error: float) -> list[BezierSe
             continue
         chords = np.concatenate([[0.0], np.cumsum(np.hypot(*np.diff(piece, axis=0).T))])
         u = chords / chords[-1] if chords[-1] > 0 else np.linspace(0.0, 1.0, len(piece))
-        bez = _ref_generate_bezier(piece, u, t1, t2)
+        bez = _ref_generate_bezier(piece, u, t1, t2, guard)
         dist_sq = np.sum((_ref_bezier(bez, u) - piece) ** 2, axis=1)
         if float(dist_sq.max()) < error_sq:
             out.append(bez)
@@ -196,7 +207,7 @@ def _ref_fit_cubic_beziers(points: list[QPointF], error: float) -> list[BezierSe
         if float(dist_sq.max()) < error_sq * 4.0:
             for _ in range(20):
                 u = _ref_reparameterize(piece, u, bez)
-                bez = _ref_generate_bezier(piece, u, t1, t2)
+                bez = _ref_generate_bezier(piece, u, t1, t2, guard)
                 dist_sq = np.sum((_ref_bezier(bez, u) - piece) ** 2, axis=1)
                 if float(dist_sq.max()) < error_sq:
                     break
@@ -292,6 +303,63 @@ def test_the_fit_of_5000_jittery_points_is_inside_the_budget_at_every_smoothing(
         for smoothing in (0.0, 0.5, 1.0):
             ms = min(_fit_ms(stroke, smoothing) for _ in range(2))
             assert ms < FIT_CEILING_MS, f"{ms:.1f} ms at {smoothing:.0%} smoothing"
+
+
+def _shaky_circle(tremor_px: float = 8.0) -> list[QPointF]:
+    """A circle of radius 200 drawn over 15 seconds at 100 Hz with a hand tremor of
+    *tremor_px* at 6 Hz, rounded to whole pixels: the display run's shaky circle."""
+    rnd = random.Random(2)
+    phase = rnd.uniform(0, 6.28)
+    points = []
+    for i in range(1500):
+        t = 15.0 * i / 1499
+        a = 2 * math.pi * i / 1499
+        r = 200.0 + tremor_px * math.sin(2 * math.pi * 6.0 * t + phase) + rnd.uniform(-1, 1)
+        points.append(QPointF(round(300 + r * math.cos(a)), round(300 + r * math.sin(a))))
+    return points
+
+
+def _farthest_from_points(segments: list[BezierSegment], points: list[QPointF]) -> float:
+    """How far any part of the fitted curve strays from the nearest raw point."""
+    raw = np.array([[p.x(), p.y()] for p in points])
+    u = np.linspace(0.0, 1.0, 40)[:, None]
+    worst = 0.0
+    for a, b, c, d in segments:
+        ctrl = np.array([[q.x(), q.y()] for q in (a, b, c, d)])
+        curve = (
+            (1 - u) ** 3 * ctrl[0]
+            + 3 * (1 - u) ** 2 * u * ctrl[1]
+            + 3 * (1 - u) * u**2 * ctrl[2]
+            + u**3 * ctrl[3]
+        )
+        dist = np.sqrt(((curve[:, None, :] - raw[None, :, :]) ** 2).sum(-1)).min(1).max()
+        worst = max(worst, float(dist))
+    return worst
+
+
+def test_the_fit_no_longer_runs_away_on_a_shaky_circle(qapp: QApplication) -> None:
+    """Found on the display run of 09-13-26 (notes Section 8.5): at 50 percent a shaky
+    circle's fit had a piece whose handles solved to about 2000 px, so the curve looped
+    480 px across the canvas between two points 20 px apart."""
+    points = _shaky_circle()
+    simplified = simplify_rdp(points, 2.5)
+    old = _ref_fit_cubic_beziers(simplified, 1.5, guard=False)
+    assert _farthest_from_points(old, points) > 100.0  # the stray the run saw
+    new = fit_cubic_beziers(simplified, 1.5)
+    # Within what the two stages allow: 2.5 px of simplification plus 1.5 px of fit,
+    # and the curve's own bulge between points; measured 6.2 px
+    assert _farthest_from_points(new, points) < 8.0
+    for a, b, c, d in new:
+        chord = math.hypot(d.x() - a.x(), d.y() - a.y())
+        left = math.hypot(b.x() - a.x(), b.y() - a.y())
+        right = math.hypot(c.x() - d.x(), c.y() - d.y())
+        assert chord == 0.0 or max(left, right) <= MAX_HANDLE_CHORDS * chord + 1e-6
+    for smoothing, reach in ((0.0, 8.0), (1.0, 12.0)):
+        item = FreehandItem()
+        for p in points:
+            item.add_point(p)
+        item.smooth(smoothing)
+        assert _farthest_from_points(item.bezier_segments, points) < reach
 
 
 # ---------------------------------------------------------------- the noise floor
