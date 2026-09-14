@@ -1,6 +1,6 @@
 # Release Engineering Notes
 
-Last Updated: 09-14-26 17:04 · Revision 1.0
+Last Updated: 09-14-26 17:12 · Revision 1.1
 
 The work that turns the finished application into a product: its identity, continuous integration, packaging, and the first release. Every feature row of the nine product requirements documents was built or recorded as a departure by 09-14-26 (`docs/Freehand-Remainder-Implementation.md`, Section 8.1, names the last of them); this document holds what follows, in the order Doug set on 09-14-26: the identity, then continuous integration, then packaging, then an end-to-end pass on real work, then the two platform backends when their machines exist.
 
@@ -8,7 +8,7 @@ The work that turns the finished application into a product: its identity, conti
 
 | Step | Scope | Status | Commits |
 |---|---|---|---|
-| 1 | The identity: the name, the repository, the licence, the version's one source, the README | Done but for the repository's rename on GitHub, which is Doug's | faf8e1b |
+| 1 | The identity: the name, the repository, the licence, the version's one source, the README | Done | faf8e1b, then this commit |
 | 2 | Continuous integration: lint, format, types, the suite on the offscreen platform, and the wheel and sdist, on every push | Written; its first run waits for a push | this commit |
 | 3 | Packaging: the Linux AppImage first (Technical Architecture PRD Section 9), then Flatpak, PyPI, the Windows MSI or portable ZIP, and the macOS bundle | Not started | |
 | 4 | An end-to-end pass on real work, on the first AppImage | Not started | |
@@ -16,7 +16,7 @@ The work that turns the finished application into a product: its identity, conti
 
 ## 2. The identity (09-14-26)
 
-Doug confirmed four of the five facts as the code held them and changed one: **the product is named Snapmockit**, so its domain can be registered. `APP_NAME` carries the name and everything a user reads takes it from there; the distribution name is `snapmockit`; the import package stays `snapmock`, so every module path and `python -m snapmock` are unchanged; the version has one source, `snapmock/__init__.py`, which `pyproject.toml` reads through hatchling's dynamic version; the settings and the library keep their on-disk names (`~/.config/SnapMock`, `~/SnapMock/Library`) until a release carries a migration, so a user's settings and library are found; the licence is MIT as it was; the README is written. Technical Architecture PRD 1.48, General UI PRD 2.37. The organisation domain constant reads `snapmockit.com`, an assumption until Doug names the registered domain. The repository stays `dbower44022/Snagit_FOSS` in the code until Doug renames it on GitHub; the address, the project file's links, the remote, and the README then follow in one commit, and Check for Updates, which queries that address, must see the rename before any release.
+Doug confirmed four of the five facts as the code held them and changed one: **the product is named Snapmockit**, so its domain can be registered. `APP_NAME` carries the name and everything a user reads takes it from there; the distribution name is `snapmockit`; the import package stays `snapmock`, so every module path and `python -m snapmock` are unchanged; the version has one source, `snapmock/__init__.py`, which `pyproject.toml` reads through hatchling's dynamic version; the settings and the library keep their on-disk names (`~/.config/SnapMock`, `~/SnapMock/Library`) until a release carries a migration, so a user's settings and library are found; the licence is MIT as it was; the README is written. Technical Architecture PRD 1.48, General UI PRD 2.37. The organisation domain constant reads `snapmockit.com`, an assumption until Doug names the registered domain. Doug renamed the repository to `dbower44022/snapmockit` on 09-14-26 at 17:10 (GitHub redirects the old name); the code's address, the project file's links, the remote, the README, and the nine product requirements documents' headers followed in one commit, so Check for Updates queries the final address from its first release.
 
 ## 3. Continuous integration (09-14-26)
 
@@ -26,4 +26,5 @@ Doug confirmed four of the five facts as the code held them and changed one: **t
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.1 | 09-14-26 17:12 | Claude (Claude Code) | Step 1 done: the repository renamed to dbower44022/snapmockit and every address changed. |
 | 1.0 | 09-14-26 17:04 | Claude (Claude Code) | Initial notes: the five steps and their status, the identity decisions of 09-14-26, and the continuous integration workflow as written. Technical Architecture PRD 1.49. |

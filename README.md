@@ -9,8 +9,8 @@ Status: the application is complete against its nine product requirements docume
 Requirements: Python 3.12 or later and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-git clone https://github.com/dbower44022/Snagit_FOSS.git
-cd Snagit_FOSS
+git clone https://github.com/dbower44022/snapmockit.git
+cd snapmockit
 uv sync
 uv run python -m snapmock
 ```
@@ -34,7 +34,7 @@ The product requirements documents under `PRDs/` are the single source of truth 
 
 ## Reporting a problem
 
-Open an issue at https://github.com/dbower44022/Snagit_FOSS/issues. Help > About > Copy Version Info in the application puts the version, the build date, and the platform on the clipboard for the report.
+Open an issue at https://github.com/dbower44022/snapmockit/issues. Help > About > Copy Version Info in the application puts the version, the build date, and the platform on the clipboard for the report.
 
 ## Licence
 

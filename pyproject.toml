@@ -16,8 +16,8 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/dbower44022/Snagit_FOSS"
-Issues = "https://github.com/dbower44022/Snagit_FOSS/issues"
+Repository = "https://github.com/dbower44022/snapmockit"
+Issues = "https://github.com/dbower44022/snapmockit/issues"
 
 [dependency-groups]
 dev = [

@@ -20,7 +20,7 @@ earlier name so existing settings are found, until a release carries a migration
 STORAGE_APP_NAME = "SnapMock"
 """The application name QSettings stores under, kept for the same reason."""
 ORG_DOMAIN = "snapmockit.com"
-REPOSITORY_URL = "https://github.com/dbower44022/Snagit_FOSS"
+REPOSITORY_URL = "https://github.com/dbower44022/snapmockit"
 DOCUMENTATION_URL = f"{REPOSITORY_URL}#readme"
 ISSUES_URL = f"{REPOSITORY_URL}/issues"
 
