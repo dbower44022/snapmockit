@@ -1,5 +1,6 @@
 """Shared pytest fixtures."""
 
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
@@ -63,6 +64,29 @@ def fake_capture_backends(monkeypatch: pytest.MonkeyPatch) -> None:
         return CaptureManager(FakeCaptureBackend(), FakeHotkeyBackend(), settings)
 
     monkeypatch.setattr(main_window_module, "create_capture_manager", _create)
+
+
+@pytest.fixture(autouse=True)
+def _delete_closed_windows(qapp: QApplication) -> Iterator[None]:
+    """Delete every closed top-level widget after each test.
+
+    pytest-qt closes the widgets a test registers but never deletes them, so they
+    accumulate for the whole run, and every later change of the application style
+    sheet, which Qt answers by re-polishing every live widget, grows with them: a
+    theme switch cost 30 to 116 seconds on the CI runner by the end of a run
+    (docs/Release-Engineering.md, Section 3). This fixture is set up before the
+    test's own fixtures and torn down after them, so it runs once qtbot has closed
+    the test's widgets, and deletes whatever is closed.
+    """
+    yield
+    from PyQt6 import sip
+    from PyQt6.QtCore import QEvent
+
+    for widget in QApplication.topLevelWidgets():
+        if not sip.isdeleted(widget) and not widget.isVisible():
+            widget.deleteLater()
+    QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete.value)
+    QApplication.processEvents()
 
 
 @pytest.fixture()
