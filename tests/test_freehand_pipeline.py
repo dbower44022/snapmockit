@@ -12,7 +12,7 @@ from pytestqt.qtbot import QtBot
 
 from snapmock.commands.add_item import AddItemCommand
 from snapmock.config.constants import StrokeCap
-from snapmock.core.path_utils import fit_cubic_beziers
+from snapmock.core.path_utils import fit_cubic_beziers, simplify_rdp
 from snapmock.core.scene import SnapScene
 from snapmock.core.selection_manager import SelectionManager
 from snapmock.items.freehand_item import FreehandItem
@@ -54,6 +54,22 @@ def _circle(radius: float = 50.0, count: int = 90) -> list[QPointF]:
     ]
 
 
+def _to_polyline(point: QPointF, polyline: list[QPointF]) -> float:
+    """The distance from *point* to the nearest segment of *polyline*."""
+    best = math.inf
+    for a, b in zip(polyline, polyline[1:]):
+        dx, dy = b.x() - a.x(), b.y() - a.y()
+        length_sq = dx * dx + dy * dy
+        t = (
+            0.0
+            if length_sq == 0
+            else ((point.x() - a.x()) * dx + (point.y() - a.y()) * dy) / length_sq
+        )
+        t = min(1.0, max(0.0, t))
+        best = min(best, math.hypot(point.x() - (a.x() + t * dx), point.y() - (a.y() + t * dy)))
+    return best
+
+
 def _render(item: FreehandItem) -> QImage:
     image = QImage(160, 160, QImage.Format.Format_ARGB32_Premultiplied)
     image.fill(Qt.GlobalColor.white)
@@ -67,11 +83,13 @@ def _render(item: FreehandItem) -> QImage:
 def test_the_fitted_path_has_fewer_segments_as_smoothing_rises(qapp: QApplication) -> None:
     item = _item(_wavy())
     counts = [len(item.fit_segments(s)) for s in (0.0, 0.3, 1.0)]
-    # The wave's 0.8 px of alternating jitter is noise the fit no longer chases: 0 and 30
-    # percent share the noise floor of 1.5 px (Freehand remainder decision 2, option B),
-    # so the count does not fall between them; it falls on a smooth stroke, below
+    # The wave's 0.8 px of alternating jitter is noise the fit no longer chases: every
+    # level up to 15 percent shares the noise floor of 1.5 px (Freehand remainder
+    # decision 2, option B), so the count need not fall between two of them; it falls
+    # strictly on a smooth stroke, below
     assert counts[0] >= counts[1] >= counts[2] >= 1
-    assert item.fit_error(0.0) == item.fit_error(0.3) == 1.5
+    assert item.fit_error(0.0) == item.fit_error(0.15) == 1.5  # the floor, to 15 percent
+    assert item.fit_error(0.3) == 3.0  # decision 4: smoothing times 10 px above it
     circle = _item(_circle())
     smooth_counts = [len(circle.fit_segments(s)) for s in (0.0, 0.3, 1.0)]
     assert smooth_counts[0] > smooth_counts[1] >= smooth_counts[2] >= 1
@@ -80,13 +98,22 @@ def test_the_fitted_path_has_fewer_segments_as_smoothing_rises(qapp: QApplicatio
     segments = item.bezier_segments
     assert segments[0][0] == item.path_points[0]
     assert segments[-1][3] == item.path_points[-1]
-    # Every raw point lies within the two stages' tolerances of the painted curve
+    # What the pipeline guarantees at 50 percent (decision 4): the raw points are averaged
+    # over 15 px of travel either side, stage 1 keeps every averaged point within half a
+    # pixel of its polyline, and stage 2 holds every kept point within the error, 5 px, of
+    # the painted curve. Kept points half a pixel apart pin the curve, so every averaged
+    # point is within the error, the half pixel, and a pixel of sampling of the curve
     path = item.path
     samples = [path.pointAtPercent(k / 600) for k in range(601)]
-    reach = 0.5 * 5.0 + 0.5 * 3.0 + 1.5
-    for raw in item.path_points:
-        nearest = min(math.hypot(s.x() - raw.x(), s.y() - raw.y()) for s in samples)
-        assert nearest <= reach
+    averaged = item.smoothed_points(0.5)
+    kept = simplify_rdp(averaged, 0.5)
+    for point in averaged:
+        assert _to_polyline(point, kept) <= 0.5 + 1e-6
+    for point in averaged:
+        nearest = min(math.hypot(s.x() - point.x(), s.y() - point.y()) for s in samples)
+        assert nearest <= 0.5 * 10.0 + 0.5 + 1.0
+    # The averaging keeps the ends where the hand put them
+    assert averaged[0] == item.path_points[0] and averaged[-1] == item.path_points[-1]
 
 
 def test_resmoothing_starts_again_from_the_raw_points(qapp: QApplication) -> None:
@@ -209,7 +236,7 @@ def test_the_panel_resmooths_a_selected_stroke(qtbot: QtBot) -> None:
     qtbot.addWidget(panel)
     panel.show()
     item = _item(_wavy())
-    item.smooth(0.5)
+    item.smooth(0.2)  # a low setting, so 95 percent has segments to take away (decision 4)
     before = item.bezier_segments
     layer = scene.layer_manager.active_layer
     assert layer is not None
@@ -217,13 +244,13 @@ def test_the_panel_resmooths_a_selected_stroke(qtbot: QtBot) -> None:
     sm.select(item)
     assert panel._freehand_section.isVisible()  # noqa: SLF001
     spin = panel._freehand_smoothing_spin  # noqa: SLF001
-    assert spin.value() == 50
+    assert spin.value() == 20
     spin.setValue(95)
     assert item.smoothing == 0.95
     assert len(item.bezier_segments) < len(before)
     assert scene.command_stack.undo_text == "Change smoothing_fit"
     scene.command_stack.undo()
-    assert item.smoothing == 0.5 and item.bezier_segments == before
+    assert item.smoothing == 0.2 and item.bezier_segments == before
     check = panel._freehand_closed_check  # noqa: SLF001
     check.setChecked(True)
     assert item.is_closed

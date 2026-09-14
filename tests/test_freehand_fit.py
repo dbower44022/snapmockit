@@ -362,6 +362,52 @@ def test_the_fit_no_longer_runs_away_on_a_shaky_circle(qapp: QApplication) -> No
         assert _farthest_from_points(item.bezier_segments, points) < reach
 
 
+def test_the_top_of_the_slider_removes_a_hand_tremor(qapp: QApplication) -> None:
+    """Decision 4 (09-13-26): at 9.3's 5 px and 3 px an 8 px tremor survived every
+    setting and the three levels looked alike on the display run. With the averaging
+    stage the 100 percent fit is a clean circle of the same size, 50 percent has most of
+    the tremor gone, and 0 percent keeps it."""
+    points = _shaky_circle(8.0)
+    item = FreehandItem()
+    for p in points:
+        item.add_point(p)
+    item.smooth(1.0)
+    assert len(item.bezier_segments) <= 6  # a circle, not a hundred and eighty wobbles
+    assert _farthest_from_points(item.bezier_segments, points) < 8.0
+    centre = QPointF(300, 300)
+    radii = [
+        math.hypot(
+            item.path.pointAtPercent(k / 200).x() - centre.x(),
+            item.path.pointAtPercent(k / 200).y() - centre.y(),
+        )
+        for k in range(201)
+    ]
+    assert 190.0 < min(radii) and max(radii) < 210.0  # the size the hand drew, within the error
+    item.smooth(0.5)
+    half = len(item.bezier_segments)
+    item.smooth(0.0)
+    assert len(item.bezier_segments) > 150 > half  # the tremor kept at 0, mostly gone at 50
+    assert _farthest_from_points(item.bezier_segments, points) < 8.0
+
+
+def test_the_averaging_stage_keeps_small_shapes_and_the_ends(qapp: QApplication) -> None:
+    """The reach is travel, not points, so a 50 px circle drawn quickly loses only a few
+    pixels of radius at 100 percent, and every stroke keeps its first and last points."""
+    circle = [
+        QPointF(60 + 50 * math.cos(2 * math.pi * k / 90), 60 + 50 * math.sin(2 * math.pi * k / 90))
+        for k in range(90)
+    ]
+    item = FreehandItem()
+    for p in circle:
+        item.add_point(p)
+    for smoothing, shrink in ((0.5, 3.0), (1.0, 6.0)):
+        averaged = item.smoothed_points(smoothing)
+        assert averaged[0] == circle[0] and averaged[-1] == circle[-1]
+        radii = [math.hypot(p.x() - 60, p.y() - 60) for p in averaged[5:-5]]
+        assert 50.0 - shrink < min(radii) <= max(radii) <= 50.0 + 0.5
+    assert item.smoothed_points(0.0) == item.path_points
+
+
 # ---------------------------------------------------------------- the noise floor
 
 
@@ -381,7 +427,7 @@ def test_the_noise_floor_applies_at_every_smoothing_and_is_capped(qapp: QApplica
         smooth.add_point(p)
     assert smooth.noise_floor() < 0.03
     assert smooth.fit_error(0.0) == MIN_FIT_ERROR_PX
-    assert smooth.fit_error(0.5) == 1.5 and smooth.fit_error(1.0) == 3.0
+    assert smooth.fit_error(0.5) == 5.0 and smooth.fit_error(1.0) == 10.0  # decision 4
 
     noisy = FreehandItem()
     for p in _sine(2000, jitter=True):
@@ -389,13 +435,13 @@ def test_the_noise_floor_applies_at_every_smoothing_and_is_capped(qapp: QApplica
     floor = noisy.noise_floor()
     assert floor == NOISE_FLOOR_FACTOR * stroke_noise(noisy.path_points)
     assert 1.0 < floor < NOISE_FLOOR_MAX_PX
-    assert noisy.fit_error(0.0) == noisy.fit_error(0.3) == floor  # the lower levels share it
-    assert noisy.fit_error(1.0) == 3.0  # the upper levels keep their meaning
+    assert noisy.fit_error(0.0) == noisy.fit_error(0.1) == floor  # the lower levels share it
+    assert noisy.fit_error(1.0) == 10.0  # the upper levels keep their meaning
     assert len(noisy.fit_segments(0.0)) < 200  # tens of segments, not one per point
 
     mouse = FreehandItem()
     for p in _sine(2000, quantise=True):
         mouse.add_point(p)
-    assert mouse.noise_floor() == NOISE_FLOOR_MAX_PX  # the cap, the 50 percent error
-    assert mouse.fit_error(0.0) == mouse.fit_error(0.5) == NOISE_FLOOR_MAX_PX
-    assert mouse.fit_error(0.51) > NOISE_FLOOR_MAX_PX
+    assert mouse.noise_floor() == NOISE_FLOOR_MAX_PX  # the cap, the 15 percent error
+    assert mouse.fit_error(0.0) == mouse.fit_error(0.15) == NOISE_FLOOR_MAX_PX
+    assert mouse.fit_error(0.16) > NOISE_FLOOR_MAX_PX

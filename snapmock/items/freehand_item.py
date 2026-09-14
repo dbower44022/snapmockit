@@ -24,22 +24,37 @@ from PyQt6.QtCore import QPointF, QRectF, Qt
 from PyQt6.QtGui import QPainter, QPainterPath, QPainterPathStroker
 from PyQt6.QtWidgets import QGraphicsItem
 
-from snapmock.core.path_utils import BezierSegment, fit_cubic_beziers, simplify_rdp, stroke_noise
+from snapmock.core.path_utils import (
+    BezierSegment,
+    fit_cubic_beziers,
+    point_tangents,
+    simplify_rdp_indices,
+    stroke_noise,
+    travel_average,
+)
 from snapmock.items.vector_item import VectorItem, _clamp_unit
 
-SMOOTHING_TOLERANCE_PX = 5.0
-"""Stage 1's tolerance at 100 percent smoothing (9.3): smoothing times 5 px."""
+SMOOTHING_REACH_PX = 30.0
+"""The averaging stage's reach at 100 percent smoothing: each raw point is replaced by the
+mean of the points within smoothing times 30 px of travel either side, before the two
+stages of 9.3 run. Decision 4 of the Freehand remainder work (09-13-26): 9.3's two stages
+alone could not remove a hand tremor without either bowing between sparse points or
+distorting small shapes, and a moving average is what the Highlighter's PRD already uses
+(notes Section 8.9)."""
 
-SMOOTHING_ERROR_PX = 3.0
-"""Stage 2's fitting error at 100 percent smoothing (9.3): smoothing times 3 px."""
+SIMPLIFY_TOLERANCE_PX = 0.5
+"""Stage 1's tolerance at every smoothing: points within half a pixel of the simplified
+line are dropped. 9.3 scaled this with the slider, to 5 px at 100 percent; decision 4
+fixes it, because a fit that sees only widely spaced points bows between them, so the
+curve is pinned to the averaged stroke within the fitting error everywhere along it."""
+
+SMOOTHING_ERROR_PX = 10.0
+"""Stage 2's fitting error at 100 percent smoothing: smoothing times 10 px, the curve's
+largest deviation from the averaged stroke. 9.3 wrote 3 px (decision 4)."""
 
 MIN_FIT_ERROR_PX = 0.5
 """The fitting error at 0 percent, so the curve follows the points without a segment for
 every pixel of the stroke."""
-
-MIN_TOLERANCE_PX = 0.5
-"""Stage 1's tolerance at 0 percent: points within half a pixel of the simplified line
-are dropped, where 9.3 drops none, so a long stroke fits in tens of milliseconds."""
 
 NOISE_FLOOR_FACTOR = 3.0
 """The fitting error is never below this many times the stroke's own noise
@@ -50,8 +65,9 @@ remainder decision 2, option B). A smooth stroke's noise is near zero, so its fi
 one it always was."""
 
 NOISE_FLOOR_MAX_PX = 1.5
-"""The noise floor never rises past the fitting error of 50 percent smoothing, so the
-upper half of the Smoothing slider keeps its meaning on the noisiest stroke."""
+"""The noise floor never rises past 1.5 px, three times the noise of whole-pixel mouse
+coordinates: the fitting error of 15 percent smoothing, so the slider keeps its meaning
+from there up on the noisiest stroke."""
 
 DEFAULT_SMOOTHING = 0.5
 
@@ -373,14 +389,25 @@ class FreehandItem(VectorItem):
         smoothing = _clamp_unit(smoothing, DEFAULT_SMOOTHING)
         return max(smoothing * SMOOTHING_ERROR_PX, MIN_FIT_ERROR_PX, self.noise_floor())
 
-    def fit_segments(self, smoothing: float) -> list[BezierSegment]:
-        """The segments the two stages of 9.3 give for the raw points at *smoothing*."""
+    def smoothed_points(self, smoothing: float) -> list[QPointF]:
+        """The raw points after the averaging stage at *smoothing* (decision 4): the reach
+        is *smoothing* times :data:`SMOOTHING_REACH_PX`; at 0 percent the raw points."""
         smoothing = _clamp_unit(smoothing, DEFAULT_SMOOTHING)
-        tolerance = max(smoothing * SMOOTHING_TOLERANCE_PX, MIN_TOLERANCE_PX)
-        simplified = simplify_rdp(self._path_points, tolerance)
-        if len(simplified) < 2:
+        return travel_average(self._path_points, smoothing * SMOOTHING_REACH_PX)
+
+    def fit_segments(self, smoothing: float) -> list[BezierSegment]:
+        """The segments the pipeline gives for the raw points at *smoothing*: the averaging
+        stage of decision 4, then the two stages of 9.3."""
+        smoothing = _clamp_unit(smoothing, DEFAULT_SMOOTHING)
+        points = self.smoothed_points(smoothing)
+        kept = simplify_rdp_indices(points, SIMPLIFY_TOLERANCE_PX)
+        if len(kept) < 2:
             return []
-        return fit_cubic_beziers(simplified, self.fit_error(smoothing))
+        # The fit's end tangents come from the stroke around each kept point rather than
+        # from the kept neighbours (decision 4)
+        return fit_cubic_beziers(
+            [points[i] for i in kept], self.fit_error(smoothing), point_tangents(points, kept)
+        )
 
     def smooth(self, smoothing: float | None = None) -> None:
         """Run the pipeline from the raw points and paint its segments (9.3, 9.7)."""

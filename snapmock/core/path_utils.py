@@ -88,9 +88,15 @@ def simplify_rdp(points: list[QPointF], epsilon: float = 2.0) -> list[QPointF]:
     list[QPointF]
         The simplified polyline.
     """
+    return [points[i] for i in simplify_rdp_indices(points, epsilon)]
+
+
+def simplify_rdp_indices(points: list[QPointF], epsilon: float = 2.0) -> list[int]:
+    """The indexes into *points* that :func:`simplify_rdp` keeps, in order, so a caller
+    can read the raw stroke around each kept point (:func:`point_tangents`)."""
     count = len(points)
     if count <= 2:
-        return list(points)
+        return list(range(count))
     xs = np.fromiter((p.x() for p in points), dtype=float, count=count)
     ys = np.fromiter((p.y() for p in points), dtype=float, count=count)
     xl: list[float] = xs.tolist()
@@ -136,7 +142,38 @@ def simplify_rdp(points: list[QPointF], epsilon: float = 2.0) -> list[QPointF]:
             keep[max_idx] = True
             stack.append((first, max_idx))
             stack.append((max_idx, last))
-    return [p for p, k in zip(points, keep) if k]
+    return [i for i, k in enumerate(keep) if k]
+
+
+TANGENT_WINDOW = 8
+"""How many raw points either side of a kept point :func:`point_tangents` averages: at
+the mouse's 60 to 120 Hz, about a tenth of a second of travel each way."""
+
+
+def point_tangents(points: list[QPointF], indices: list[int]) -> list[np.ndarray | None]:
+    """The direction of travel of the stroke *points* at each kept index, as unit vectors,
+    read from the raw points on either side rather than from the kept neighbours.
+
+    Schneider's fit estimates a piece's end tangents from the chord to the next kept
+    point, which is right when the kept points are dense and wrong when a wide
+    simplification leaves them far apart: a wavy underline at 50 percent smoothing then
+    looped after its first trough (Freehand remainder notes, Section 8.9). The mean of the
+    raw points up to :data:`TANGENT_WINDOW` before a kept point to the mean of those after
+    it is the stroke's own direction there. None where the stroke does not move, so the
+    fit falls back to the chord.
+    """
+    a = np.array([[p.x(), p.y()] for p in points], dtype=float).reshape(-1, 2)
+    count = len(a)
+    out: list[np.ndarray | None] = []
+    for i in indices:
+        lo = max(0, i - TANGENT_WINDOW)
+        hi = min(count - 1, i + TANGENT_WINDOW)
+        before = a[lo:i].mean(axis=0) if i > lo else a[i]
+        after = a[i + 1 : hi + 1].mean(axis=0) if hi > i else a[i]
+        v = after - before
+        length = float(np.hypot(v[0], v[1]))
+        out.append(v / length if length > 1e-9 else None)
+    return out
 
 
 BezierSegment = tuple[QPointF, QPointF, QPointF, QPointF]
@@ -217,16 +254,23 @@ def _reparameterize(pts: np.ndarray, u: np.ndarray, bez: np.ndarray, q: np.ndarr
     return result
 
 
-def fit_cubic_beziers(points: list[QPointF], error: float) -> list[BezierSegment]:
+def fit_cubic_beziers(
+    points: list[QPointF], error: float, tangents: list[np.ndarray | None] | None = None
+) -> list[BezierSegment]:
     """Cubic Bezier segments through *points*, each within *error* pixels of the points it
     covers: least-squares fitting with Newton reparameterization, split at the worst point
     when a piece misses (Schneider, "An Algorithm for Automatically Fitting Digitized
-    Curves", Graphics Gems, 1990). Basic Shape PRD 9.3, stage 2."""
+    Curves", Graphics Gems, 1990). Basic Shape PRD 9.3, stage 2.
+
+    *tangents*, one unit direction of travel per point or None, replaces Schneider's chord
+    estimate of a piece's end tangents where given (:func:`point_tangents`)."""
     pts = np.array([[p.x(), p.y()] for p in points], dtype=float).reshape(-1, 2)
+    dirs: list[np.ndarray | None] = list(tangents) if tangents is not None else [None] * len(pts)
     if len(pts) > 1:
         moved = np.ones(len(pts), dtype=bool)
         moved[1:] = np.any(np.abs(np.diff(pts, axis=0)) > 1e-9, axis=1)
         pts = pts[moved]
+        dirs = [d for d, m in zip(dirs, moved) if m]
     if len(pts) == 0:
         return []
     if len(pts) == 1:
@@ -234,7 +278,14 @@ def fit_cubic_beziers(points: list[QPointF], error: float) -> list[BezierSegment
         return [(p, QPointF(p), QPointF(p), QPointF(p))]
     error_sq = max(error, 1e-3) ** 2
     out: list[np.ndarray] = []
-    stack = [(0, len(pts) - 1, _normalized(pts[1] - pts[0]), _normalized(pts[-2] - pts[-1]))]
+
+    def travel(index: int, fallback: np.ndarray) -> np.ndarray:
+        d = dirs[index]
+        return d if d is not None else fallback
+
+    first_t = travel(0, _normalized(pts[1] - pts[0]))
+    last_t = -travel(len(pts) - 1, -_normalized(pts[-2] - pts[-1]))
+    stack = [(0, len(pts) - 1, first_t, last_t)]
     while stack:
         first, last, t1, t2 = stack.pop()
         piece = pts[first : last + 1]
@@ -266,7 +317,7 @@ def fit_cubic_beziers(points: list[QPointF], error: float) -> list[BezierSegment
                 out.append(bez)
                 continue
         split = int(np.argmax(dist_sq[1:-1])) + 1
-        centre = _normalized(piece[split - 1] - piece[split + 1])
+        centre = -travel(first + split, -_normalized(piece[split - 1] - piece[split + 1]))
         stack.append((first + split, last, -centre, t2))
         stack.append((first, first + split, t1, centre))
     return [
@@ -278,6 +329,30 @@ def fit_cubic_beziers(points: list[QPointF], error: float) -> list[BezierSegment
         )
         for b in out
     ]
+
+
+def travel_average(points: list[QPointF], reach: float) -> list[QPointF]:
+    """*points* smoothed by a centred moving average over the points within *reach* pixels
+    of travel along the stroke on either side; the first and last points stay put
+    (Basic Shape PRD 9.3 as decision 4 of the Freehand remainder work reshaped it).
+
+    The window is measured in travel and not in points, so the result does not depend
+    on the mouse's event rate: a hand tremor a few pixels long is averaged away at a
+    reach of a few tens of pixels, and a shape larger than the reach keeps its size to
+    within a few pixels. A reach of zero returns the points unchanged.
+    """
+    count = len(points)
+    if reach <= 0.0 or count < 3:
+        return [QPointF(p) for p in points]
+    a = np.array([[p.x(), p.y()] for p in points], dtype=float)
+    travel = np.concatenate([[0.0], np.cumsum(np.hypot(*np.diff(a, axis=0).T))])
+    lo = np.searchsorted(travel, travel - reach, side="left")
+    hi = np.searchsorted(travel, travel + reach, side="right")
+    sums = np.vstack([[0.0, 0.0], np.cumsum(a, axis=0)])
+    out = (sums[hi] - sums[lo]) / (hi - lo)[:, None]
+    out[0] = a[0]
+    out[-1] = a[-1]
+    return [QPointF(float(x), float(y)) for x, y in out]
 
 
 def stroke_noise(points: list[QPointF]) -> float:
