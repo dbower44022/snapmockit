@@ -28,5 +28,5 @@ def test_copy_version_info_fills_the_clipboard(qtbot: QtBot) -> None:
     assert clipboard is not None
     text = clipboard.text()
     assert text == version_info_text()
-    assert text.startswith(f"SnapMock {APP_VERSION} (built {APP_BUILD_DATE})")
+    assert text.startswith(f"Snapmockit {APP_VERSION} (built {APP_BUILD_DATE})")
     assert "Qt " in text

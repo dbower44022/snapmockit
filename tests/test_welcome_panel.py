@@ -90,7 +90,7 @@ class TestPanelContent:
     def test_logo_tagline_cards_steps_and_names(self, qtbot: QtBot) -> None:
         panel = WelcomePanel(AppSettings())
         qtbot.addWidget(panel)
-        assert TAGLINE == "SnapMock - Screenshot Annotation & UI Mockup Tool"
+        assert TAGLINE == "Snapmockit - Screenshot Annotation & UI Mockup Tool"
         assert [c[0] for c in CARDS] == [CARD_OPEN_IMAGE, CARD_PASTE, CARD_NEW_CANVAS]
         assert len(STEPS) == 4
         assert STEPS[0][0] == "Import or paste a screenshot"

@@ -1435,7 +1435,7 @@ class MainWindow(QMainWindow):
         )
         self._add_capture_toggle(
             capture_menu,
-            "&Hide SnapMock During Capture",
+            f"&Hide {APP_NAME} During Capture",
             "hide_window",
             self._settings.capture_hide_window,
             self._settings.set_capture_hide_window,
@@ -1577,14 +1577,14 @@ class MainWindow(QMainWindow):
             self._settings.set_capture_copy_to_clipboard,
         )
         menu.addSeparator()
-        show = menu.addAction("&Show SnapMock")
+        show = menu.addAction(f"&Show {APP_NAME}")
         if show is not None:
             show.triggered.connect(self.show_from_tray)
         prefs = menu.addAction("&Preferences...")
         if prefs is not None:
             prefs.triggered.connect(lambda: self._file_preferences(focus_capture=True))
         menu.addSeparator()
-        quit_action = menu.addAction("&Quit SnapMock")
+        quit_action = menu.addAction(f"&Quit {APP_NAME}")
         if quit_action is not None:
             quit_action.triggered.connect(self.quit_application)
         tray.setContextMenu(menu)
@@ -2017,7 +2017,7 @@ class MainWindow(QMainWindow):
             "Open Project",
             "",
             f"All Supported (*{PROJECT_EXTENSION} *{SNAGIT_EXTENSION})"
-            f";;SnapMock Projects (*{PROJECT_EXTENSION})"
+            f";;{APP_NAME} Projects (*{PROJECT_EXTENSION})"
             f";;Snagit Files (*{SNAGIT_EXTENSION})"
             ";;All Files (*)",
         )
@@ -2080,7 +2080,7 @@ class MainWindow(QMainWindow):
             self,
             "Save Project",
             "",
-            f"SnapMock Projects (*{PROJECT_EXTENSION});;Snagit Files (*{SNAGIT_EXTENSION})",
+            f"{APP_NAME} Projects (*{PROJECT_EXTENSION});;Snagit Files (*{SNAGIT_EXTENSION})",
         )
         if not path_str:
             return

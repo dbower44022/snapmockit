@@ -16,7 +16,7 @@ from snapmock.config.shortcuts import SHORTCUTS
 
 
 def test_app_name() -> None:
-    assert APP_NAME == "SnapMock"
+    assert APP_NAME == "Snapmockit"
 
 
 def test_canvas_defaults() -> None:

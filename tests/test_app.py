@@ -4,8 +4,8 @@ from snapmock.main_window import MainWindow
 
 
 def test_main_window_title(main_window: MainWindow) -> None:
-    """Window title follows the PRD 2.4 pattern: [Project Name] - SnapMock."""
-    assert main_window.windowTitle() == "Untitled - SnapMock"
+    """Window title follows the PRD 2.4 pattern: [Project Name] - Snapmockit."""
+    assert main_window.windowTitle() == "Untitled - Snapmockit"
 
 
 def test_main_window_minimum_size(main_window: MainWindow) -> None:

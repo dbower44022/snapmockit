@@ -165,14 +165,14 @@ def test_17_1_panel_layout_is_restored_in_a_new_window(qtbot: QtBot) -> None:
 def test_17_1_window_title_shows_the_name_and_the_dirty_asterisk(
     main_window: MainWindow, tmp_path: Path
 ) -> None:
-    """Row 5: "[Name] - SnapMock", an asterisk while dirty, the file's stem after a save."""
-    assert main_window.windowTitle() == "Untitled - SnapMock"
+    """Row 5: "[Name] - Snapmockit", an asterisk while dirty, the file's stem after a save."""
+    assert main_window.windowTitle() == "Untitled - Snapmockit"
     _add_rects(main_window, 1)
-    assert main_window.windowTitle() == "*Untitled - SnapMock"
+    assert main_window.windowTitle() == "*Untitled - Snapmockit"
     main_window._save_to(tmp_path / "acceptance.smk")  # noqa: SLF001
-    assert main_window.windowTitle() == "acceptance - SnapMock"
+    assert main_window.windowTitle() == "acceptance - Snapmockit"
     _add_rects(main_window, 1)
-    assert main_window.windowTitle() == "*acceptance - SnapMock"
+    assert main_window.windowTitle() == "*acceptance - Snapmockit"
 
 
 # ---- 17.2 Menu Bar ----
@@ -303,7 +303,7 @@ SECTION_3_ROWS: dict[str, list[str]] = {
         "Keyboard Shortcuts",
         "Report a Bug",
         "Check for Updates",
-        "About SnapMock",
+        "About Snapmockit",
     ],
 }
 
@@ -370,7 +370,7 @@ def test_17_2_every_section_3_row_is_present_and_the_deferred_rows_say_so(
     assert len(sent) == 1
     main_window._update_checker.receive(404, b"{}")  # noqa: SLF001
     assert [box.text() for box in boxes] == [
-        f"No release has been published yet. You are running SnapMock {APP_VERSION}."
+        f"No release has been published yet. You are running Snapmockit {APP_VERSION}."
     ]
     assert unmet_messages == []
 

@@ -147,7 +147,9 @@ def test_a_newer_release_offers_the_release_page(
     box = shown[0]
     assert box.windowTitle() == "Check for Updates"
     assert box.icon() == QMessageBox.Icon.Information
-    assert box.text() == f"SnapMock v9.0.0 is available. You are running SnapMock {__version__}."
+    assert (
+        box.text() == f"Snapmockit v9.0.0 is available. You are running Snapmockit {__version__}."
+    )
     assert _labels(box) == {"Open Release Page", "Close"}
     _button(box, "Open Release Page").click()
     assert opened == ["https://example.test/release"]
@@ -160,7 +162,7 @@ def test_no_release_offers_the_repository_page(
     _checker(main_window).receive(404, b'{"message": "Not Found"}')
     box = shown[0]
     assert box.text() == (
-        f"No release has been published yet. You are running SnapMock {__version__}."
+        f"No release has been published yet. You are running Snapmockit {__version__}."
     )
     assert _labels(box) == {"Open Repository Page", "Close"}
     _button(box, "Open Repository Page").click()
@@ -180,7 +182,7 @@ def test_up_to_date_rate_limited_and_unreadable_offer_close_only(
     _checker(main_window).receive(200, _release("latest"))
     texts = [box.text() for box in shown]
     assert texts == [
-        f"SnapMock {__version__} is up to date. The latest release is {__version__}.",
+        f"Snapmockit {__version__} is up to date. The latest release is {__version__}.",
         "GitHub declined the request; try again later.",
         "The latest release could not be read. Try again later.",
         "The latest release could not be read. Try again later.",
@@ -204,7 +206,7 @@ def test_message_text_for_every_outcome(main_window: MainWindow) -> None:
     text = main_window.update_message_text
     link = main_window.update_message_link
     newer = UpdateCheckResult(Outcome.NEWER, "0.1.0", "v0.2.0", "https://example.test/r")
-    assert text(newer) == "SnapMock v0.2.0 is available. You are running SnapMock 0.1.0."
+    assert text(newer) == "Snapmockit v0.2.0 is available. You are running Snapmockit 0.1.0."
     assert link(newer) == ("Open Release Page", "https://example.test/r")
     assert link(UpdateCheckResult(Outcome.NEWER, "0.1.0", "v0.2.0", "")) is None
     assert link(UpdateCheckResult(Outcome.NO_RELEASE)) == ("Open Repository Page", REPOSITORY_URL)

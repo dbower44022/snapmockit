@@ -25,7 +25,7 @@ from PyQt6.QtCore import QObject, QUrl, pyqtSignal
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 
 from snapmock import __version__
-from snapmock.config.constants import REPOSITORY_URL
+from snapmock.config.constants import APP_NAME, REPOSITORY_URL
 
 GITHUB_API_URL = "https://api.github.com"
 """The GitHub REST API host; the endpoint below is built on it."""
@@ -51,7 +51,7 @@ def request_headers(version: str = __version__) -> dict[str, str]:
     """The two headers every check sends (kickoff silence 1)."""
     return {
         "Accept": "application/vnd.github+json",
-        "User-Agent": f"SnapMock/{version}",
+        "User-Agent": f"{APP_NAME}/{version}",
     }
 
 

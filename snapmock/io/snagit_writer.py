@@ -14,7 +14,7 @@ from typing import Any
 from PyQt6.QtCore import QBuffer, QIODevice, Qt
 from PyQt6.QtGui import QColor
 
-from snapmock.config.constants import APP_VERSION
+from snapmock.config.constants import APP_NAME, APP_VERSION
 from snapmock.core.scene import SnapScene
 from snapmock.io.rtf_utils import text_to_rtf_base64
 from snapmock.items.arc_item import ArcItem
@@ -88,7 +88,7 @@ def save_snagx(scene: SnapScene, path: Path) -> list[str]:
             "ShowOriginal": False,
             "SuiDetail": 0,
         },
-        "SoftwareVersion": f"SnapMock {APP_VERSION}",
+        "SoftwareVersion": f"{APP_NAME} {APP_VERSION}",
         "StepToolSequenceLowercaseLetter": 1,
         "StepToolSequenceNumeric": 1,
         "StepToolSequenceUppercaseLetter": 1,
@@ -103,7 +103,7 @@ def save_snagx(scene: SnapScene, path: Path) -> list[str]:
     now = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S")
     metadata_data: dict[str, Any] = {
         "AppCompany": "",
-        "AppName": "SnapMock",
+        "AppName": APP_NAME,
         "AppVersion": APP_VERSION,
         "CaptureDate": now,
         "CaptureId": _new_guid(),

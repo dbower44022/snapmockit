@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import QBuffer, QIODevice, QMarginsF, QRectF, QSize, QSizeF
 from PyQt6.QtGui import QColor, QImage, QPageLayout, QPageSize, QPaintDevice, QPainter
 
+from snapmock.config.constants import APP_NAME
 from snapmock.core.render_engine import RenderEngine
 
 if TYPE_CHECKING:
@@ -47,7 +48,7 @@ class ExportFormat(StrEnum):
     @property
     def label(self) -> str:
         labels = {"png": "PNG", "jpeg": "JPEG", "svg": "SVG", "pdf": "PDF"}
-        labels["smk"] = "SnapMock Project"
+        labels["smk"] = f"{APP_NAME} Project"
         return labels[self.value]
 
     @property
@@ -63,7 +64,7 @@ class ExportFormat(StrEnum):
             "jpeg": "JPEG Image (*.jpg *.jpeg)",
             "svg": "SVG Image (*.svg)",
             "pdf": "PDF Document (*.pdf)",
-            "smk": "SnapMock Project (*.smk)",
+            "smk": f"{APP_NAME} Project (*.smk)",
         }[self.value]
 
     @classmethod
@@ -269,7 +270,7 @@ def _write_svg(scene: SnapScene, settings: ExportSettings, region: QRectF, targe
     generator.setResolution(BASE_DPI)
     generator.setSize(QSize(round(region.width()), round(region.height())))
     generator.setViewBox(QRectF(0, 0, region.width(), region.height()))
-    generator.setTitle(scene.objectName() or "SnapMock export")
+    generator.setTitle(scene.objectName() or f"{APP_NAME} export")
     hidden: list[QGraphicsItem] = []
     if not settings.svg_embed_raster:
         hidden = [i for i in _raster_items(scene) if i.isVisible()]

@@ -62,7 +62,7 @@ def test_capture_menu_order_and_items(main_window: MainWindow) -> None:
         "&Delay",
         "Include Mouse &Cursor",
         "Copy to Clip&board",
-        "&Hide SnapMock During Capture",
+        "&Hide Snapmockit During Capture",
         "Capture &Preferences...",
     ]
     assert "scrolling" not in " ".join(texts).lower()
@@ -116,7 +116,7 @@ def test_delay_and_toggles_sync_across_menus(main_window: MainWindow) -> None:
     cursor = next(a for a in menu.actions() if a.text() == "Include Mouse &Cursor")
     cursor.setChecked(True)
     assert AppSettings().capture_include_cursor() is True
-    hide = next(a for a in menu.actions() if a.text() == "&Hide SnapMock During Capture")
+    hide = next(a for a in menu.actions() if a.text() == "&Hide Snapmockit During Capture")
     assert hide.isChecked() is True
     hide.setChecked(False)
     assert AppSettings().capture_hide_window() is False
@@ -250,7 +250,7 @@ def test_tray_created_with_menu(qtbot: QtBot, tray_available: None) -> None:
     window = MainWindow()
     qtbot.addWidget(window)
     tray = window.tray_icon
-    assert tray is not None and tray.toolTip() == "SnapMock"
+    assert tray is not None and tray.toolTip() == "Snapmockit"
     menu = tray.contextMenu()
     assert menu is not None
     texts = [a.text() for a in menu.actions() if not a.isSeparator()]
@@ -261,14 +261,14 @@ def test_tray_created_with_menu(qtbot: QtBot, tray_available: None) -> None:
         "&Delay",
         "Include Mouse &Cursor",
         "Copy to Clip&board",
-        "&Show SnapMock",
+        "&Show Snapmockit",
         "&Preferences...",
-        "&Quit SnapMock",
+        "&Quit Snapmockit",
     ]
     window.capture_manager.countdown_tick.emit(3)
-    assert tray.toolTip() == "SnapMock: capturing in 3 s"
+    assert tray.toolTip() == "Snapmockit: capturing in 3 s"
     window.capture_manager.countdown_tick.emit(0)
-    assert tray.toolTip() == "SnapMock"
+    assert tray.toolTip() == "Snapmockit"
 
 
 def test_tray_not_created_when_disabled(qtbot: QtBot, tray_available: None) -> None:

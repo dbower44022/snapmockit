@@ -14,6 +14,7 @@ from collections.abc import Iterable
 from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtWidgets import QMenu, QMenuBar
 
+from snapmock.config.constants import APP_NAME
 from snapmock.config.shortcuts import SHORTCUTS
 from snapmock.core.theme_manager import theme_manager
 
@@ -148,15 +149,15 @@ ACTION_ICONS: dict[str, str] = {
     "Capture Active Window": "app-window",
     "Capture Full Screen": "device-desktop",
     "Capture Preferences...": "settings",
-    "Show SnapMock": "eye",
-    "Quit SnapMock": "power",
+    f"Show {APP_NAME}": "eye",
+    f"Quit {APP_NAME}": "power",
     # Help
     "Welcome / Getting Started": "home",
     "Documentation": "book",
     "Keyboard Shortcuts": "keyboard",
     "Report a Bug": "bug",
     "Check for Updates": "refresh",
-    "About SnapMock": "info-circle",
+    f"About {APP_NAME}": "info-circle",
 }
 
 # Buttons outside menus: the capture control and the panel action bars.

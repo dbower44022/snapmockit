@@ -17,11 +17,12 @@ from snapmock.capture.backend import (
     QtScreenGrabBackend,
 )
 from snapmock.capture.models import BackendCapabilities, PermissionState, ScreenGrab
+from snapmock.config.constants import APP_NAME
 
 NOT_IMPLEMENTED = "not yet implemented on this platform"
 PERMISSION_MESSAGE = (
-    "SnapMock needs Screen Recording permission. Enable SnapMock under System Settings > "
-    "Privacy & Security > Screen Recording, then quit and reopen SnapMock."
+    f"{APP_NAME} needs Screen Recording permission. Enable {APP_NAME} under System Settings > "
+    f"Privacy & Security > Screen Recording, then quit and reopen {APP_NAME}."
 )
 SCREEN_RECORDING_SETTINGS_URL = (
     "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"

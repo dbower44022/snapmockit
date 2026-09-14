@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.47</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.48</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.47</dd>
-    <dt>Last Updated</dt>    <dd>09-13-26 23:07</dd>
+    <dt>Document version</dt><dd>1.48</dd>
+    <dt>Last Updated</dt>    <dd>09-14-26 14:38</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.48</td>
+        <td class="nowrap">09-14-26 14:38</td>
+        <td>Doug Bower</td>
+        <td>The product is named Snapmockit (decided 09-14-26): one APP_NAME constant, distribution name snapmockit, import package unchanged, the version from one source, the on-disk storage names kept until a migration.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.47</td>
         <td class="nowrap">09-13-26 23:07</td>
@@ -455,6 +462,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-14-26 14:38</td>
+        <td>1, 9, 10</td>
+        <td>Decided</td>
+        <td><strong>Decided</strong> (Doug, 09-14-26): the product is named <strong>Snapmockit</strong>, so its domain can be registered; Section 1's "Working Project Name" said SnapMock was tentative pending a trademark check. The name lives in one constant, <code>APP_NAME</code>, and everything a user reads takes it from there: the window title, the About dialog, the tray menu, the Help and Capture menus, the file dialogs' filters, the export labels, the Snagit writer's application fields, the project file's writer field, the preferences, the onboarding texts, and the update check's user agent. The distribution name in <code>pyproject.toml</code> is <code>snapmockit</code>; the import package stays <code>snapmock</code>, so Section 10 and every module path are unchanged and <code>python -m snapmock</code> still starts the application. The version has one source, <code>snapmock/__init__.py</code>, which <code>pyproject.toml</code> reads through hatchling's dynamic version and the constants import. Two names are kept on disk on purpose until a release carries a migration: the settings organisation and application names under which QSettings stores (<code>~/.config/SnapMock</code>) and the default library directory (<code>~/SnapMock/Library</code>), so a user's settings and library are found by the renamed application. The documents keep their SnapMock titles and file names; each names the product it describes as of its own writing, and every cross-reference between them would break on a rename. The repository's name is separately yours to change on GitHub; the code's repository address follows it when it does.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-13-26 23:07</td>
         <td>8, 10</td>

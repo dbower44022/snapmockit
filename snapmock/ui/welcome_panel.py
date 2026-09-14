@@ -219,7 +219,7 @@ class WelcomePanel(QWidget):
         self.setObjectName("WelcomePanel")
         self.setAccessibleName("Welcome")
         self.setAccessibleDescription(
-            "Quick Start cards and a four-step guide for new users of SnapMock."
+            f"Quick Start cards and a four-step guide for new users of {APP_NAME}."
         )
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
@@ -301,7 +301,7 @@ class WelcomePanel(QWidget):
         self._dont_show = QCheckBox(DONT_SHOW_AGAIN)
         self._dont_show.setAccessibleName(DONT_SHOW_AGAIN)
         self._dont_show.setAccessibleDescription(
-            "When checked, the Welcome panel no longer opens when SnapMock starts."
+            f"When checked, the Welcome panel no longer opens when {APP_NAME} starts."
         )
         self._dont_show.setChecked(not settings.show_welcome_at_startup())
         self._dont_show.toggled.connect(self._on_dont_show_toggled)

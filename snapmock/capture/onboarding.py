@@ -20,8 +20,10 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from snapmock.config.constants import APP_NAME
+
 CONSENT_TEXT = (
-    "Your desktop will ask whether SnapMock may take a screenshot. This is the desktop's "
+    f"Your desktop will ask whether {APP_NAME} may take a screenshot. This is the desktop's "
     "own dialog. Some desktops ask once; some ask every time."
 )
 HOTKEY_TEXT = (
@@ -45,11 +47,11 @@ MACOS_NOTE = (
 
 
 MACOS_PERMISSION_TEXT = (
-    "macOS asks you to allow SnapMock to record the screen before it can take screenshots. "
+    f"macOS asks you to allow {APP_NAME} to record the screen before it can take screenshots. "
     "Click Continue to see the system prompt. If you have already denied it, open System "
-    "Settings and enable SnapMock under Privacy & Security > Screen Recording."
+    f"Settings and enable {APP_NAME} under Privacy & Security > Screen Recording."
 )
-MACOS_RESTART_TEXT = "Quit and reopen SnapMock to finish."
+MACOS_RESTART_TEXT = f"Quit and reopen {APP_NAME} to finish."
 
 
 def _copy_to_clipboard(text: str) -> None:

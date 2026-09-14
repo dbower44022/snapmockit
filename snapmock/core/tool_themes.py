@@ -31,6 +31,7 @@ from PyQt6.QtGui import QColor
 
 from snapmock import __version__
 from snapmock.config.constants import (
+    APP_NAME,
     ApplyTarget,
     ArcType,
     BadgeShape,
@@ -299,10 +300,10 @@ def theme_to_dict(theme: ToolTheme) -> dict[str, Any]:
 def theme_from_dict(data: object) -> ToolTheme:
     """The theme held in a parsed theme document; ``ThemeFileError`` when it is not one."""
     if not isinstance(data, dict) or data.get("format") != THEME_FILE_KIND:
-        raise ThemeFileError("not a SnapMock tool theme file")
+        raise ThemeFileError(f"not a {APP_NAME} tool theme file")
     version = data.get("format_version")
     if not isinstance(version, int) or version > FORMAT_VERSION:
-        raise ThemeFileError(f"theme format version {version!r} is newer than this SnapMock")
+        raise ThemeFileError(f"theme format version {version!r} is newer than this {APP_NAME}")
     name = str(data.get("name") or "").strip()
     if not name:
         raise ThemeFileError("the theme has no name")

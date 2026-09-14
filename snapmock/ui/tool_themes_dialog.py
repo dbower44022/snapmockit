@@ -33,6 +33,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from snapmock.config.constants import APP_NAME
 from snapmock.core.tool_themes import (
     DEFAULT_THEME_NAME,
     THEME_SUFFIX,
@@ -47,7 +48,7 @@ if TYPE_CHECKING:
     from snapmock.tools.tool_manager import ToolManager
 
 ACTIVE_MARK = "✓ "
-THEME_FILE_FILTER = f"SnapMock Tool Theme (*{THEME_SUFFIX})"
+THEME_FILE_FILTER = f"{APP_NAME} Tool Theme (*{THEME_SUFFIX})"
 
 
 class ToolThemesDialog(QDialog):

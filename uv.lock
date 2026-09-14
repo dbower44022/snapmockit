@@ -527,8 +527,7 @@ wheels = [
 ]
 
 [[package]]
-name = "snapmock"
-version = "0.1.0"
+name = "snapmockit"
 source = { editable = "." }
 dependencies = [
     { name = "numpy" },

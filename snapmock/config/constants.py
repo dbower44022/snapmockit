@@ -3,14 +3,23 @@
 from enum import Enum
 from pathlib import Path
 
-APP_NAME = "SnapMock"
-APP_VERSION = "0.1.0"
+from snapmock import __version__
+
+APP_NAME = "Snapmockit"
+"""The product's name, decided 09-14-26 (it was SnapMock while the domain was in
+question). Everything a user reads takes it from here."""
+APP_VERSION = __version__
+"""One source: ``snapmock/__init__.py``, which ``pyproject.toml`` reads at build time."""
 # Set by the release process; the About dialog shows it beside the version (PRD 11.6).
 APP_BUILD_DATE = "2026-09-08"
 APP_LICENSE = "MIT License"
 COPYRIGHT = "Copyright (c) 2026 Doug Bower"
 ORG_NAME = "SnapMock"
-ORG_DOMAIN = "snapmock.org"
+"""The organisation name QSettings stores under (``~/.config/SnapMock``): kept at the
+earlier name so existing settings are found, until a release carries a migration."""
+STORAGE_APP_NAME = "SnapMock"
+"""The application name QSettings stores under, kept for the same reason."""
+ORG_DOMAIN = "snapmockit.com"
 REPOSITORY_URL = "https://github.com/dbower44022/Snagit_FOSS"
 DOCUMENTATION_URL = f"{REPOSITORY_URL}#readme"
 ISSUES_URL = f"{REPOSITORY_URL}/issues"
@@ -63,7 +72,7 @@ PROJECT_EXTENSION = ".smk"
 THUMBNAIL_MAX_SIZE = 256
 
 # Library
-DEFAULT_LIBRARY_DIRECTORY = Path.home() / "SnapMock" / "Library"
+DEFAULT_LIBRARY_DIRECTORY = Path.home() / "SnapMock" / "Library"  # kept: existing libraries
 LIBRARY_THUMBNAIL_MIN = 80
 LIBRARY_THUMBNAIL_MAX = 256
 LIBRARY_THUMBNAIL_DEFAULT = 128

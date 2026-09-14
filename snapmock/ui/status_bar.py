@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import QLabel, QMenu, QStatusBar, QToolButton, QWidget
 
+from snapmock.config.constants import APP_NAME
 from snapmock.core.process_memory import format_memory, memory_role, process_memory_bytes
 from snapmock.items.base_item import SnapGraphicsItem
 from snapmock.ui.toolbar import ZOOM_PRESETS
@@ -59,7 +60,7 @@ class SnapStatusBar(QStatusBar):
         self._zoom_button.setAccessibleDescription("Opens the zoom preset menu.")
         self._zoom_button.clicked.connect(self._show_zoom_menu)
         self._memory_label = self._zone(MEMORY_ZONE_WIDTH)
-        self._memory_label.setToolTip("Memory used by SnapMock")
+        self._memory_label.setToolTip(f"Memory used by {APP_NAME}")
 
         self.addWidget(self._hint_label, 1)
         for widget in (

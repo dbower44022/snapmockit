@@ -7,7 +7,6 @@ from PyQt6.QtCore import QSettings
 from PyQt6.QtGui import QColor
 
 from snapmock.config.constants import (
-    APP_NAME,
     CHECKERBOARD_CELL_SIZE,
     DEFAULT_CANVAS_HEIGHT,
     DEFAULT_CANVAS_WIDTH,
@@ -31,6 +30,7 @@ from snapmock.config.constants import (
     RECENT_FILES_DEFAULT,
     RECENT_ZOOM_MAX,
     SNAP_TOLERANCE_DEFAULT,
+    STORAGE_APP_NAME,
     THUMBNAIL_DELAY_DEFAULT_MS,
     UNDO_LIMIT,
     ZOOM_DEFAULT,
@@ -49,7 +49,7 @@ class AppSettings:
     """Thin wrapper around QSettings for typed access to application preferences."""
 
     def __init__(self) -> None:
-        self._qs = QSettings(ORG_NAME, APP_NAME)
+        self._qs = QSettings(ORG_NAME, STORAGE_APP_NAME)
 
     # --- window geometry ---
 

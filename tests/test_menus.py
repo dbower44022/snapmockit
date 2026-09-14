@@ -236,7 +236,7 @@ def test_help_menu_order_and_links(window: MainWindow) -> None:
         "Keyboard Shortcuts",
         "Report a Bug",
         "Check for Updates",
-        "About SnapMock",
+        "About Snapmockit",
     ]
     assert DOCUMENTATION_URL.startswith("https://github.com/dbower44022/Snagit_FOSS")
     assert ISSUES_URL == "https://github.com/dbower44022/Snagit_FOSS/issues"

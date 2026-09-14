@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-SnapMock — an open-source multi-platform screenshot annotation & UI mockup tool built with Python and PyQt6.
+Snapmockit (named SnapMock until 09-14-26; the import package is still `snapmock`) — an open-source multi-platform screenshot annotation & UI mockup tool built with Python and PyQt6.
 
 ## Commands
 

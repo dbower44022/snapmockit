@@ -47,6 +47,7 @@ from snapmock.capture.models import (
     FullScreenScope,
 )
 from snapmock.config.constants import (
+    APP_NAME,
     LIBRARY_THUMBNAIL_MAX,
     LIBRARY_THUMBNAIL_MIN,
     PANEL_THRESHOLD_MAX,
@@ -589,7 +590,7 @@ class PreferencesDialog(QDialog):
 
         self._capture_hide_cb = QCheckBox()
         self._capture_hide_cb.setChecked(s.capture_hide_window())
-        form.addRow("Hide SnapMock window during capture:", self._capture_hide_cb)
+        form.addRow(f"Hide {APP_NAME} window during capture:", self._capture_hide_cb)
         self._readers["capture_hide_window"] = self._capture_hide_cb.isChecked
 
         self._capture_clipboard_cb = QCheckBox()

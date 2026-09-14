@@ -55,7 +55,7 @@ def test_headers_name_the_api_version_and_the_application() -> None:
     headers = request_headers()
     assert headers == {
         "Accept": "application/vnd.github+json",
-        "User-Agent": f"SnapMock/{__version__}",
+        "User-Agent": f"Snapmockit/{__version__}",
     }
     assert __version__ == APP_VERSION
 
@@ -169,7 +169,7 @@ def test_start_sends_one_request_with_the_headers_and_timeout(
     request = sent.requests[0]
     assert request.url().toString() == latest_release_url()
     assert request.rawHeader(b"Accept").data() == b"application/vnd.github+json"
-    assert request.rawHeader(b"User-Agent").data() == f"SnapMock/{__version__}".encode()
+    assert request.rawHeader(b"User-Agent").data() == f"Snapmockit/{__version__}".encode()
     assert request.transferTimeout() == TIMEOUT_MS
 
 
