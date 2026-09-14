@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -2024,6 +2024,15 @@ class MainWindow(QMainWindow):
         if not path_str:
             return
         self._open_project(Path(path_str))
+
+    def open_paths(self, paths: Iterable[Path]) -> None:
+        """Open every project or Snagit file in *paths*, as the command line names them.
+
+        The desktop entry's ``%F`` and a shell both reach here (packaging silence 2);
+        a file that cannot be opened reports through the Open Error message.
+        """
+        for path in paths:
+            self._open_project(path)
 
     def _open_project(self, path: Path) -> Document | None:
         """Open *path* in a new tab, or activate its tab if already open."""

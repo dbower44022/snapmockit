@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AppStream metainfo for the Linux AppImage. @VERSION@ and @DATE@ are filled by
+     packaging/appimage/build.py from the built wheel and the build date. -->
+<component type="desktop-application">
+  <id>io.github.dbower44022.snapmockit</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Snapmockit</name>
+  <summary>Screenshot annotation and user interface mockup tool</summary>
+  <description>
+    <p>
+      Snapmockit captures a screen, a window, or a region and annotates it with shapes,
+      arrows, text, callouts, highlights, blur, numbered steps, stamps, and emoji on
+      layers. It exports PNG, JPEG, SVG, and PDF, saves projects to come back to, and
+      reads and writes Snagit's .snagx files.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.dbower44022.snapmockit.desktop</launchable>
+  <url type="homepage">https://github.com/dbower44022/snapmockit</url>
+  <url type="bugtracker">https://github.com/dbower44022/snapmockit/issues</url>
+  <developer id="io.github.dbower44022">
+    <name>Doug Bower</name>
+  </developer>
+  <provides>
+    <binary>snapmockit</binary>
+    <mediatype>application/x-snapmockit-project</mediatype>
+  </provides>
+  <categories>
+    <category>Graphics</category>
+    <category>Utility</category>
+  </categories>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="@VERSION@" date="@DATE@"/>
+  </releases>
+</component>

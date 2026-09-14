@@ -19,8 +19,21 @@ def parse_capture_args(argv: list[str]) -> CaptureCommand | None:
     Accepts ``--capture``, ``--capture <mode>``, ``--capture=<mode>``,
     ``--delay <seconds>`` and ``--delay=<seconds>``. Unknown arguments are ignored.
     """
+    return parse_command_line(argv)[0]
+
+
+def parse_command_line(argv: list[str]) -> tuple[CaptureCommand | None, list[str]]:
+    """The capture command in *argv*, if any, and the files named on it.
+
+    *argv* is a whole command line; its first element is the program unless it is
+    an option. A file is any later argument that does not start with ``-`` and is
+    not the value of ``--capture`` or ``--delay``; the desktop entry's ``%F`` and
+    a shell both pass files that way (packaging silence 2). Unknown options are
+    ignored.
+    """
     command: CaptureCommand | None = None
     delay: int | None = None
+    files: list[str] = []
     args = list(argv)
     i = 0
     while i < len(args):
@@ -41,7 +54,9 @@ def parse_capture_args(argv: list[str]) -> CaptureCommand | None:
                 delay = max(0, min(60, int(text)))
             except ValueError:
                 delay = None
+        elif i > 0 and not arg.startswith("-"):
+            files.append(arg)
         i += 1
     if command is not None:
         command.delay_seconds = delay
-    return command
+    return command, files

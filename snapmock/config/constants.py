@@ -20,6 +20,9 @@ earlier name so existing settings are found, until a release carries a migration
 STORAGE_APP_NAME = "SnapMock"
 """The application name QSettings stores under, kept for the same reason."""
 ORG_DOMAIN = "snapmockit.com"
+DESKTOP_ENTRY_ID = "io.github.dbower44022.snapmockit"
+"""The desktop entry's id (packaging silence 2): the AppImage's ``.desktop`` file, its
+AppStream metainfo, its icon name, and the window class Qt reports to the desktop."""
 REPOSITORY_URL = "https://github.com/dbower44022/snapmockit"
 DOCUMENTATION_URL = f"{REPOSITORY_URL}#readme"
 ISSUES_URL = f"{REPOSITORY_URL}/issues"

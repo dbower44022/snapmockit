@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- shared-mime-info: the Snapmockit project file, so a double-click opens it. -->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-snapmockit-project">
+    <comment>Snapmockit project</comment>
+    <glob pattern="*.smk"/>
+    <sub-class-of type="application/zip"/>
+    <icon name="io.github.dbower44022.snapmockit"/>
+  </mime-type>
+</mime-info>

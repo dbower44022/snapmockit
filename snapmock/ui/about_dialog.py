@@ -6,7 +6,6 @@ import platform
 import sys
 
 from PyQt6.QtCore import QT_VERSION_STR, Qt
-from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import (
     QApplication,
     QDialog,
@@ -14,7 +13,6 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QStyle,
     QVBoxLayout,
     QWidget,
 )
@@ -30,6 +28,7 @@ from snapmock.config.constants import (
     REPOSITORY_URL,
 )
 from snapmock.ui.accessibility import apply_default_names
+from snapmock.ui.icons import render_application_icon
 
 TAGLINE = "Screenshot Annotation & UI Mockup Tool"
 CREDITS = ["Doug Bower", "Tabler Icons by Paweł Kuna (MIT)"]
@@ -69,12 +68,7 @@ class AboutDialog(QDialog):
 
         header = QHBoxLayout()
         icon = QLabel()
-        style = self.style()
-        if style is not None:
-            pixmap: QPixmap = style.standardIcon(QStyle.StandardPixmap.SP_DesktopIcon).pixmap(
-                48, 48
-            )
-            icon.setPixmap(pixmap)
+        icon.setPixmap(render_application_icon(48))
         header.addWidget(icon)
         title = QLabel(f"<h2 style='margin:0'>{APP_NAME}</h2><p style='margin:0'>{TAGLINE}</p>")
         header.addWidget(title, 1)

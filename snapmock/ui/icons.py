@@ -11,12 +11,42 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from PyQt6.QtGui import QAction, QKeySequence
+from PyQt6.QtCore import QRectF, Qt
+from PyQt6.QtGui import QAction, QIcon, QKeySequence, QPainter, QPixmap
+from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import QMenu, QMenuBar
 
 from snapmock.config.constants import APP_NAME
 from snapmock.config.shortcuts import SHORTCUTS
-from snapmock.core.theme_manager import theme_manager
+from snapmock.core.theme_manager import RESOURCES_DIR, theme_manager
+
+APPLICATION_ICON_FILE = RESOURCES_DIR / "icons" / "snapmockit.svg"
+"""The product's one face (packaging decision 3): the window icon, the tray, the About
+dialog, and, rendered by the AppImage recipe, the desktop entry's icon set."""
+
+APPLICATION_ICON_SIZES: tuple[int, ...] = (16, 24, 32, 48, 64, 128, 256)
+
+
+def render_application_icon(size: int) -> QPixmap:
+    """The application icon rendered at *size* pixels square from its SVG."""
+    pixmap = QPixmap(size, size)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    renderer = QSvgRenderer(str(APPLICATION_ICON_FILE))
+    if renderer.isValid():
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        renderer.render(painter, QRectF(0, 0, size, size))
+        painter.end()
+    return pixmap
+
+
+def application_icon() -> QIcon:
+    """The application icon with every size the desktop asks for rendered in."""
+    icon = QIcon()
+    for size in APPLICATION_ICON_SIZES:
+        icon.addPixmap(render_application_icon(size))
+    return icon
+
 
 # Tool id -> Tabler icon name (Left Tool Palette, Tools menu, Section 3.7).
 TOOL_ICONS: dict[str, str] = {

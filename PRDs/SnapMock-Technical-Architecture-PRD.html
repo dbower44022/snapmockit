@@ -11,7 +11,7 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.49</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.50</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.50</td>
+        <td class="nowrap">09-14-26 18:08</td>
+        <td>Doug Bower</td>
+        <td>The Linux AppImage decided and its recipe written (docs/Packaging-AppImage-Implementation.md): built by python-appimage on a relocatable CPython, in continuous integration on every push and on a release tag; Section 9's packaging row names the tool; Section 10 gains packaging/appimage/; a --version flag and file arguments on the entry point; one application icon.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.49</td>
         <td class="nowrap">09-14-26 17:04</td>
@@ -469,6 +476,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-14-26 18:08</td>
+        <td>7.3, 8, 9, 10</td>
+        <td>Decided</td>
+        <td><strong>Decided</strong> (09-14-26; <code>docs/Packaging-AppImage-Implementation.md</code>, Section 2): the Linux AppImage of 7.3 is built by <code>python-appimage</code> (decision 1, option A): its relocatable CPython 3.12 built on <code>manylinux_2_28</code> is extracted, the application's wheel and its locked dependencies are installed into it whole by pip, and <code>appimagetool</code> seals the result, so every Qt platform plugin, QtDBus, QtNetwork, and the resources are present because they were installed and not because an import analysis found them; the glibc floor is 2.28, the image's, wherever the build runs. Section 9's packaging row names the tool for Linux; PyInstaller and <code>cx_Freeze</code> stay named for Windows and macOS, which are out of this work's scope. The build runs in continuous integration on every push and on a <code>vX.Y.Z</code> tag, which attaches the file to a GitHub release (decision 2, option A). <strong>Section 10:</strong> <code>packaging/appimage/</code>, the recipe (<code>build.py</code>, run as <code>uv run --group packaging python packaging/appimage/build.py</code>, producing <code>dist/Snapmockit-&lt;version&gt;-x86_64.AppImage</code> with the version read from the wheel), the desktop entry <code>io.github.dbower44022.snapmockit.desktop</code>, the AppStream metainfo, the shared-mime-info file for <code>.smk</code>, and the entry point template; the packaging tools live in a <code>packaging</code> dependency group and never in the runtime dependencies (9.1 holds). <strong>The entry point</strong> (<code>app.py</code>) gains <code>--version</code>, which prints the product's name and version and exits before any Qt object exists, and opens the project and Snagit files named on the command line, which the desktop entry's <code>%F</code> passes (silences 2 and 6 of that work); it names the desktop entry to Qt so the window carries the entry's icon and class. <strong>One application icon</strong> (decision 3, option A): <code>snapmock/resources/icons/snapmockit.svg</code>, a first draft drawn by the session, is the window icon, the tray icon, the About dialog's, and, rendered to PNG by the recipe, the desktop's. <strong>Section 8's</strong> startup figure is measured against the AppImage in that work's Phase 2. The migration of the on-disk names (decision 4) and the first release, <code>v0.9.0</code> as an ordinary release since Check for Updates reads <code>releases/latest</code> (decision 5, corrected), follow in Phase 4.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-14-26 17:04</td>
         <td>9, 10</td>
@@ -2187,7 +2200,7 @@ deferred to a post-1.0 release.</p>
     <tr><th>Trash</th><td>send2trash</td><td>2.1+</td><td>Moves Library files to the platform trash instead of deleting them (Library PRD). Optional under Section 9.1.</td></tr>
     <tr><th>SVG Export</th><td>svgwrite</td><td>1.4+</td><td>Clean SVG file generation for vector export.</td></tr>
     <tr><th>PDF Export</th><td>ReportLab or QPrinter</td><td>Latest</td><td>PDF generation. QPrinter (built into Qt) is the primary option; ReportLab as fallback.</td></tr>
-    <tr><th>Packaging</th><td>PyInstaller / <code>cx_Freeze</code></td><td>Latest</td><td>Cross-platform binary packaging.</td></tr>
+    <tr><th>Packaging</th><td><code>python-appimage</code> (Linux AppImage); PyInstaller / <code>cx_Freeze</code> (Windows, macOS)</td><td>1.4.6+; Latest</td><td>Linux: a relocatable CPython with the wheel installed whole, sealed by <code>appimagetool</code> (packaging decision 1, 09-14-26); the tool lives in the <code>packaging</code> dependency group. Windows and macOS: binary packaging, not yet built.</td></tr>
     <tr><th>Testing</th><td>pytest + pytest-qt</td><td>Latest</td><td>Unit and integration testing with Qt widget testing support.</td></tr>
     <tr><th>Linting</th><td>ruff</td><td>Latest</td><td>Fast Python linter and formatter.</td></tr>
     <tr><th>Type Checking</th><td>mypy</td><td>Latest</td><td>Static type analysis for catching bugs early.</td></tr>
@@ -2315,6 +2328,7 @@ docstring.</p>
         render.py                 # Render library files without opening them in a tab
     resources/                    # Application resources — icons, stamps, themes
         icons/
+            snapmockit.svg        # the application icon (packaging decision 3): window, tray, About, and the AppImage's desktop icon set
             tabler/               # vendored Tabler Icons subset (MIT); LICENSE alongside the SVG files
         sounds/
         emoji/                    # the bundled emoji data (Numbered Steps, Stamps & Emoji PRD 4.2; decision 2)
@@ -2393,8 +2407,15 @@ docstring.</p>
         unmet_requirements.py     # the shared unmet-requirement message for never-disabled controls
         unsaved_changes_dialog.py # Unsaved Changes dialog with the canvas preview (General UI PRD 11.7)
         welcome_panel.py          # the Welcome panel of General UI PRD 16 and its canvas size dialog
-tests/
+packaging/
+    appimage/                 # the Linux AppImage recipe (Technical Architecture PRD 7.3; docs/Packaging-AppImage-Implementation.md)
+        build.py              # one command: uv run --group packaging python packaging/appimage/build.py -> dist/Snapmockit-<version>-x86_64.AppImage
+        entrypoint.sh         # the AppRun body python-appimage writes: the bundled Python, -I, -m snapmock, the arguments
+        io.github.dbower44022.snapmockit.desktop      # the desktop entry: name, icon, Exec with %F, Graphics and Utility, the .smk MIME type
+        io.github.dbower44022.snapmockit.appdata.xml # the AppStream metainfo; the release row filled from the wheel at build time
+        io.github.dbower44022.snapmockit.xml          # shared-mime-info: application/x-snapmockit-project for .smk
 scripts/                      # one-off generators run by hand: build_emoji_data.py (the emoji data file)
+tests/
     __init__.py
     conftest.py
     test_app.py

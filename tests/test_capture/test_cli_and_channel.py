@@ -11,7 +11,7 @@ import pytest
 from PyQt6.QtWidgets import QApplication
 from pytestqt.qtbot import QtBot
 
-from snapmock.capture.cli import parse_capture_args
+from snapmock.capture.cli import parse_capture_args, parse_command_line
 from snapmock.capture.single_instance import SingleInstanceChannel, try_forward
 
 
@@ -63,3 +63,20 @@ def test_channel_recovers_from_stale_endpoint(qtbot: QtBot) -> None:
     finally:
         channel.close()
     assert not path.exists()
+
+
+def test_parse_command_line_separates_files_from_the_capture_options() -> None:
+    """Packaging silence 2: the desktop entry's %F and a shell name files positionally."""
+    command, files = parse_command_line(["snapmock"])
+    assert command is None and files == []
+    command, files = parse_command_line(["snapmock", "a.smk", "b.snagx"])
+    assert command is None and files == ["a.smk", "b.snagx"]
+    command, files = parse_command_line(
+        ["snapmock", "--capture", "region", "--delay", "3", "c.smk"]
+    )
+    assert command is not None and command.mode == "region" and command.delay_seconds == 3
+    assert files == ["c.smk"]
+    command, files = parse_command_line(["--capture=full", "d.smk"])
+    assert command is not None and command.mode == "full" and files == ["d.smk"]
+    command, files = parse_command_line(["snapmock", "--unknown", "e.smk"])
+    assert command is None and files == ["e.smk"]

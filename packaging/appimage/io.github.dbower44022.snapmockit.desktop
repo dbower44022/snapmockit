@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Snapmockit
+GenericName=Screenshot Annotation Tool
+Comment=Capture, annotate, and mock up screenshots
+Exec=snapmockit %F
+Icon=io.github.dbower44022.snapmockit
+Terminal=false
+Categories=Graphics;Utility;
+MimeType=application/x-snapmockit-project;
+Keywords=screenshot;capture;annotate;mockup;
+StartupNotify=true
+StartupWMClass=io.github.dbower44022.snapmockit

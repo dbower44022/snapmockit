@@ -1,6 +1,6 @@
 # Packaging: the Linux AppImage — Implementation Notes
 
-Last Updated: 09-14-26 17:59 · Revision 1.0
+Last Updated: 09-14-26 18:10 · Revision 1.1
 
 Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`, Section 1) for Linux: the AppImage that Technical Architecture PRD 7.3 names as the primary Linux distribution, built by a recipe in the repository, proven on this machine, built in continuous integration on every push, and published as a GitHub release on a tag, together with the migration of the two on-disk names the rename of 09-14-26 left as they were. The kickoff prompt is `docs/Packaging-AppImage-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -8,7 +8,7 @@ Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`
 
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
-| 1 | The five decisions, this document, and the recipe under `packaging/appimage/` with its tests | Step 1 done 09-14-26; step 2 in progress | |
+| 1 | The five decisions, this document, and the recipe under `packaging/appimage/` with its tests | Done 09-14-26 | 860f370, then the recipe commit |
 | 2 | The AppImage built here and run as a user would; every proof of the task recorded; size and start time measured | Not started | |
 | 3 | The build in continuous integration: the AppImage as an artifact on every push, a smoke test on the runner, the release job on a `vX.Y.Z` tag | Not started | |
 | 4 | The migration of the on-disk names, and the first release, `v0.9.0` | Not started | |
@@ -24,7 +24,7 @@ The `python-appimage` tool's CPython 3.12 base image, built on the `manylinux_2_
 
 The alternatives: a PyInstaller one-directory bundle wrapped by `appimagetool`, smaller and the tool Technical Architecture PRD Section 9 names, at the cost of hook work for the platform plugins, QtDBus, and the resources, and of a pruning that can drop a lazily imported module on a machine that is not this one; and a bare `appimagetool` over a copied virtual environment, which is not relocatable without the same work as the chosen option. Section 9's packaging row is amended to name `python-appimage` for Linux.
 
-**A correction to the kickoff's cost statement for decision 2:** with this option the AppImage's glibc floor is set by the manylinux image the Python was built on (`manylinux_2_28`, glibc 2.28), not by the machine that runs the build, so a build on the continuous-integration runner runs on distributions older than the runner. Verified in Phase 1 step 2 by reading the built AppImage's library requirements.
+**A correction to the kickoff's cost statement for decision 2:** with this option the AppImage's glibc floor is set by the wheels installed into it, not by the machine that runs the build, so a build on the continuous-integration runner runs on distributions older than the runner. **Verified 09-14-26 by reading the built file's symbol versions:** the bundled Python needs glibc 2.28 (the `manylinux_2_28` image's), and Qt's `libQt6Core.so.6` needs glibc 2.34, because the `pyqt6-qt6` 6.10.2 wheel on PyPI is tagged `manylinux_2_34_x86_64`. **The floor is therefore glibc 2.34:** Ubuntu 22.04, Debian 12, Fedora 35, RHEL 9, and later. The estimate of 2.28 in the decision as presented was wrong by one wheel and is corrected here.
 
 Follow-on detail: `AppRun` passes its arguments to `python -m snapmock`; `QT_QPA_PLATFORM` is not forced, so Qt chooses xcb or wayland as it does from source.
 
@@ -71,18 +71,41 @@ Verified by running the code on this machine (Linux, Cinnamon on X11, glibc 2.39
 
 ## 5. The recipe
 
-Written in Phase 1 step 2.
+`packaging/appimage/` (Technical Architecture PRD 1.50, Section 10). One command from the repository at a commit:
+
+```
+uv run --group packaging python packaging/appimage/build.py
+```
+
+produces `dist/Snapmockit-<version>-x86_64.AppImage`. The steps, in `build.py`:
+
+1. `uv build --wheel` into `build/appimage/wheel/`; the version is read from the wheel's file name and cross-checked by nothing else, so it is never typed. `uv export --no-dev --no-emit-project --frozen --no-hashes` gives the seven locked runtime requirement lines (numpy, pillow, psutil, pyqt6, pyqt6-qt6, pyqt6-sip, send2trash), so what ships is what `uv.lock` and the CI build prove.
+2. The application icon (`snapmock/resources/icons/snapmockit.svg`) is rendered to 16, 24, 32, 48, 64, 128, 256, and 512 pixel PNGs through Qt's SVG renderer on the offscreen platform.
+3. A staging directory gets the desktop entry, the 256 pixel PNG named as the entry's `Icon`, `entrypoint.sh`, and `requirements.txt` (the locked lines, then the wheel's path). `python-appimage build app --base-image <the pinned image> --no-packaging` extracts the base image, installs each requirement with the bundled pip under `-I`, and writes `AppRun` from the entry point: `exec "${APPDIR}/usr/bin/python3.12" -I -m snapmock "$@"`. `-I` keeps the user's `PYTHONPATH` and user site-packages out of the bundled interpreter. `QT_QPA_PLATFORM` is not set, so Qt picks xcb or wayland from the session as it does from source.
+4. The AppDir is completed with what `python-appimage` does not carry: `usr/share/metainfo/io.github.dbower44022.snapmockit.appdata.xml` with `@VERSION@` and `@DATE@` filled (the `.appdata.xml` name is the one `appimagetool` looks for and validates; AppStream accepts it beside `.metainfo.xml`), `usr/share/mime/packages/io.github.dbower44022.snapmockit.xml`, the hicolor icon set at the eight sizes plus the scalable SVG, and `usr/bin/snapmockit`, a symlink to `AppRun`, so the desktop entry's `Exec=snapmockit %F` names a file that exists.
+5. `appimagetool` (fetched once by `python-appimage` into `~/.cache/python-appimage/bin`) seals the AppDir; it validates the AppStream metainfo and embeds the type 2 runtime.
+
+**The base image is pinned:** `python3.12.14-cp312-cp312-manylinux_2_28_x86_64.AppImage` from the `python3.12` release of `niess/python-appimage`, downloaded once into `build/appimage/` by its direct address. `python-appimage`'s own lookup reads GitHub's API unauthenticated on every build, which a shared runner is rate limited against; the pin avoids the call and makes the Python version part of the recipe.
+
+**The build, measured here 09-14-26:** about one minute with the base image already downloaded (the pip installs from PyPI are most of it); the file is 122.3 MB (128,264,696 bytes), below the decision's 150 to 200 MB estimate because squashfs compresses the 435 MB environment well. `--version` answers in 0.40 s wall from the sealed file, mount included. `--appimage-extract-and-run --version` answers the same without FUSE. The AppDir's bundled Python builds the main window on the offscreen platform (`from snapmock.main_window import MainWindow`, then `MainWindow()`), the smoke test Phase 3 runs on the runner.
+
+**What the host must provide (silence 4).** Verified by `ldd` over the xcb platform plugin in the built AppDir: nothing is unresolved on this machine, and the libraries taken from the host are libc, libstdc++, libgcc, glib, dbus, fontconfig, freetype, expat, png, brotli, bz2, lzma, zstd, lz4, pcre2, systemd, gcrypt, gpg-error, cap, bsd, md, X11, X11-xcb, Xau, Xdmcp, xkbcommon, xkbcommon-x11, GL, GLX, EGL, GLdispatch, and the xcb family (xcb, cursor, icccm, image, keysyms, randr, render, render-util, shape, shm, sync, util, xfixes, xkb). On a bare Ubuntu that is the apt list in `ci.yml`'s checks job (`libegl1 libgl1 libglib2.0-0 libdbus-1-3 libfontconfig1 libfreetype6 libxkbcommon0 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 libxcb-xkb1 libxcb-render-util0 libxcb-image0`), plus `libx11-6` and `libxfixes3` for the X11 capture backend's ctypes loads, `libwayland-client0` for the wayland platform plugin, and `xdg-desktop-portal` with a backend for the Wayland capture. Fonts come from the host (silence 3). The README records the same list in Phase 2, once the display run has confirmed it.
+
+**The entry point and the icon.** `snapmock/app.py`: `--version` prints `Snapmockit <version>` and exits before any Qt object exists; the files named on the command line (`parse_command_line` in `capture/cli.py`, which `parse_capture_args` now wraps) open through `MainWindow.open_paths` after the window shows; the application names itself to Qt (`setApplicationName`, `setApplicationVersion`, `setDesktopFileName(DESKTOP_ENTRY_ID)`, `setWindowIcon`), so the window carries the desktop entry's class and icon under xcb and wayland. `DESKTOP_ENTRY_ID` in `config/constants.py` is the one source of the id; the recipe imports it, and the tests compare the files' names to it. `snapmock/ui/icons.py` gains `render_application_icon` and `application_icon`; the tray (`capture/tray.py`) and the About dialog draw the same SVG.
 
 ## 6. Tests
 
-Written in Phase 1 step 2.
+`tests/test_packaging_appimage.py`, twelve tests, none of which builds or reaches the network: the desktop entry's fields (type, name, icon, `Exec` with `%F`, the two categories, the MIME type, the window class) and `desktop-file-validate` where installed; the metainfo's id, name, licence, launchable, provided media type, and placeholder release row, the template fill with the package version, and `appstreamcli validate --no-net` where installed; the MIME file's one type and one glob; the entry point's shebang, `-I -m snapmock "$@"`, and the absence of a forced platform; the icon rendered square with an opaque centre and a transparent corner at 16, 48, and 256 pixels, and every size in the application icon; the build script's `render_icons`, `wheel_version`, `appimage_name`, and `requirement_lines`, and the recipe files' existence. `tests/test_app.py` gains the `--version` test (exit code 0, the text, no Qt) and an `open_paths` test that opens a saved project from a path; `tests/test_capture/test_cli_and_channel.py` gains the `parse_command_line` cases (files alone, files after `--capture` and `--delay`, an option without a program name, an unknown option). `desktop-file-validate` reports one hint, that Graphics and Utility are both main categories so the entry may appear twice in a menu; silence 2 names both and the hint is not an error.
 
 ## 7. Follow-ups
 
 - A designed application icon to replace the session's draft (decision 3, option B).
+- `APP_BUILD_DATE` in `config/constants.py` is set by hand ("2026-09-08"); the release process of Phase 4 sets it for `v0.9.0`, and a later step could derive it from the build.
+- `appimagetool` is fetched at its `continuous` tag by `python-appimage`; a pinned release would make the seal reproducible too.
 
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.1 | 09-14-26 18:10 | Claude (Claude Code) | Phase 1 done: Sections 5 and 6 written (the recipe, its measurements, the host libraries, the entry point and icon changes, the tests); the glibc floor corrected to 2.34 from the built file; three follow-ups. |
 | 1.0 | 09-14-26 17:59 | Claude (Claude Code) | Initial notes: the phase table, the five decisions as approved (decision 5 corrected: an ordinary release, since `releases/latest` excludes pre-releases), the seven silences with silence 2's consequence for the entry point, and the starting state re-verified. |
