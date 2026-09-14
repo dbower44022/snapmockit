@@ -1,6 +1,6 @@
 # Basic Shape Remainder and Blur Modes Implementation Notes
 
-Last Updated: 09-13-26 14:36 · Revision 1.9
+Last Updated: 09-14-26 09:34 · Revision 1.10
 
 Implements the remainder of the Basic Shape Annotation Tools PRD (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.8 at the start) and the Blur / Pixelate tool of the Blur, Highlighter, and Eyedropper Tools PRD (version 1.4), with the General UI PRD (version 2.16) and Technical Architecture PRD (version 1.28) rows they own, in the five phases and the close-out defined by `docs/Basic-Shape-Remainder-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2.
 
@@ -183,10 +183,13 @@ The older checks the Vector Item Properties notes list are answered there.
 
 **Section 9's last rows are closed** by `docs/Freehand-Remainder-Implementation.md` (09-13-26): 9.2's brush-tip cursor, and 9.10's fitting budget and long-stroke preview. Two things there reach back into this work. The Freehand pipeline this work built in Phase 2 is faster with its result unchanged, and its fitting error now has a noise floor below 50 percent smoothing, so the 0.5 px floor of the 1.11 row and the 630 ms figure of Section 4 are superseded (that work's Section 6); and the 9.2 cursor this work's Phase 2 left unbuilt is built (its Section 5). No row of the Basic Shape Annotation Tools PRD is open except the pressure data it reserves and the Open Issues of its Section 14.
 
+**Solid Fill passes**, on Doug's display run of 09-14-26 (checklist page `SnapMock Blur and Eyedropper Display Checks`): with Solid Fill chosen under Mode:, a green typed into the Hex field of the Blur tool's own Fill swatch committed, the swatch turned green, and a dragged rectangle covered the text under it with a solid green box. The seventh check of Section 10 is closed, and with it every display check this work owed. Blur PRD 1.19.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.10 | 09-14-26 09:34 | Claude (Claude Code) | Section 10: Solid Fill passes on the display run of 09-14-26; every display check of this work is answered. Blur PRD 1.19. |
 | 1.9 | 09-13-26 14:36 | Claude (Claude Code) | Section 10: the pointer to the Freehand remainder work, which closes Section 9's last rows and supersedes this work's 0.5 px fitting floor and 630 ms figure. |
 | 1.8 | 09-12-26 16:01 | Claude (Claude Code) | Section 10: the pointer to the shared drawing work, which closes the Basic Shape PRD's Section 2 and 9.5. |
 | 1.7 | 09-12-26 10:35 | Claude (Claude Code) | Section 10: the second display run of 09-12-26. Gaussian Blur and Pixelate pass; Solid Fill stays blocked, narrowed from the shared colour picker (which the same run proved works) to the Blur tool's own Fill swatch, whose signal wiring is sound headlessly, leaving the popover interaction as the fault |

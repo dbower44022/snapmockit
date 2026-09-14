@@ -1,6 +1,6 @@
 # Freeform Blur Brush and Highlighter Straightening Implementation Notes
 
-Last Updated: 09-14-26 02:46 · Revision 1.6
+Last Updated: 09-14-26 09:34 · Revision 1.7
 
 Implements the remainder of the Blur / Pixelate tool and the whole of the Highlighter's drawing behaviour from the Blur, Highlighter, and Eyedropper Tools PRD (`PRDs/SnapMock-Blur-Highlighter-Eyedropper-Tools-PRD.html`, version 1.6 at the start), with the General UI PRD (version 2.20) and Technical Architecture PRD (version 1.32) rows they own, in the five phases and the close-out defined by `docs/Freeform-Blur-Highlighter-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2.
 
@@ -177,10 +177,17 @@ The first run's difficulty finding the Blur tool's Mode and Shape controls was n
 
 Found by the Freehand remainder work on 09-13-26 and fixed on 09-14-26 (Blur PRD 1.18): the brush cursor of Phase 2 and the brush-editing cursor of Phase 3 are drawn in screen pixels at the brush's size times the zoom, but neither tool listened to the view's `zoom_changed` signal, so a zoom left the circle at its old size until the tool was activated again or its bar changed. The Blur tool now connects to the signal in `activate` and disconnects in `deactivate`, re-drawing the cursor while the region shape is Freeform; the Select tool does the same while a brush-editing session lasts. The pattern is the Freehand tool's (`docs/Freehand-Remainder-Implementation.md`, Section 5). Two tests in `tests/test_blur_brush.py` and `tests/test_blur_brush_edit.py`. The full suite at the fix's commit (cee0740), run alone from a scratch worktree between 01:08 and 02:45 on 09-14-26: **1634 passed, 0 failed, 13 skipped, 1 deselected, in 1 hour 37 minutes.**
 
+## 12. The display run of 09-14-26
+
+Run by Doug between 08:57 and 09:31 from the checklist page `SnapMock Blur and Eyedropper Display Checks`, whose marks were read back, against the working tree at c020337. Of this work's checks: **the painted region passes again** (two strokes adding up, Enter placing them, the Edit menu reading Undo Add BlurItem), **the Whole Layer region and all three source modes pass again**, and **the erased region passes for the first time**, on the only route 2.8 gives it: with Cinnamon's window-move gesture handed to the Super key for the check (`gsettings set org.cinnamon.desktop.wm.preferences mouse-button-modifier '<Super>'`, and back to `'<Alt>'` afterwards), Alt+paint inside brush editing erased the smear along the dragged path and the window stayed put. Section 10's "confirmed as blocked" is therefore a desktop setting, not a fault, and the eraser needs no second route for a user who moves the gesture; whether it should have one anyway is the Blur PRD's question, as before. The Multiply highlight passes again, as the Vector Item Properties notes recorded on 09-12-26.
+
+Two notes Doug left. On the Enter that ends brush editing: "It remains the blur tool." Headlessly, after the same Enter the session is over, the viewport's cursor is the arrow, the active tool is the Select tool, and the status bar reads the Select tool's idle line; not reproduced, and what stayed on the display is asked. On New Layer (Ctrl+Shift+N): "Layer 1 remained active." Reproduced: `AddLayerCommand` adds the layer above the active one and leaves the active layer where it was, and the Layers panel's highlight stays with it; General UI PRD Section 7 says only "create a new empty annotation layer above the active layer" and is silent on activation. Raised with Doug; not this work's row.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.7 | 09-14-26 09:34 | Claude (Claude Code) | Section 12: the display run of 09-14-26. The erased region passes with the desktop gesture handed to Super, the painted region and Whole Layer with its source modes pass again; two notes, one not reproduced and one a New Layer silence raised with Doug. |
 | 1.6 | 09-14-26 02:46 | Claude (Claude Code) | Section 11: the full suite at the fix's commit, 1634 passed, whole. |
 | 1.5 | 09-14-26 01:08 | Claude (Claude Code) | Section 11: the brush and brush-editing cursors follow the zoom. Blur PRD 1.18. |
 | 1.4 | 09-12-26 10:35 | Claude (Claude Code) | Section 10: the second display run of 09-12-26. Every check this work owed now passes — the painted region, Whole Layer, all three source modes, and the freeform highlight's handles joining the marker-tip cursor and the straightened highlight. The erased region is confirmed blocked by Cinnamon's Alt gesture rather than failing, and the Tool Options Bar difficulty is confirmed to have been a layout question, not a missing control |

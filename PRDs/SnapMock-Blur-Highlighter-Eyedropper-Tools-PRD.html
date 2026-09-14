@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Blur, Highlighter &amp; Eyedropper Tools</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.18</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.19</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Blur / Pixelate · Highlighter · Eyedropper</dd>
-    <dt>Document version</dt><dd>1.18</dd>
-    <dt>Last Updated</dt>    <dd>09-14-26 01:08</dd>
+    <dt>Document version</dt><dd>1.19</dd>
+    <dt>Last Updated</dt>    <dd>09-14-26 09:34</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.19</td>
+        <td class="nowrap">09-14-26 09:34</td>
+        <td>Doug Bower</td>
+        <td>Display run of 09-14-26: Solid Fill from the tool's own swatch, the painted and the erased regions, Whole Layer with its source modes, the Multiply highlight, and the Eyedropper's loupe all pass; no display check of this document is owed.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.18</td>
         <td class="nowrap">09-14-26 01:08</td>
@@ -185,6 +192,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-14-26 09:34</td>
+        <td>2.2, 2.3, 2.4, 2.5, 2.8, 3.7, 4.3, 4.4</td>
+        <td>Verified</td>
+        <td>Display run by Doug between 08:57 and 09:31 on 09-14-26, from a checklist page whose marks were read back: 43 steps, 35 as described, 8 problems, all eight explained in the notes. <strong>2.2's Solid Fill passes from the Blur tool's own Fill swatch</strong>, blocked since 09-12-26: a hex typed into the swatch's picker committed and the region covered the text in solid green. <strong>2.3's painted region passes</strong> again. <strong>2.8's erased region passes for the first time:</strong> Alt+paint inside brush editing erased the smear along the dragged path, once Cinnamon's window-move gesture was handed to the Super key for the check; the "blocked" of the 1.8 row was the desktop's gesture, not the tool. <strong>2.4's Whole Layer region and 2.5's three source modes pass</strong> again. <strong>3.7's Multiply highlight over dark text passes</strong> again. <strong>4.3's loupe is seen for the first time and passes:</strong> the magnifier following the pointer with its crosshair, swatch, and value, growing through 4.4's four sample sizes, flipping at the right and top edges, and a click sampling a dark value; the Eyedropper activated from <code>I</code>, which it had not on 09-12-26. The narrow-window check of the Eyedropper's bar cannot arise, since that bar fits inside the window's minimum width (notes Section 12 of the Eyedropper work). Two of Doug's notes are not this document's: the Enter that ends brush editing leaving something that "remains the blur tool", not reproduced headlessly and asked; and New Layer leaving the earlier layer active, a General UI PRD silence raised with him. No display check of this document is owed.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-14-26 01:08</td>
         <td>2.6, 2.8</td>

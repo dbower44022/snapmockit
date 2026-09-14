@@ -1,6 +1,6 @@
 # The Freehand Tool's Remaining Rows — Implementation Notes
 
-Last Updated: 09-14-26 01:08 · Revision 1.10
+Last Updated: 09-14-26 09:34 · Revision 1.11
 
 Implements the last open rows of the Basic Shape Annotation Tools PRD (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.21 at the start), all of them Section 9's, the Freehand / Pen tool: 9.2's brush-tip cursor and 9.10's two performance rows, with the Section 12 Freehand row they own and the General UI PRD (version 2.32) and Technical Architecture PRD (version 1.42) rows, in the four phases and the close-out defined by `docs/Freehand-Remainder-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2. Finishing this work leaves the Basic Shape Annotation Tools PRD with no open row except what the document itself reserves.
 
@@ -288,10 +288,15 @@ Tests: `tests/test_freehand_pipeline.py` asserts the three stages' own guarantee
 
 **Next required step:** none of this work's; the Blur brush cursor's zoom gap of Section 8.3 is fixed. Nothing in the Basic Shape Annotation Tools PRD is left to build. After that, the Blur brush cursor's zoom gap is a one-line change in its own PRD's terms; nothing else in the Basic Shape Annotation Tools PRD is left to build.
 
+### 8.11 The other works' display checks, run 09-14-26
+
+The checks Section 8.2 listed as owed by other works were run by Doug on 09-14-26 from the page `SnapMock Blur and Eyedropper Display Checks`: 43 steps, 35 as described, 8 problems, all eight explained. Solid Fill from the Blur tool's own swatch passes (Basic Shape remainder notes 1.10); the highlight in Multiply passes again; the painted region, the erased region with the desktop gesture moved, and the Whole Layer region with its source modes pass (Freeform Blur notes Section 12); the loupe passes at every size and edge, and the narrow-window check cannot arise (Eyedropper notes Section 12). Blur PRD 1.19. Raised with Doug from the run: whether New Layer should make the new layer active.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.11 | 09-14-26 09:34 | Claude (Claude Code) | Section 8.11: the other works' display checks run 09-14-26, all answered; pointers to the three notes that own them. Blur PRD 1.19. |
 | 1.10 | 09-14-26 01:08 | Claude (Claude Code) | Section 8.3: the Blur brush cursor's zoom gap fixed (Blur PRD 1.18); the next required step is none. |
 | 1.9 | 09-14-26 00:44 | Claude (Claude Code) | Section 8.10: the full suite at the decision 4 commit, 1633 passed, whole; the phase table's last row done; the next required step is none of this work's. |
 | 1.8 | 09-13-26 23:28 | Claude (Claude Code) | Section 8.10: the retest of 09-13-26, seven of seven marked steps as described, closing section 5's two problems and every display check of 8.2. Basic Shape PRD 1.28. |
