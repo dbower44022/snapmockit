@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Basic Shape Annotation Tools</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.25</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.26</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Line · Arrow · Rectangle · Ellipse · Arc · Polygon · Freehand / Pen</dd>
-    <dt>Document version</dt><dd>1.25</dd>
-    <dt>Last Updated</dt>    <dd>09-13-26 14:36</dd>
+    <dt>Document version</dt><dd>1.26</dd>
+    <dt>Last Updated</dt>    <dd>09-13-26 20:56</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.26</td>
+        <td class="nowrap">09-13-26 20:56</td>
+        <td>Doug Bower</td>
+        <td>Display run of 09-13-26: 9.1, 9.2, and 9.10 pass on the display. The fit's runaway handles on a zigzag piece, older than this work, found by the run's shaky circle and fixed. 9.3's maxima raised as a question: a hand tremor over 5 px survives every smoothing setting.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.25</td>
         <td class="nowrap">09-13-26 14:36</td>
@@ -247,6 +254,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-13-26 20:56</td>
+        <td>9.1, 9.2, 9.3, 9.10, 12</td>
+        <td>Verified</td>
+        <td>Display run by Doug between 20:31 and 20:49 on 09-13-26, from a checklist page whose marks were read back (notes Section 8.5): 36 steps, 35 marked, 33 as described, 2 problems. <strong>9.1 and 9.2 pass on the display:</strong> the dot-variant crosshair while idle; the brush tip at 2 px and 30 px, in red and in blue, at 100 and 400 percent, following a Ctrl+wheel zoom made in the middle of a stroke, and the crosshair back on release. <strong>9.10's long stroke passes:</strong> a stroke of over 25 seconds stayed whole and smooth while drawn and snapped at once on release. <strong>9.10's fitting budget passes on the display:</strong> the snap on release was immediate at 0, 50, and 100 percent on a shaky circle drawn over 15 seconds, and the 0 percent result read as the stroke drawn. The two problems were the 50 and 100 percent circles, "Not really smoother, might even be worse" and "Not significantly smoother". Reproducing that circle headlessly found two things. <strong>Fixed, 9.3:</strong> the least-squares fit could run away on a piece whose simplified points zigzag, solving to control handles about 2000 px long that still passed every point at its own parameter, so the curve looped 480 px across the canvas between two points 20 px apart; the defect is older than this work (the pipeline of the 1.11 row gives the same control points) and is the likelier reading of "might even be worse". A handle is now never longer than two chords; past that the piece takes Schneider's chord-third fallback and is split by the error test. <strong>Raised, not changed, 9.3's maxima:</strong> stage 1 keeps every point further than its tolerance from the simplified line, so a hand tremor whose peaks stand higher than 5 px survives at 100 percent and the three settings look alike on it (notes Section 8.7, measured: a 3 px tremor is gone at a tolerance of 8 px, a 5 px tremor at 15 px, an 8 px tremor at 20 px, each with a fitting error of half the tolerance). Whether the slider's top should reach further than 5 px and 3 px is 9.3's question and is put to Doug at this close-out. The display checks of the 1.25 row are all answered; none is owed.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-13-26 14:36</td>
         <td>9.10, 12</td>

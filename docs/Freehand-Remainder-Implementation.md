@@ -1,6 +1,6 @@
 # The Freehand Tool's Remaining Rows — Implementation Notes
 
-Last Updated: 09-13-26 17:41 · Revision 1.4
+Last Updated: 09-13-26 20:56 · Revision 1.5
 
 Implements the last open rows of the Basic Shape Annotation Tools PRD (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.21 at the start), all of them Section 9's, the Freehand / Pen tool: 9.2's brush-tip cursor and 9.10's two performance rows, with the Section 12 Freehand row they own and the General UI PRD (version 2.32) and Technical Architecture PRD (version 1.42) rows, in the four phases and the close-out defined by `docs/Freehand-Remainder-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2. Finishing this work leaves the Basic Shape Annotation Tools PRD with no open row except what the document itself reserves.
 
@@ -216,12 +216,45 @@ Owed by other works and not this one's: a blur region in Solid Fill, whose Fill 
 
 **At the close-out commit of the work** (30090c9), the last commit that changes code being dca9a9c, run alone from a scratch worktree between 16:02 and 17:40 with nothing else on the machine: **1630 passed, 0 failed, 13 skipped, 1 deselected, in 1 hour 38 minutes.** The 21 tests more than the run at the start (1609) are this work's own: seven cursor, seven fit, and eight preview tests, less the one pipeline test whose assertion changed in place. Three whole passes in a row, at c1ee66c, e6d3701, and 30090c9: the timer fix of 09-13-26 holds, and a failure in a later run is a real failure.
 
-**Next required step:** Doug's display run of the three checks in 8.2, recorded here when run. After that, the Blur brush cursor's zoom gap is a one-line change in its own PRD's terms; nothing else in the Basic Shape Annotation Tools PRD is left to build.
+### 8.5 The display run of 09-13-26
+
+Run by Doug between 20:31 and 20:49 from the checklist page `SnapMock Freehand Display Checks`, whose marks were read back, against commit 26272a6. **36 steps: 35 marked, 33 as described, 2 problems, both in section 5 and both explained below.** The one unmarked step is section 4's first, setting the width to 6 px, whose next step depended on it and passed.
+
+| # | Check (Section 8.2) | Steps | Result |
+|---|---|---|---|
+| 1 | The brush tip at a thin and a thick stroke, in two colours, at 100 and 400 percent zoom, and the dot crosshair between strokes; the tip following a zoom made mid-stroke | 2.1 to 2.13; 3.1 to 3.8 | As described, every step |
+| 2 | A long slow stroke of over 25 seconds staying smooth and wholly visible while drawn, and its snap on release | 4.2 to 4.5 | As described |
+| 3 | The snap on release at 0, 50, and 100 percent feeling immediate, and the 0 percent result reading as the stroke drawn | 5.1 to 5.8 | Timing as described at every level; 0 percent as described; **50 and 100 percent marked as problems**: "Not really smoother, might even be worse" and "Not significantly smoother" |
+
+Two things lie behind the two problems, found by reproducing the run's shaky circle headlessly (a circle of radius 200 px drawn over 15 seconds at 100 Hz with a hand tremor of 8 px at 6 Hz, rounded to whole pixels).
+
+### 8.6 The fit's handles ran away on a zigzag piece
+
+**A defect in the fit, older than this work, fixed in d4cec30.** At 50 percent the shaky circle's fit had a three-point piece, three simplified points 20 px apart in a zigzag, whose least-squares solve gave control handles about 2000 px long. Every point lay within the fitting error of the curve at its own parameter, so the piece passed, and the curve looped 480 px across the canvas between two of its points; at 0 percent the same defect strayed 30 px. The old pipeline of commit c1ee66c produces the same control points, so this is Schneider's fit as the Basic Shape remainder work wrote it, not the speed work or the noise floor: Schneider guards a degenerate solve only from below. A handle longer than `MAX_HANDLE_CHORDS` (2) times its chord now takes the chord-third fallback, and the error test splits the piece as it splits any miss; a half circle needs two thirds of a chord, so no honest piece is touched. On the run's circle the curve now stays within 6 px of the points at every level. This is the likelier reading of "might even be worse" at 50 percent: a loop or a spike where none was at 0. The test module's reference pipeline carries the guard as a switch, so the agreement tests still isolate the speed change and the new test shows the old fit straying and the new one within bounds.
+
+### 8.7 What the Smoothing slider can and cannot remove
+
+**Not a defect: 9.3's own numbers.** Stage 1 keeps every point more than its tolerance from the simplified line, so a wobble whose peaks stand higher than the tolerance is kept, and stage 2 then follows the kept peaks within its error. At 100 percent the tolerance is 5 px and the error 3 px, so a hand tremor of more than about 3 px survives at every setting, and 0, 50, and 100 percent look alike on it, which is what the run saw. Measured on the shaky circle at three tremor sizes, the tremor left after the fit (the deviation of the curve's radius from its own running mean) and the segments:
+
+| Tremor | 5 px and 3 px (9.3's 100 percent) | 8 px and 4 px | 10 px and 5 px | 15 px and 8 px | 20 px and 10 px |
+|---|---|---|---|---|---|
+| 3 px | 2.7 px left, 133 segments | 0.3 px, 4 | 0.3 px, 4 | 0.4 px, 4 | 0.3 px, 4 |
+| 5 px | 3.7 px, 179 | 4.2 px, 122 | 3.1 px, 23 | 0.3 px, 3 | 0.6 px, 4 |
+| 8 px | 5.8 px, 180 | 5.8 px, 180 | 6.0 px, 141 | 5.1 px, 28 | 0.5 px, 3 |
+
+A tremor disappears once the tolerance is about twice its size; below that the slider changes the segment count and not the look. The noise floor of decision 2 does not enter: it caps at 1.5 px, the 50 percent error, and every figure above is at 50 percent or higher. What the slider's top should mean is a question for 9.3, raised with Doug at this close-out and recorded in the Basic Shape PRD's 1.26 row; nothing is changed by this work.
+
+### 8.8 The suite after the guard
+
+Started at d4cec30 after the guard's commit; recorded here when it lands.
+
+**Next required step:** Doug's answer on 9.3's maxima (Section 8.7). After that, the Blur brush cursor's zoom gap is a one-line change in its own PRD's terms; nothing else in the Basic Shape Annotation Tools PRD is left to build.
 
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.5 | 09-13-26 20:56 | Claude (Claude Code) | Section 8.5, the display run of 09-13-26: 33 of 35 marked steps as described, checks 1 and 2 passing whole and check 3's timing at every level; 8.6, the fit's runaway handles found by the run's shaky circle and fixed (d4cec30); 8.7, what the Smoothing slider can remove under 9.3's numbers, measured, and the question raised; 8.8, the suite pending. Basic Shape PRD 1.26. |
 | 1.4 | 09-13-26 17:41 | Claude (Claude Code) | Section 8.4: the two full-suite runs, 1622 passed at e6d3701 and 1630 passed at 30090c9, both whole; the close-out row done. |
 | 1.3 | 09-13-26 14:36 | Claude (Claude Code) | Phase 4 done and the work closed out: Section 7 with the pieces, the declared bounds, the targeted repaint, and the six silences found while building, 7.1's cost per move before and after, 7.2's tests, and 7.3's close-out; Section 8 with what remains of the Basic Shape PRD (nothing open but what it reserves), the display checks owed, what remains elsewhere, and the suite runs pending; the phase-table rows done. Basic Shape PRD 1.25, Technical Architecture PRD 1.46; Basic Shape remainder notes 1.9, shared drawing notes 1.14, General UI notes 1.42. |
 | 1.2 | 09-13-26 14:22 | Claude (Claude Code) | Phase 3 done: Section 2.5 with option B refined on the measurement and chosen; Section 6 with the vectorised simplification, the shared Bernstein rows, the noise measure and the floor at every smoothing, the four silences found while building, 6.1's measurements after against Section 3, 6.2's tests, and 6.3's close-out; Section 5.1 with the Phase 2 full-suite run (1616 passed); the phase-table row done. Basic Shape PRD 1.24, Technical Architecture PRD 1.45. |
