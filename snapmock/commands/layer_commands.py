@@ -20,23 +20,31 @@ BACKGROUND_LAYER_NAME = "Background"
 
 
 class AddLayerCommand(BaseCommand):
-    """Add a new layer."""
+    """Add a new layer and make it the active layer (General UI PRD 7.4; decided
+    09-14-26 after a display run: the PRD says the layer goes above the active one and is
+    silent on activation, and a user who presses Ctrl+Shift+N expects to draw on the layer
+    just made). Undo removes it and puts the earlier active layer back."""
 
     def __init__(self, manager: LayerManager, name: str, index: int | None = None) -> None:
         self._mgr = manager
         self._name = name
         self._index = index
         self._layer: Layer | None = None
+        self._previous_active_id: str = ""
 
     def redo(self) -> None:
+        self._previous_active_id = self._mgr.active_layer_id
         if self._layer is None:
             self._layer = self._mgr.add_layer(self._name, self._index)
         else:
             self._mgr.insert_layer(self._layer, self._index or self._mgr.count)
+        self._mgr.set_active(self._layer.layer_id)
 
     def undo(self) -> None:
         if self._layer is not None:
             self._mgr.remove_layer(self._layer.layer_id)
+        if self._mgr.layer_by_id(self._previous_active_id) is not None:
+            self._mgr.set_active(self._previous_active_id)
 
     @property
     def description(self) -> str:

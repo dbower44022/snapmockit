@@ -16,7 +16,14 @@ from snapmock.main_window import MainWindow
 @pytest.fixture()
 def window(qtbot: QtBot) -> MainWindow:
     w = MainWindow()
-    qtbot.addWidget(w)
+
+    def _mark_all_clean(win: MainWindow) -> None:
+        # A test that fails before its own mark_clean must not hang the run on the
+        # unsaved-changes prompt at close (found 09-14-26)
+        for doc in win.documents.documents:
+            doc.scene.command_stack.mark_clean()
+
+    qtbot.addWidget(w, before_close_func=_mark_all_clean)
     return w
 
 
@@ -156,9 +163,12 @@ def test_background_layer_pins_the_bottom_of_the_stack(
     window._layer_move_to_top()  # noqa: SLF001
     assert unmet_messages[-1][0] == "Move Layer to Top"
     assert lm.layers[0] is background
-    # New Layer Below on the Background layer lands above it; a duplicate is an Annotation
+    # New Layer Below on the Background layer lands above it and becomes active (General
+    # UI PRD 2.36); a duplicate of the Background layer is an Annotation
     window._layer_new_relative(background.layer_id, above=False)  # noqa: SLF001
     assert lm.layers[0] is background and lm.layers[1].name == "Layer 4"
+    assert lm.active_layer is lm.layers[1]
+    lm.set_active(background.layer_id)
     window._layer_duplicate()  # noqa: SLF001
     assert lm.layers[0] is background and lm.layers[1].layer_type == "Annotation"
     assert lm.layers[1].name == "Layer 1 copy"

@@ -1,6 +1,6 @@
 # General UI Implementation Notes
 
-Last Updated: 09-13-26 14:36 · Revision 1.42
+Last Updated: 09-14-26 09:50 · Revision 1.43
 
 Implements the SnapMock General User Interface PRD (version 2.4, `PRDs/SnapMock-General-UI-PRD.html`) in the eight phases defined by `docs/General-UI-Implementation-Kickoff-Prompt.md`. A session pasting that prompt starts at the first phase not marked done in Section 1.
 
@@ -706,10 +706,15 @@ One thing in these notes moves. **Section 6.6's cursor table** gains a third cur
 
 The Section 17.2 table gains no walk: no item gains a property. No module is added.
 
+## 27. A New Layer Becomes the Active Layer
+
+Raised by Doug's display run of 09-14-26 (`docs/Freeform-Blur-Highlighter-Implementation.md`, Section 12): after Ctrl+Shift+N, "Layer 1 remained active". Section 7.4 and the Layer menu say only that the new layer goes above the active one. Doug chose activation on 09-14-26: `AddLayerCommand` makes the layer it adds the active one and its undo restores the earlier active layer where it still exists, on every route that pushes the command. General UI PRD 2.36; `tests/test_layer_commands.py`. The Section 17.2 table gains no walk.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.43 | 09-14-26 09:50 | Claude (Claude Code) | Section 27: a new layer becomes the active layer, decided 09-14-26. General UI PRD 2.36. |
 | 1.42 | 09-13-26 14:36 | Claude (Claude Code) | Section 26, the Freehand tool's remaining rows: the cursor row 6.6 gains, the zoom_changed listener, and the Blur brush cursor's zoom gap. General UI PRD 2.33 and 2.34. |
 | 1.41 | 09-12-26 16:01 | Claude (Claude Code) | Section 25, the shape tools' shared drawing behaviour: what moves in Sections 1.3, 9, and 12.2, and the switch to the Select tool that is gone. General UI PRD 2.26, 2.27, 2.28, and 2.32. |
 | 1.40 | 09-12-26 14:51 | Claude (Claude Code) | The header revision, left at 1.38 while the change log stood at 1.39, is corrected to match. The two Section 6 bullets of 09-12-26 carry their display result: checks 8 and 9 of the shared drawing work's run both pass, so the colour picker's Saved row and the Tool Options Bar's "More…" popover are confirmed on the display. Their PRD references are corrected from 2.26 and 2.27 to 2.29 and 2.30, the numbers `fc704a9` gave them after a parallel session took the same two. |
