@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.48</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.49</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.48</dd>
-    <dt>Last Updated</dt>    <dd>09-14-26 14:38</dd>
+    <dt>Document version</dt><dd>1.49</dd>
+    <dt>Last Updated</dt>    <dd>09-14-26 17:04</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.49</td>
+        <td class="nowrap">09-14-26 17:04</td>
+        <td>Doug Bower</td>
+        <td>Continuous integration decided and written: lint, format, types, the suite on the offscreen platform, and the wheel and sdist build, on every push and pull request (docs/Release-Engineering.md).</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.48</td>
         <td class="nowrap">09-14-26 14:38</td>
@@ -462,6 +469,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-14-26 17:04</td>
+        <td>9, 10</td>
+        <td>Decided</td>
+        <td><strong>Decided</strong> (09-14-26; <code>docs/Release-Engineering.md</code>, Section 3): continuous integration on GitHub Actions, in <code>.github/workflows/ci.yml</code>, on every push to main and every pull request. Two jobs on Ubuntu: the checks, with the Qt runtime libraries installed, uv, <code>uv sync --locked</code>, ruff's lint and format check, mypy over <code>snapmock</code>, and the whole suite on the offscreen platform with the one environmental deselection the project's runs carry; and the build, <code>uv build</code>, which proves the wheel, the sdist, the dynamic version, and the packaging metadata on every change and keeps both as an artifact. Section 9's "Development Tools" gains the workflow as the gate the section's linters, type checker, and test runner were meant to be run through; Section 10 gains no package, since a workflow file is not one. Written and verified locally on 09-14-26; its first run on GitHub waits for a push.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-14-26 14:38</td>
         <td>1, 9, 10</td>

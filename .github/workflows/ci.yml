@@ -1,0 +1,77 @@
+# Continuous integration (Technical Architecture PRD 1.49; docs/Release-Engineering.md).
+# Lint, format, type check, and the whole test suite on the offscreen Qt platform, on
+# every push and pull request; and a build of the wheel and sdist, so the packaging
+# metadata is proven on every change too.
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, types, tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Qt runtime libraries and fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libegl1 libgl1 libglib2.0-0 libdbus-1-3 libfontconfig1 libfreetype6 \
+            libxkbcommon0 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 \
+            libxcb-shape0 libxcb-xkb1 libxcb-render-util0 libxcb-image0 \
+            fonts-dejavu-core fonts-noto-color-emoji
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install
+        run: uv sync --locked
+
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      - name: Ruff format
+        run: uv run ruff format --check .
+
+      - name: Mypy
+        run: uv run mypy snapmock
+
+      - name: Tests
+        run: >
+          uv run pytest -q -o faulthandler_timeout=120
+          --deselect tests/test_property_panel.py::test_font_combo_reflects_text_item_font
+
+  build:
+    name: Wheel and sdist
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Set up Python
+        run: uv python install
+      - name: Build
+        run: uv build
+      - name: Show what was built
+        run: ls -l dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: snapmockit-dist
+          path: dist/
+          if-no-files-found: error
