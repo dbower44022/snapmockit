@@ -39,14 +39,14 @@ def release_body(tag: str, url: str = "https://github.com/x/y/releases/tag/t") -
 
 
 def test_repository_path_is_derived_from_the_repository_url() -> None:
-    assert repository_path() == "dbower44022/Snagit_FOSS"
+    assert repository_path() == "dbower44022/snapmockit"
     assert repository_path("https://github.com/o/n.git") == "o/n"
     assert repository_path("https://github.com/o/n/") == "o/n"
 
 
 def test_latest_release_endpoint_excludes_drafts_and_pre_releases() -> None:
     assert latest_release_url() == (
-        "https://api.github.com/repos/dbower44022/Snagit_FOSS/releases/latest"
+        "https://api.github.com/repos/dbower44022/snapmockit/releases/latest"
     )
     assert REPOSITORY_URL.endswith(repository_path())
 

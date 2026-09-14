@@ -17,7 +17,7 @@ def test_about_shows_version_build_date_and_licence(qtbot: QtBot) -> None:
     labels = [w.text() for w in dlg.findChildren(type(dlg._version_label))]  # noqa: SLF001
     assert any(APP_LICENSE in t for t in labels)
     assert any("Built with PyQt6" in t for t in labels)
-    assert any("github.com/dbower44022/Snagit_FOSS/issues" in t for t in labels)
+    assert any("github.com/dbower44022/snapmockit/issues" in t for t in labels)
 
 
 def test_copy_version_info_fills_the_clipboard(qtbot: QtBot) -> None:

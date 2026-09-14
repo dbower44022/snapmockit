@@ -238,8 +238,8 @@ def test_help_menu_order_and_links(window: MainWindow) -> None:
         "Check for Updates",
         "About Snapmockit",
     ]
-    assert DOCUMENTATION_URL.startswith("https://github.com/dbower44022/Snagit_FOSS")
-    assert ISSUES_URL == "https://github.com/dbower44022/Snagit_FOSS/issues"
+    assert DOCUMENTATION_URL.startswith("https://github.com/dbower44022/snapmockit")
+    assert ISSUES_URL == "https://github.com/dbower44022/snapmockit/issues"
 
 
 def test_delete_row_has_backspace_alternate(window: MainWindow) -> None:
