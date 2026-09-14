@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.46</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.47</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.46</dd>
-    <dt>Last Updated</dt>    <dd>09-13-26 14:36</dd>
+    <dt>Document version</dt><dd>1.47</dd>
+    <dt>Last Updated</dt>    <dd>09-13-26 23:07</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.47</td>
+        <td class="nowrap">09-13-26 23:07</td>
+        <td>Doug Bower</td>
+        <td>Freehand remainder decision 4: three helpers join core/path_utils.py and the fit takes tangents; Section 8's Freehand item-creation figure 22 to 40 ms at 5000 points.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.46</td>
         <td class="nowrap">09-13-26 14:36</td>
@@ -448,6 +455,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-13-26 23:07</td>
+        <td>8, 10</td>
+        <td>Changed</td>
+        <td>Freehand remainder decision 4 (09-13-26; Basic Shape PRD 1.27; notes Section 8.9). <code>core/path_utils.py</code> gains <code>travel_average</code>, <code>simplify_rdp_indices</code>, and <code>point_tangents</code>, and <code>fit_cubic_beziers</code> takes optional tangents; Section 10's row for the module is unchanged in wording. Section 8's item-creation row for the Freehand tool at 5000 raw points now measures 22 to 40 ms at every smoothing on this machine, against 12 to 40 at the 1.45 row: the averaging stage and the half-pixel simplification at every smoothing cost a few milliseconds at the high settings, and the 0 percent jittery case is the same 40 ms it was.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-13-26 14:36</td>
         <td>3.9, 8, 10</td>

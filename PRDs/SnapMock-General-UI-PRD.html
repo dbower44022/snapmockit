@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.34</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.35</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.34</dd>
-    <dt>Last Updated</dt>    <dd>09-13-26 10:42</dd>
+    <dt>Document version</dt><dd>2.35</dd>
+    <dt>Last Updated</dt>    <dd>09-13-26 23:07</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.35</td>
+        <td class="nowrap">09-13-26 23:07</td>
+        <td>Doug Bower</td>
+        <td>5.3's Freehand Smoothing description follows the Basic Shape PRD's 1.27: an averaging stage, a fixed half-pixel simplification, and a 10 px fit at 100 percent; the control is unchanged.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.34</td>
         <td class="nowrap">09-13-26 10:42</td>
@@ -395,6 +402,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-13-26 23:07</td>
+        <td>5.3</td>
+        <td>Corrected</td>
+        <td>The Freehand row of 5.3 reads "Smoothing, which now simplifies the path on release (up to 6 px of tolerance at 100 percent)"; the Basic Shape remainder work made that 5 px, and the Freehand remainder work's decision 4 (09-13-26; Basic Shape PRD 1.27) reshapes it: the Smoothing slider now averages the stroke over up to 30 px of travel, simplifies it at half a pixel, and fits it within up to 10 px, so at its top it removes a hand's shake and keeps the shape. The control itself, a slider from 0 to 100 percent with its value label, is unchanged, as are the presets and themes that store it.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-13-26 10:42</td>
         <td>6.6</td>

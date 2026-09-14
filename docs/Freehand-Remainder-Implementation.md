@@ -1,6 +1,6 @@
 # The Freehand Tool's Remaining Rows — Implementation Notes
 
-Last Updated: 09-13-26 22:32 · Revision 1.6
+Last Updated: 09-13-26 23:07 · Revision 1.7
 
 Implements the last open rows of the Basic Shape Annotation Tools PRD (`PRDs/SnapMock-Basic-Shape-Annotation-Tools-PRD.html`, version 1.21 at the start), all of them Section 9's, the Freehand / Pen tool: 9.2's brush-tip cursor and 9.10's two performance rows, with the Section 12 Freehand row they own and the General UI PRD (version 2.32) and Technical Architecture PRD (version 1.42) rows, in the four phases and the close-out defined by `docs/Freehand-Remainder-Kickoff-Prompt.md` (revision 1.0). A session pasting that prompt starts at the first phase not marked done in Section 1. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) governs the standards; the General UI implementation notes (`docs/General-UI-Implementation.md`) hold the walk table of Section 17.2. Finishing this work leaves the Basic Shape Annotation Tools PRD with no open row except what the document itself reserves.
 
@@ -14,7 +14,8 @@ Starting state, verified at commit d88f041 on 09-13-26 (the kickoff names 13d005
 | 2 | The brush-tip cursor (9.1, 9.2; General UI PRD 6.6) | Done | 6d6a789, then this close-out commit |
 | 3 | The fit within 50 ms (9.3, 9.10) | Done | 483e387, 54e62da, then this close-out commit |
 | 4 | The long-stroke preview (9.10) | Done | dca9a9c, then this close-out commit |
-| Close-out | PRD rows, the notes complete with the measurements before and after, the pointers in the Basic Shape remainder notes (Section 10), the shared drawing notes (Section 12.2), and the General UI notes (Section 26), the display checks owed, what remains of the Basic Shape PRD | Done | 30090c9, then this commit |
+| Close-out | PRD rows, the notes complete with the measurements before and after, the pointers in the Basic Shape remainder notes (Section 10), the shared drawing notes (Section 12.2), and the General UI notes (Section 26), the display checks owed, what remains of the Basic Shape PRD | Done | 30090c9, 26272a6 |
+| After the display run | The runaway-handle guard (8.6); decision 4, the Smoothing slider reshaped (2.6, 8.9) | Done but for the suite run and the retest | d4cec30, 16977ea, then this commit |
 
 ## 2. Decisions
 
@@ -60,6 +61,12 @@ Each decided as the kickoff recommended, on 09-13-26, with the detail the readin
 ### 2.5 Decision 2's option B, refined on the measurement (09-13-26)
 
 Presented to Doug after step 1 of Phase 3 and chosen ("b"). Option A left 5000 jittery points at 0 percent at 1.2 to 1.5 s, so the rule reached B, and measuring B as approved found three things. The median point-to-point deviation alone changes nothing: on the jittery stroke it is 0.26 px, under the 0.5 px floor already there, and the floor that meets the budget is about 1.2 px, or 1.5 px on a stroke of whole-pixel mouse coordinates, which every stroke at 100 percent zoom is. A floor at 0 percent only puts a cliff at 1 percent, since every level from 0 to 16 percent already resolves to the 0.5 px error, so the floor applies at every smoothing: the error is the larger of the slider's value and the floor. The lower half of the slider then becomes one level on the noisiest strokes, with the floor capped at 1.5 px so the upper half keeps its meaning; on a smooth stroke the floor is near zero and nothing changes. The measure is the median jump between consecutive points' deviations from their neighbours' chord, times three (Section 6). The alternative, option D, A alone with 0 percent recorded as a departure, would have left every mouse stroke at 30 percent or below paying about 50 ms per 200 points on release. The cost taken: the pipeline test's strict ordering between 0 and 30 percent on its 0.8 px alternating wave becomes non-strict, and a stroke saved at low smoothing before this work re-fits to fewer segments when re-smoothed, never on load.
+
+### 2.6 Decision 4, what the Smoothing slider does above its floor (09-13-26)
+
+Raised by the display run of 09-13-26 (Section 8.5), where the 50 and 100 percent circles were "not really smoother", and presented twice.
+
+**First, the numbers.** 9.3's maxima, a 5 px tolerance and a 3 px error at 100 percent, cannot remove a hand tremor over about 3 px, since stage 1 keeps every peak higher than its tolerance (Section 8.7). Doug chose option B, raising the top of the scale to 20 px and 10 px, over A, keeping 9.3's numbers, and C, raising the tolerance alone. **Then the mechanism.** Building B showed that 9.3's structure, a fit of only the kept points, bows between them once they are 20 px apart: a 30 px wavy underline came out 39 px off with a loop after its first trough at 50 percent, 18 px off with the fit's tangents read from the raw stroke. Pinning the fit to the stroke, stage 1 fixed at half a pixel, removed the bows but then flattened a tremor only when the error exceeded its peaks, and the error that flattens an 8 px tremor distorts a 50 px circle by as much. Doug chose **option M**: a centred moving average over the points within the slider times 30 px of travel either side, then stage 1 at half a pixel, then stage 2 within the slider times 10 px, with the fit's end tangents from the stroke around each kept point. Over option P, the pinned fit alone, where a tremor over about 4 px survives every setting, and option S, 9.3's structure with the larger numbers, where the wave's hump bows 18 px. The cost taken: 9.3 gains a third stage, a departure in mechanism and not only in numbers; a small quick shape softens at high settings, a 50 px circle losing 4 px of radius at 100 percent and a 40 px hook rounding by 6 px; the reach is travel, so a slowly drawn tremor is removed more easily than a fast one. The Highlighter's own PRD uses a moving average for the same purpose (Blur PRD 3.2), so the device has precedent.
 
 ## 3. The measurements at the starting commit
 
@@ -248,12 +255,42 @@ A tremor disappears once the tolerance is about twice its size; below that the s
 
 At 108ed39, the guard's commit d4cec30 plus this record, run alone from a scratch worktree between 20:56 and 22:31: **1631 passed, 0 failed, 13 skipped, 1 deselected, in 1 hour 35 minutes.** The one test more than the run at 30090c9 is the shaky-circle test of the guard.
 
-**Next required step:** Doug's answer on 9.3's maxima (Section 8.7). After that, the Blur brush cursor's zoom gap is a one-line change in its own PRD's terms; nothing else in the Basic Shape Annotation Tools PRD is left to build.
+### 8.9 Decision 4 built: the three stages
+
+16977ea. `travel_average` in `core/path_utils.py` replaces each point by the mean of the points within a reach of travel along the stroke either side, the first and last points kept, in one NumPy pass over the cumulative travel; `simplify_rdp_indices` returns what `simplify_rdp` keeps as indexes; `point_tangents` reads the stroke's direction at each kept index from the raw points up to eight either side; `fit_cubic_beziers` takes those tangents in place of Schneider's chord estimates where given, at the ends and at every split. `FreehandItem.smoothed_points` is the averaging stage, its reach `SMOOTHING_REACH_PX` (30) times the smoothing; `fit_segments` runs it, then stage 1 at `SIMPLIFY_TOLERANCE_PX` (0.5, at every smoothing; `MIN_TOLERANCE_PX` and `SMOOTHING_TOLERANCE_PX` are gone), then stage 2 at `fit_error`, whose 100 percent value `SMOOTHING_ERROR_PX` is 10 px. The noise floor of decision 2 is unchanged and still read from the raw points; its 1.5 px cap is now the error of 15 percent.
+
+Silences found while building, decided as the code says:
+
+- **The averaging keeps the first and last points where the hand put them**, so a stroke still starts and ends under the pointer and Close Path still joins the ends the user drew.
+- **The tangent window is eight raw points either side**, about a tenth of a second at the mouse's rate; a stroke that does not move there falls back to the chord.
+- **The noise floor is read from the raw points, not the averaged ones**: the stroke's noise is its own, and above 15 percent the slider's error exceeds the cap anyway.
+- **A callers' fit without tangents is the fit it was**: `fit_cubic_beziers` keeps Schneider's estimates when none are given, so the agreement tests against the old pipeline still hold and nothing else in the code changes.
+
+Measured on 09-13-26 at 16977ea, on the offscreen platform while nothing else ran (load average 1.3 to 2.3 from the measuring itself), the median of three:
+
+| Stroke | 0 percent | 50 percent | 100 percent |
+|---|---|---|---|
+| shaky circle, radius 200, 8 px tremor | 192 segments, tremor 6.1 px, radius 200.0 | 61, 2.4 px, 200.2 | 4, 0.4 px, 200.3 |
+| shaky circle, 3 px tremor | 185, 2.5 px, 200.1 | 3, 0.2 px, 200.3 | 2, 0.3 px, 198.3 |
+| smooth circle, radius 50, 90 points | 6, radius 49.9 | 2, 48.7 | 2, 46.1 |
+| wavy underline, 30 px high | 5 segments, within 1.7 px | 3, within 3.6 px | 3, within 6.6 px |
+| sharp 40 px hook | within 2.5 px | within 3.9 px | within 6.4 px |
+
+The release at 5000 points, the Section 3 strokes: smooth 22 to 24 ms, jittery 23 to 40 ms, whole-pixel 23 to 37 ms, at every smoothing; the 0 percent jittery case is the slowest at 40 ms, inside 9.10's 50 ms with the least margin, because the averaging stage does nothing there and the fit works on the half-pixel kept set. At 500 and 2000 points, 8 to 21 ms.
+
+Tests: `tests/test_freehand_pipeline.py` asserts the three stages' own guarantees at 50 percent (every averaged point within half a pixel of the kept polyline, every kept point within the error of the curve, the ends kept) in place of the old raw-to-curve bound; `tests/test_freehand_fit.py` gains the top of the slider turning the 8 px tremor circle into a circle of four segments and the size the hand drew, with the tremor kept at 0 percent and mostly gone at 50, and the averaging stage keeping a quick 50 px circle within 3 px of radius at 50 percent and 6 px at 100 and every stroke's ends; the panel's re-smooth test starts at 20 percent so 95 percent has segments to take away. Targeted run at 16977ea over the ten Freehand, point-edit, preview, modifier, cursor, resize, straightening, bar, and preset modules: 117 passed. Ruff and mypy are clean.
+
+### 8.10 The suite after decision 4
+
+Started at the close-out commit of decision 4; recorded here when it lands, with Doug's retest of the 50 and 100 percent circles.
+
+**Next required step:** Doug's retest of the shaky circle at 50 and 100 percent from the checklist page's section 6, and the suite of 8.10 recorded. After that, the Blur brush cursor's zoom gap is a one-line change in its own PRD's terms; nothing else in the Basic Shape Annotation Tools PRD is left to build.
 
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.7 | 09-13-26 23:07 | Claude (Claude Code) | Section 2.6, decision 4 in its two parts (B, then M over P and S); Section 8.9, the three stages built with the silences, the measurements, and the tests; 8.10, the suite pending; the phase table's post-run row. Basic Shape PRD 1.27, General UI PRD 2.35, Technical Architecture PRD 1.47. |
 | 1.6 | 09-13-26 22:32 | Claude (Claude Code) | Section 8.8: the full suite at the guard commit, 1631 passed, whole. |
 | 1.5 | 09-13-26 20:56 | Claude (Claude Code) | Section 8.5, the display run of 09-13-26: 33 of 35 marked steps as described, checks 1 and 2 passing whole and check 3's timing at every level; 8.6, the fit's runaway handles found by the run's shaky circle and fixed (d4cec30); 8.7, what the Smoothing slider can remove under 9.3's numbers, measured, and the question raised; 8.8, the suite pending. Basic Shape PRD 1.26. |
 | 1.4 | 09-13-26 17:41 | Claude (Claude Code) | Section 8.4: the two full-suite runs, 1622 passed at e6d3701 and 1630 passed at 30090c9, both whole; the close-out row done. |

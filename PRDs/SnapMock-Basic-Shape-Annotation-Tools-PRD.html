@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Basic Shape Annotation Tools</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.26</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.27</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Line · Arrow · Rectangle · Ellipse · Arc · Polygon · Freehand / Pen</dd>
-    <dt>Document version</dt><dd>1.26</dd>
-    <dt>Last Updated</dt>    <dd>09-13-26 20:56</dd>
+    <dt>Document version</dt><dd>1.27</dd>
+    <dt>Last Updated</dt>    <dd>09-13-26 23:07</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/Snagit_FOSS</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.27</td>
+        <td class="nowrap">09-13-26 23:07</td>
+        <td>Doug Bower</td>
+        <td>9.3 changed (decision 4): a moving average over smoothing times 30 px of travel before the two stages, stage 1 fixed at half a pixel, stage 2 at smoothing times 10 px with tangents from the stroke, so the slider smooths a hand's shake.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.26</td>
         <td class="nowrap">09-13-26 20:56</td>
@@ -254,6 +261,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-13-26 23:07</td>
+        <td>9.3, 12</td>
+        <td>Changed</td>
+        <td><strong>9.3 changed</strong> (decision 4 of the Freehand remainder work, chosen by Doug on 09-13-26 in two parts; notes Sections 2.6 and 8.9). The pipeline has three stages. <strong>An averaging stage first:</strong> each raw point is replaced by the mean of the points within smoothing times 30 px of travel along the stroke on either side, the first and last points kept where the hand put them; at 0 percent nothing is averaged. <strong>Stage 1's tolerance is half a pixel at every smoothing</strong>, no longer smoothing times 5 px, so the fit sees the whole averaged stroke and is pinned to it. <strong>Stage 2's error is smoothing times 10 px</strong>, no longer 3 px, and the fit's end tangents are read from the stroke around each kept point rather than from the kept neighbours. Why: at this document's 5 px and 3 px a hand tremor over about 3 px survived every setting, which is what the 1.26 row's display run saw; raising the two numbers alone (20 px and 10 px, the first half of the decision) made the fit bow between the widely spaced kept points, a 30 px wavy underline coming out 18 to 39 px off at 50 percent; pinning the fit removed the bows but then a tremor was flattened only by an error large enough to distort a 50 px circle by as much. The moving average is the Blur, Highlighter, and Eyedropper Tools PRD's own device (its 3.2). Measured: a circle of radius 200 with an 8 px tremor is a four-segment circle of the same radius at 100 percent and has most of the tremor gone at 50; a 3 px tremor is gone at 50; a 30 px wave stays a wave within 3.6 px at 50 percent and 6.6 at 100; a 50 px circle drawn quickly loses 1.3 px of radius at 50 percent and 3.9 at 100; a sharp 40 px hook is rounded by 4 px at 50 and 6 at 100; the release stays inside 9.10's 50 ms at 5000 points, 22 to 40 ms. The cost: a small quick shape softens at the top of the scale, and a slowly drawn tremor is removed more easily than a fast one, since the reach is travel and not time. The noise floor of the 1.24 row is unchanged and its 1.5 px cap is now the error of 15 percent. Section 12's row "At 100% the stroke is noticeably smoothed" is met on a tremor for the first time; its "At 0% the stroke closely matches the raw mouse path" is unchanged. Strokes saved before this version re-fit differently when re-smoothed from the Property Panel and never on load. The display retest owed: the shaky circle at 50 and 100 percent.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-13-26 20:56</td>
         <td>9.1, 9.2, 9.3, 9.10, 12</td>
