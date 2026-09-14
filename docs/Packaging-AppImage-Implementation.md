@@ -8,8 +8,8 @@ Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`
 
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
-| 1 | The five decisions, this document, and the recipe under `packaging/appimage/` with its tests | Done 09-14-26 | 860f370, then the recipe commit |
-| 2 | The AppImage built here and run as a user would; every proof of the task recorded; size and start time measured | Not started | |
+| 1 | The five decisions, this document, and the recipe under `packaging/appimage/` with its tests | Done 09-14-26: the suite at 2d10faa, 1652 passed, 13 skipped, 1 deselected, in 7 minutes 58 seconds from a scratch worktree | 860f370, 2d10faa, then the close-out commit |
+| 2 | The AppImage built here and run as a user would; every proof of the task recorded; size and start time measured | Checklist page published 09-14-26 (`Snapmockit AppImage Display Checks`); the run is owed | |
 | 3 | The build in continuous integration: the AppImage as an artifact on every push, a smoke test on the runner, the release job on a `vX.Y.Z` tag | Not started | |
 | 4 | The migration of the on-disk names, and the first release, `v0.9.0` | Not started | |
 | Close-out | The PRD rows, the release-engineering notes, the display checks owed, what of 7.3 remains | Not started | |
