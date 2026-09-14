@@ -54,7 +54,7 @@ jobs:
 
       - name: Tests
         run: >
-          uv run pytest -q -o faulthandler_timeout=120
+          uv run pytest -q -o faulthandler_timeout=120 --durations=15
           --deselect tests/test_property_panel.py::test_font_combo_reflects_text_item_font
 
   build:

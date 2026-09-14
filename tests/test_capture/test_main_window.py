@@ -328,7 +328,9 @@ def test_command_line_capture_as_first_action(qtbot: QtBot) -> None:
     qtbot.addWidget(window)
     manager: CaptureManager = window.capture_manager
     assert not window.isVisible()
-    with qtbot.waitSignal(manager.capture_completed, timeout=3000):
+    # The capture path completes in a fraction of a second here; the wait is generous
+    # for a two-core CI runner, where 3 s expired on the first run (09-14-26)
+    with qtbot.waitSignal(manager.capture_completed, timeout=20000):
         _capture_as_first_action(window, CaptureCommand(mode="full"), show_after=True)
     assert window.isVisible()
     assert window.library.list_files()
