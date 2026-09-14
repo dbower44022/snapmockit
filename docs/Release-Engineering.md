@@ -1,6 +1,6 @@
 # Release Engineering Notes
 
-Last Updated: 09-14-26 17:12 · Revision 1.1
+Last Updated: 09-14-26 17:29 · Revision 1.2
 
 The work that turns the finished application into a product: its identity, continuous integration, packaging, and the first release. Every feature row of the nine product requirements documents was built or recorded as a departure by 09-14-26 (`docs/Freehand-Remainder-Implementation.md`, Section 8.1, names the last of them); this document holds what follows, in the order Doug set on 09-14-26: the identity, then continuous integration, then packaging, then an end-to-end pass on real work, then the two platform backends when their machines exist.
 
@@ -10,7 +10,7 @@ The work that turns the finished application into a product: its identity, conti
 |---|---|---|---|
 | 1 | The identity: the name, the repository, the licence, the version's one source, the README | Done | faf8e1b, then this commit |
 | 2 | Continuous integration: lint, format, types, the suite on the offscreen platform, and the wheel and sdist, on every push | Written; its first run waits for a push | this commit |
-| 3 | Packaging: the Linux AppImage first (Technical Architecture PRD Section 9), then Flatpak, PyPI, the Windows MSI or portable ZIP, and the macOS bundle | Not started | |
+| 3 | Packaging: the Linux AppImage first (Technical Architecture PRD 7.3), then Flatpak, PyPI, the Windows MSI or portable ZIP, and the macOS bundle | Kickoff written: `docs/Packaging-AppImage-Kickoff-Prompt.md` (revision 1.0), not yet run | |
 | 4 | An end-to-end pass on real work, on the first AppImage | Not started | |
 | 5 | The Windows and macOS capture backends, when their machines exist | Waiting | |
 
@@ -26,5 +26,6 @@ Doug confirmed four of the five facts as the code held them and changed one: **t
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.2 | 09-14-26 17:29 | Claude (Claude Code) | Step 3's kickoff prompt written, `docs/Packaging-AppImage-Kickoff-Prompt.md` (revision 1.0). |
 | 1.1 | 09-14-26 17:12 | Claude (Claude Code) | Step 1 done: the repository renamed to dbower44022/snapmockit and every address changed. |
 | 1.0 | 09-14-26 17:04 | Claude (Claude Code) | Initial notes: the five steps and their status, the identity decisions of 09-14-26, and the continuous integration workflow as written. Technical Architecture PRD 1.49. |
