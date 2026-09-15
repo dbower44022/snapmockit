@@ -1,6 +1,6 @@
 # Packaging: the Linux AppImage — Implementation Notes
 
-Last Updated: 09-14-26 23:35 · Revision 1.3
+Last Updated: 09-14-26 23:56 · Revision 1.4
 
 Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`, Section 1) for Linux: the AppImage that Technical Architecture PRD 7.3 names as the primary Linux distribution, built by a recipe in the repository, proven on this machine, built in continuous integration on every push, and published as a GitHub release on a tag, together with the migration of the two on-disk names the rename of 09-14-26 left as they were. The kickoff prompt is `docs/Packaging-AppImage-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -9,7 +9,7 @@ Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
 | 1 | The five decisions, this document, and the recipe under `packaging/appimage/` with its tests | Done 09-14-26: the suite at 2d10faa, 1652 passed, 13 skipped, 1 deselected, in 7 minutes 58 seconds from a scratch worktree | 860f370, 2d10faa, then the close-out commit |
-| 2 | The AppImage built here and run as a user would; every proof of the task recorded; size and start time measured | Checklist page published 09-14-26 (`Snapmockit AppImage Display Checks`); the run is owed | |
+| 2 | The AppImage built here and run as a user would; every proof of the task recorded; size and start time measured | Done 09-14-26 but for the Wayland portal capture, deferred (Section 8.2); one note on the panel icon open | eb4e4ac, d3b100f, then the close-out commit |
 | 3 | The build in continuous integration: the AppImage as an artifact on every push, a smoke test on the runner, the release job on a `vX.Y.Z` tag | Not started | |
 | 4 | The migration of the on-disk names, and the first release, `v0.9.0` | Not started | |
 | Close-out | The PRD rows, the release-engineering notes, the display checks owed, what of 7.3 remains | Not started | |
@@ -106,6 +106,20 @@ produces `dist/Snapmockit-<version>-x86_64.AppImage`. The steps, in `build.py`:
 ## 8. The Phase 2 display run
 
 **Steps 1.1 and 1.2, run by Doug on 09-14-26 at about 23:25 against the first build (2d10faa):** `--version` printed `Snapmockit 0.1.0`; the start printed one line, `qt.qpa.services: Failed to register with host portal QDBusError("org.freedesktop.portal.Error.Failed", "Could not register app ID: Connection already associated with an application ID")`. Reproduced here with a minimized window from the AppDir's Python: Qt 6.10 registers the desktop entry's id with the desktop portal's registry (`org.freedesktop.host.portal.Registry`) when the first window shows, once, from the name it holds at that moment; the entry point set the name after the application object existed, so Qt registered a second time on the same connection and the portal refused it. **Fixed:** `app.py` sets the application name, version, and desktop file name through the static setters before `QApplication` is constructed, and Qt registers once. Doug ran step 1.2 again against the rebuild of 23:28 and saw the portal's own answer, `Could not register app ID: App info not found for 'io.github.dbower44022.snapmockit'`, and called it another error, which it is from a user's chair: a line at every start. The portal looks the registered id up among the installed desktop entries, and a bare AppImage has none. **Fixed again, 23:35:** `app.py` gains `desktop_entry_installed`, which looks for `<id>.desktop` under the `applications` directory of `$XDG_DATA_HOME` and each of `$XDG_DATA_DIRS` as the desktop does, and the id is given to Qt only where that is true: from a package or an integrated AppImage the registration succeeds and the desktop matches the window to its entry; from source or a bare AppImage nothing is registered and nothing is printed. Verified with a minimized window from the rebuilt AppDir: no line. The application name is set in every case, and Qt's window class on X11 is that name, `Snapmockit`, with or without the desktop file name (read with `xprop`), so the desktop entry's `StartupWMClass` is `Snapmockit`, not the id as first written. Under Wayland the app id is the desktop file name when set, which is exactly the integrated case. Tested in `tests/test_app.py` against a temporary data path.
+
+### 8.1 The run, 09-14-26 23:41 to 23:53
+
+Run by Doug from the checklist page `Snapmockit AppImage Display Checks` (https://claude.ai/artifact/HHCf3xs7L32kcHrtEnBpe2), whose marks were read back, against the build of 23:35 from d3b100f. **25 steps: 19 marked, 18 as described, 1 problem; steps 1.1 and 1.2 run from the terminal and reported in the conversation instead of marked (the two findings above); the four Wayland steps of section 7 not run, since the machine could not be logged out at the time.**
+
+Passing, as described and with no note: the window found the existing settings (theme and panel layout) and the existing library; Help > About showed the icon and version 0.1.0; Copy Version Info's Executable line named the AppImage file; Help > Check for Updates reached GitHub from inside the AppImage, reported "No release has been published yet. You are running 0.1.0.", and Open Repository Page opened the repository; Capture Full Screen and Capture Region through the X11 backend each landed a new tab; `--capture full` from the shell was forwarded to the running instance, which took the capture with no second window; a project was saved, closed, and reopened with its rectangle; PNG and PDF exports were written and the PDF opened in the document viewer; a Snagit file opened with its annotations; the file manager listed the AppImage and a double-click started it; Quit closed it. Every proof the task named is met except the Wayland portal capture.
+
+**The problem, step 2.1 (the icon):** Doug's note reads "The icon in the linux titlebar is correct, but there is not icon in the application titlebar." The window manager's title bar shows the icon; where the second place is (the panel's window list, or something inside the window) is being asked and recorded when answered.
+
+### 8.2 Measurements against Technical Architecture PRD Section 8
+
+**Startup:** from process start to the main window mapped on the X11 display, measured three times with `wmctrl` polling at 50 ms, the sealed file with the FUSE mount, session restore on, on this machine (Intel i7-11700K): **1.70 s, 1.70 s, 1.63 s.** Section 8's target is under 2 seconds to interactive; the window is responsive when mapped. From the extracted AppDir on the offscreen platform the same path takes 1.0 s, so the mount and the display account for about 0.7 s. **Size:** 122.3 MB (128,264,696 bytes). Both recorded in the Technical Architecture PRD's 1.51 row.
+
+**Owed:** the Wayland portal capture (checklist section 7: log into Cinnamon on Wayland, start the AppImage, Capture Full Screen through the portal's consent dialog, Capture Active Window degrading to Region), when the machine can be logged out. It stays a display check of this work until then.
 
 ## Change Log
 
