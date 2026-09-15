@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import math
 from collections.abc import Callable, Iterable
 from pathlib import Path
@@ -202,6 +203,9 @@ def create_capture_manager(settings: AppSettings) -> CaptureManager:
 def _as_color(value: object) -> QColor:
     """A QColor from a preference change value (QColor or colour text)."""
     return QColor(value) if isinstance(value, QColor) else QColor(str(value))
+
+
+log = logging.getLogger("snapmock")
 
 
 class MainWindow(QMainWindow):
@@ -2024,6 +2028,15 @@ class MainWindow(QMainWindow):
         if not path_str:
             return
         self._open_project(Path(path_str))
+
+    def show_startup_message(self, text: str) -> None:
+        """A message the entry point owes the user at start, as a toast and in the log.
+
+        The storage migration of packaging decision 4 reports its moves this way:
+        a message, never a dialog that blocks (General UI PRD 1.3).
+        """
+        log.info("%s", text)
+        self._toast.show_message(text)
 
     def open_paths(self, paths: Iterable[Path]) -> None:
         """Open every project or Snagit file in *paths*, as the command line names them.

@@ -14,11 +14,19 @@ APP_VERSION = __version__
 APP_BUILD_DATE = "2026-09-08"
 APP_LICENSE = "MIT License"
 COPYRIGHT = "Copyright (c) 2026 Doug Bower"
-ORG_NAME = "SnapMock"
-"""The organisation name QSettings stores under (``~/.config/SnapMock``): kept at the
-earlier name so existing settings are found, until a release carries a migration."""
-STORAGE_APP_NAME = "SnapMock"
-"""The application name QSettings stores under, kept for the same reason."""
+ORG_NAME = APP_NAME
+"""The organisation name QSettings stores under (``~/.config/Snapmockit``) since the
+migration of packaging decision 4 (09-15-26); ``config/migration.py`` moves the earlier
+store there once and answers with the earlier names while only the old store exists."""
+STORAGE_APP_NAME = APP_NAME
+"""The application name QSettings stores under (``Snapmockit.conf``)."""
+LEGACY_ORG_NAME = "SnapMock"
+LEGACY_STORAGE_APP_NAME = "SnapMock"
+"""The names the store had until 09-15-26, read from where a migration has not run."""
+DATA_DIRECTORY_NAME = "snapmockit"
+"""The directory under the generic configuration location that holds presets, themes,
+the tool state, and custom stamps (``~/.config/snapmockit``)."""
+LEGACY_DATA_DIRECTORY_NAME = "snapmock"
 ORG_DOMAIN = "snapmockit.com"
 DESKTOP_ENTRY_ID = "io.github.dbower44022.snapmockit"
 """The desktop entry's id (packaging silence 2): the AppImage's ``.desktop`` file, its
@@ -75,7 +83,11 @@ PROJECT_EXTENSION = ".smk"
 THUMBNAIL_MAX_SIZE = 256
 
 # Library
-DEFAULT_LIBRARY_DIRECTORY = Path.home() / "SnapMock" / "Library"  # kept: existing libraries
+LIBRARY_SUBPATH = Path(APP_NAME) / "Library"
+"""The default library's path under the home directory (``~/Snapmockit/Library``)."""
+LEGACY_LIBRARY_SUBPATH = Path("SnapMock") / "Library"
+"""Where the default library was until 09-15-26; moved once by ``config/migration.py``."""
+DEFAULT_LIBRARY_DIRECTORY = Path.home() / LIBRARY_SUBPATH
 LIBRARY_THUMBNAIL_MIN = 80
 LIBRARY_THUMBNAIL_MAX = 256
 LIBRARY_THUMBNAIL_DEFAULT = 128

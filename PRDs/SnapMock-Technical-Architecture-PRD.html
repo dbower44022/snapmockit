@@ -11,7 +11,7 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.52</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.53</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.53</td>
+        <td class="nowrap">09-15-26 00:26</td>
+        <td>Doug Bower</td>
+        <td>The on-disk names move to the product's on the first start of a version that carries config/migration.py (packaging decision 4): the settings store, the presets and themes, and the default library, never destructively; Section 10 gains the module.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.52</td>
         <td class="nowrap">09-15-26 00:22</td>
@@ -490,6 +497,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-15-26 00:26</td>
+        <td>4.4, 10</td>
+        <td>Built</td>
+        <td><strong>Built</strong> (09-15-26; packaging decision 4, option A; <code>docs/Packaging-AppImage-Implementation.md</code>, Section 10): the three on-disk names the 1.48 row kept move to the product's on the first start of a version that carries <code>snapmock/config/migration.py</code>. <code>~/.config/SnapMock/SnapMock.conf</code> becomes <code>~/.config/Snapmockit/Snapmockit.conf</code>, <code>~/.config/snapmock</code> (Section 4.4's application data directory: presets, themes, the tool state, custom stamps) becomes <code>~/.config/snapmockit</code>, and <code>~/SnapMock/Library</code> becomes <code>~/Snapmockit/Library</code>, each only when the old exists and the new does not, the library only when the library preference is unset or names the old default, and every settings value that named a file under the old library (recent files, open files, remembered zooms, the preference itself) is rewritten to the new path. Nothing is deleted or overwritten: a move that fails, or that must not happen, leaves the old location in place and is reported, and the three lookups the application reads through (<code>storage_names</code>, <code>data_directory</code>, <code>default_library_directory</code>) answer with the old location while only it exists, so the application reads what it read before. The moves are announced once, after the window shows, as a toast and a log line, never a dialog that blocks (General UI PRD 1.3). <code>ORG_NAME</code>, <code>STORAGE_APP_NAME</code>, and <code>DEFAULT_LIBRARY_DIRECTORY</code> now carry the product's names with <code>LEGACY_</code> constants beside them; <code>AppSettings</code> and <code>application_data_directory</code> read through the lookups. <strong>Section 10:</strong> <code>config/migration.py</code>. Ten tests in <code>tests/test_storage_migration.py</code> against a temporary home: the three lookups in each state, the full move with the rewritten paths, idempotence, a new location never overwritten, a library the preference puts elsewhere left alone, a preference naming the old default moved with it, and a refused move leaving everything readable.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-15-26 00:22</td>
         <td>7.3, 9</td>
@@ -2296,6 +2309,7 @@ docstring.</p>
         transform_item.py         # record a before/after QTransform for an item
     config/                       # Application configuration: constants, settings, keyboard…
         constants.py              # Application-wide constants
+        migration.py              # the one-time move of the on-disk names from SnapMock to Snapmockit (packaging decision 4)
         settings.py               # Persistent application settings backed by QSettings
         shortcuts.py              # Keyboard shortcut definitions
     core/                         # Core subsystems: scene graph, layers, commands,…

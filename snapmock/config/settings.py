@@ -13,7 +13,6 @@ from snapmock.config.constants import (
     DEFAULT_FILL_COLOR,
     DEFAULT_FONT_FAMILY,
     DEFAULT_FONT_SIZE,
-    DEFAULT_LIBRARY_DIRECTORY,
     DEFAULT_STROKE_COLOR,
     DEFAULT_STROKE_WIDTH,
     GRID_SIZE_DEFAULT,
@@ -21,7 +20,6 @@ from snapmock.config.constants import (
     GUIDE_OPACITY_DEFAULT,
     LIBRARY_PREVIEW_DEFAULT,
     LIBRARY_THUMBNAIL_DEFAULT,
-    ORG_NAME,
     PANEL_NARROW_THRESHOLD_DEFAULT,
     PANEL_STRIP_THRESHOLD_DEFAULT,
     PANEL_THRESHOLD_MAX,
@@ -30,12 +28,12 @@ from snapmock.config.constants import (
     RECENT_FILES_DEFAULT,
     RECENT_ZOOM_MAX,
     SNAP_TOLERANCE_DEFAULT,
-    STORAGE_APP_NAME,
     THUMBNAIL_DELAY_DEFAULT_MS,
     UNDO_LIMIT,
     ZOOM_DEFAULT,
     ZOOM_PIXEL_GRID_THRESHOLD,
 )
+from snapmock.config.migration import default_library_directory, storage_names
 
 # Global hotkey settings: action -> (settings key, default portable key sequence).
 CAPTURE_HOTKEY_KEYS: dict[str, tuple[str, str]] = {
@@ -49,7 +47,8 @@ class AppSettings:
     """Thin wrapper around QSettings for typed access to application preferences."""
 
     def __init__(self) -> None:
-        self._qs = QSettings(ORG_NAME, STORAGE_APP_NAME)
+        org, app = storage_names()
+        self._qs = QSettings(org, app)
 
     # --- window geometry ---
 
@@ -519,7 +518,7 @@ class AppSettings:
         val = self._qs.value("library/directory", "")
         if isinstance(val, str) and val:
             return Path(val)
-        return DEFAULT_LIBRARY_DIRECTORY
+        return default_library_directory()
 
     def set_library_directory(self, path: Path) -> None:
         self._qs.setValue("library/directory", str(path))

@@ -26,7 +26,7 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from PyQt6.QtCore import QObject, QStandardPaths, Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import QObject, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor
 
 from snapmock import __version__
@@ -53,6 +53,7 @@ from snapmock.config.constants import (
     TailStyle,
     VerticalAlign,
 )
+from snapmock.config.migration import data_directory
 from snapmock.core.emoji_data import SkinTone
 
 if TYPE_CHECKING:
@@ -146,14 +147,14 @@ class ThemeFileError(ValueError):
 
 
 def application_data_directory() -> Path:
-    """Where presets, themes, and the tool state live: ``~/.config/snapmock`` on Linux.
+    """Where presets, themes, and the tool state live: ``~/.config/snapmockit`` on Linux.
 
     The platform's generic configuration location (``QStandardPaths``), under a
-    lower-case ``snapmock`` folder, as the General UI PRD's example shows.
+    lower-case folder named for the product, as the General UI PRD's example shows;
+    ``config/migration.py`` answers with the earlier ``snapmock`` folder while only
+    that one exists (packaging decision 4).
     """
-    base = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericConfigLocation)
-    root = Path(base) if base else Path.home() / ".config"
-    return root / "snapmock"
+    return data_directory()
 
 
 # ---- the value codec ------------------------------------------------------------------

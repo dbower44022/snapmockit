@@ -26,7 +26,7 @@ def isolated_settings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     application data directory.
 
     Keeps the test run from touching the real QSettings store, creating
-    ``~/SnapMock/Library``, or writing presets and themes under ``~/.config``.
+    ``~/Snapmockit/Library``, or writing presets and themes under ``~/.config``.
     """
     ini = tmp_path / "settings.ini"
     library_dir = tmp_path / "Library"
@@ -45,7 +45,7 @@ def isolated_settings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     settings_module.AppSettings().set_panel_narrow_threshold(PANEL_THRESHOLD_MIN)
     settings_module.AppSettings().set_panel_strip_threshold(PANEL_THRESHOLD_MIN)
     # Presets, themes, and the tool state (General UI PRD 11.8, 11.9, 15.4) go to a
-    # throwaway application data directory, never to ~/.config/snapmock.
+    # throwaway application data directory, never to ~/.config/snapmockit.
     monkeypatch.setattr(
         tool_themes_module, "application_data_directory", lambda: tmp_path / "snapmock-data"
     )
