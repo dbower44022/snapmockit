@@ -1,6 +1,6 @@
 # Packaging: the Linux AppImage — Implementation Notes
 
-Last Updated: 09-15-26 00:26 · Revision 1.8
+Last Updated: 09-15-26 00:45 · Revision 1.9
 
 Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`, Section 1) for Linux: the AppImage that Technical Architecture PRD 7.3 names as the primary Linux distribution, built by a recipe in the repository, proven on this machine, built in continuous integration on every push, and published as a GitHub release on a tag, together with the migration of the two on-disk names the rename of 09-14-26 left as they were. The kickoff prompt is `docs/Packaging-AppImage-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -11,8 +11,8 @@ Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`
 | 1 | The five decisions, this document, and the recipe under `packaging/appimage/` with its tests | Done 09-14-26: the suite at 2d10faa, 1652 passed, 13 skipped, 1 deselected, in 7 minutes 58 seconds from a scratch worktree | 860f370, 2d10faa, then the close-out commit |
 | 2 | The AppImage built here and run as a user would; every proof of the task recorded; size and start time measured | Done 09-14-26 but for the Wayland portal capture, deferred (Section 8.2); the icon note closed 09-15-26 as an instruction error | eb4e4ac, d3b100f, then the close-out commit |
 | 3 | The build in continuous integration: the AppImage as an artifact on every push, a smoke test on the runner, the release job on a `vX.Y.Z` tag | Done 09-15-26: run 34928224677 green, the AppImage job in 51 seconds | b683422, then the close-out commit |
-| 4 | The migration of the on-disk names, and the first release, `v0.9.0` | Step 1 done 09-15-26 (the migration); step 2, the release, next | b29ac86 |
-| Close-out | The PRD rows, the release-engineering notes, the display checks owed, what of 7.3 remains | Not started | |
+| 4 | The migration of the on-disk names, and the first release, `v0.9.0` | Done 09-15-26: v0.9.0 published by the release job at 00:43, found by Check for Updates from 0.1.0; the migration\'s first start and the menu check owed as display checks | b29ac86, 080e2f3 |
+| Close-out | The PRD rows, the release-engineering notes, the display checks owed, what of 7.3 remains | Done 09-15-26 (Section 11) | the close-out commit |
 
 ## 2. Decisions
 
@@ -148,6 +148,22 @@ Passing, as described and with no note: the window found the existing settings (
 The library moves only when the library preference is unset or names the old default; a library the user put elsewhere is left where it is, and the report says so. After a library move every settings value that named a file under the old path (the recent files, the open files, the remembered zooms, the preference itself) is rewritten to the new path, so nothing dangles, and the emptied `~/SnapMock` directory is removed. Nothing is deleted or overwritten: a new location that already exists, or a move the file system refuses, leaves the old in place with the reason in the report. The three lookups the application reads through, `storage_names` (used by `AppSettings`), `data_directory` (used by `application_data_directory`), and `default_library_directory` (used by `AppSettings.library_directory`), answer with the old location while only it exists, so a machine where the move could not happen keeps working from the old names. The constants carry the product's names, with `LEGACY_` constants beside them. The entry point calls the migration once the application object exists and, after the window shows, reports the moves made in one toast and one log line, never a dialog that blocks (General UI PRD 1.3), through `MainWindow.show_startup_message`. Running from source migrates too, since the source and the AppImage share the same stores; on this machine the first start of any build from this commit moves Doug's settings, the theme store, and the library at `~/SnapMock/Library`, which the preference does not override (verified: `library/directory` is unset in the store).
 
 **Tests:** `tests/test_storage_migration.py`, ten tests against a temporary home and configuration root: the lookups on a fresh machine, with only the old store, and with both; the full move with the rewritten paths and the message; idempotence and the empty run; a new location never overwritten; a library the preference puts elsewhere left alone; a preference naming the old default moved with the library; a refused move leaving everything readable through the old names; `rewrite_paths` touching only the strings that name the old library; the message's shape. The suite's isolated-settings fixture keeps the migration out of every other test.
+
+### 10.1 The first release, v0.9.0 (Phase 4, step 2)
+
+Version `0.9.0` and build date `2026-09-15` in commit 080e2f3, its suite green from a scratch worktree (1669 passed, 14 skipped, 1 deselected, 6 minutes 13 seconds); the annotated tag `v0.9.0`, whose message is the release's notes, pushed with `main` at 00:39. **Run 34929663044 on the tag:** the checks in 3 minutes 34 seconds, the wheel in 12 seconds, the AppImage job in 72 seconds, and the release job in 19 seconds after them; **the release `Snapmockit 0.9.0` was published at 00:43 with `Snapmockit-0.9.0-x86_64.AppImage` attached, 128,272,888 bytes, an ordinary release** (`prerelease=false`, decision 5 as corrected), and `releases/latest` answers with it. The file was downloaded here (SHA-256 begins `ebe7c8e0f0b7427c`), answers `--version` with `Snapmockit 0.9.0`, and passes the smoke script against a scratch home.
+
+**Check for Updates from the version before, proven headless:** the 0.1.0 AppImage of 23:35, extracted, running `UpdateChecker` from its own bundled Python against the real endpoint (`https://api.github.com/repos/dbower44022/snapmockit/releases/latest`): outcome `NEWER`, tag `v0.9.0`, release page `https://github.com/dbower44022/snapmockit/releases/tag/v0.9.0`. The same check through the Help menu, and the migration's first start of 0.9.0 on this machine, are display checks owed to Doug (Section 11).
+
+## 11. Close-out
+
+**Done.** Technical Architecture PRD 7.3's primary Linux form exists: a recipe (Section 5), proven here (Section 8), built and smoke-tested in continuous integration on every push (Section 9), and published as the GitHub release `v0.9.0` that Check for Updates finds (Section 10.1); the on-disk names migrate to the product's on first start (Section 10). PRD rows: Technical Architecture 1.50 to 1.54 (7.3, 8, 9, 10, and 4.4); General UI 2.39 (3.8's first real target, and the application data directory's new name). `docs/Release-Engineering.md`: step 3 done for Linux, step 4 pointed at the released AppImage.
+
+**What of 7.3 remains, and what this machine can build:** Flatpak (secondary Linux; this machine can build it, with `flatpak-builder` and the KDE or freedesktop runtime, a manifest, and the same desktop integration files; a Flathub submission is a separate step); PyPI (`uv publish` of the wheel and sdist the CI build already makes, from this machine or a workflow, once a PyPI account and token exist; the console entry point Section 3 of the kickoff noted is missing would be added then); the Windows MSI and portable ZIP (need a Windows machine, and the Windows capture backend's own display checks first; `docs/Windows-Backend-Kickoff-Prompt.md`); the macOS bundle (needs a Mac, and the macOS backend, deferred). This machine can build the Flatpak and publish to PyPI; it cannot build the Windows or macOS packages.
+
+**Display checks this work owes, all on the checklist page's sections 7 and 8:** Help > Check for Updates from the 0.1.0 AppImage finding v0.9.0 and Open Release Page opening it; the first start of 0.9.0 showing the migration's message once, with the settings and the library found at their new names and the old directories gone; a second start showing nothing; and the Wayland portal capture of section 7, when the machine can be logged out.
+
+**The next required step** is step 4 of the release-engineering list: an end-to-end pass on real work on the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, before `1.0.0` is claimed. Its kickoff prompt is not yet written.
 
 ## Change Log
 

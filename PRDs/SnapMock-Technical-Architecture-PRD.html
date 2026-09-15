@@ -11,7 +11,7 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.53</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.54</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.54</td>
+        <td class="nowrap">09-15-26 00:45</td>
+        <td>Doug Bower</td>
+        <td>The first release: v0.9.0, the Linux AppImage of 7.3 published by the release job and found by Check for Updates from the version before; what of 7.3 remains (Flatpak, PyPI, Windows, macOS) and which of it the development machine can build.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.53</td>
         <td class="nowrap">09-15-26 00:26</td>
@@ -497,6 +504,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-15-26 00:45</td>
+        <td>7.3, 8, 9, 10</td>
+        <td>Released</td>
+        <td><strong>Released</strong> (09-15-26; <code>docs/Packaging-AppImage-Implementation.md</code>, Sections 10.1 and 11): version 0.9.0, tagged <code>v0.9.0</code>, published as an ordinary GitHub release by the release job of the 1.52 row (run 34929663044: the checks, the wheel, the AppImage in 72 seconds, the release in 19), with <code>Snapmockit-0.9.0-x86_64.AppImage</code> attached (128,272,888 bytes). <code>releases/latest</code> answers with it, and Check for Updates run from the 0.1.0 AppImage's own Python reports NEWER with the tag and the release page (General UI PRD 3.8's first real target). The released file, downloaded, answers <code>--version</code> and passes the smoke test. <strong>7.3 stands as follows:</strong> Linux AppImage, the primary form, done; Flatpak (secondary), PyPI, the Windows MSI and portable ZIP, and the macOS DMG remain. The development machine can build the Flatpak (<code>flatpak-builder</code> over the same desktop integration files) and publish to PyPI (<code>uv publish</code> of the wheel and sdist the build job already makes, once an account and token exist); the Windows and macOS packages wait for their machines and their capture backends' display checks. Section 8's startup figure stands at the 1.51 row's measurement; Section 9's packaging row and Section 10 are as the 1.50 and 1.53 rows left them. The display checks this work still owes: the menu's Check for Updates from 0.1.0, the migration's first start of 0.9.0, and the Wayland portal capture.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-15-26 00:26</td>
         <td>4.4, 10</td>

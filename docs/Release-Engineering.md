@@ -1,6 +1,6 @@
 # Release Engineering Notes
 
-Last Updated: 09-14-26 18:15 · Revision 1.6
+Last Updated: 09-15-26 00:45 · Revision 1.7
 
 The work that turns the finished application into a product: its identity, continuous integration, packaging, and the first release. Every feature row of the nine product requirements documents was built or recorded as a departure by 09-14-26 (`docs/Freehand-Remainder-Implementation.md`, Section 8.1, names the last of them); this document holds what follows, in the order Doug set on 09-14-26: the identity, then continuous integration, then packaging, then an end-to-end pass on real work, then the two platform backends when their machines exist.
 
@@ -10,8 +10,8 @@ The work that turns the finished application into a product: its identity, conti
 |---|---|---|---|
 | 1 | The identity: the name, the repository, the licence, the version's one source, the README | Done | faf8e1b, then this commit |
 | 2 | Continuous integration: lint, format, types, the suite on the offscreen platform, and the wheel and sdist, on every push | Done: green on GitHub 09-14-26 | 632b30b, 74bc47d |
-| 3 | Packaging: the Linux AppImage first (Technical Architecture PRD 7.3), then Flatpak, PyPI, the Windows MSI or portable ZIP, and the macOS bundle | In progress: Phase 1 of 4 done 09-14-26 (`docs/Packaging-AppImage-Implementation.md`): the recipe builds a 122 MB AppImage here; Phase 2's display checks are owed | 860f370, 2d10faa |
-| 4 | An end-to-end pass on real work, on the first AppImage | Not started | |
+| 3 | Packaging: the Linux AppImage first (Technical Architecture PRD 7.3), then Flatpak, PyPI, the Windows MSI or portable ZIP, and the macOS bundle | Linux AppImage done 09-15-26: released as v0.9.0 (`docs/Packaging-AppImage-Implementation.md`); Flatpak, PyPI, Windows, and macOS remain | 860f370 to 080e2f3 |
+| 4 | An end-to-end pass on real work, on the released AppImage `Snapmockit-0.9.0-x86_64.AppImage` | Next: kickoff prompt to be written | |
 | 5 | The Windows and macOS capture backends, when their machines exist | Waiting | |
 
 ## 2. The identity (09-14-26)
@@ -26,6 +26,7 @@ Doug confirmed four of the five facts as the code held them and changed one: **t
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.7 | 09-15-26 00:45 | Claude (Claude Code) | Step 3 done for Linux: the AppImage released as v0.9.0 with the on-disk names migrated; step 4 pointed at the released file. |
 | 1.6 | 09-14-26 18:15 | Claude (Claude Code) | Step 3: Phase 1 of the AppImage work done, the recipe and the first build recorded in its own notes. |
 | 1.5 | 09-14-26 18:09 | Claude (Claude Code) | Section 3: the runner's time with the teardown, 3 minutes 40 seconds for the suite, the checks job 4 minutes 10 seconds. |
 | 1.4 | 09-14-26 18:03 | Claude (Claude Code) | Section 3: closed windows deleted at each test's teardown; the suite 6 minutes 8 seconds here, whole. |

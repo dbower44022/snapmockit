@@ -11,7 +11,7 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.38</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.39</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.39</td>
+        <td class="nowrap">09-15-26 00:45</td>
+        <td>Doug Bower</td>
+        <td>Check for Updates has its first real target, the v0.9.0 release, found from the version before (3.8); the settings, the application data directory, and the default library carry the product's name from 09-15-26, moved once on first start with a message that does not block (11.8, 16, 1.3).</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.38</td>
         <td class="nowrap">09-14-26 15:00</td>
@@ -423,6 +430,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-15-26 00:45</td>
+        <td>3.8, 11.8, 16, 1.3</td>
+        <td>Built</td>
+        <td><strong>Built</strong> (09-15-26; packaging work, <code>docs/Packaging-AppImage-Implementation.md</code>, Sections 10 and 10.1; Technical Architecture PRD 1.53 and 1.54). <strong>3.8:</strong> the first release, <code>v0.9.0</code>, exists as an ordinary GitHub release, so the row's query has a real target: from the 0.1.0 build the check reports "Snapmockit v0.9.0 is available. You are running Snapmockit 0.1.0." with Open Release Page, verified headless from the earlier AppImage's own Python against the real endpoint; the same through the Help menu is a display check owed. Decision 5 of that work: the release is not marked a pre-release, because <code>releases/latest</code>, which the 09-10-26 rows chose, excludes pre-releases. <strong>11.8 and 16:</strong> the application data directory's example path reads <code>~/.config/snapmockit</code> from 09-15-26 (it was <code>~/.config/snapmock</code>); the settings store is <code>~/.config/Snapmockit/Snapmockit.conf</code> and the default library <code>~/Snapmockit/Library</code>. On the first start of a version from 09-15-26 each is moved from its SnapMock name, only when the old exists and the new does not, the library only when the Library preference is unset or names the old default, and the recent files, open files, and remembered zooms that named the old library are rewritten; nothing is deleted. <strong>1.3:</strong> the moves are announced once as a toast at the bottom of the window and a log line, never a dialog that blocks. The document's own examples keep the old path as written; this row is the correction.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-14-26 15:00</td>
         <td>13, 2</td>
