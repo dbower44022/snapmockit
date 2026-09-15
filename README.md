@@ -41,6 +41,37 @@ dist/Snapmockit-*.AppImage --capture full
 
 It needs glibc 2.34 or later (Ubuntu 22.04, Debian 12, Fedora 35, RHEL 9, and later) and these libraries from the system, which every desktop installation has and a bare server may not: on Debian and Ubuntu, `libegl1 libgl1 libglib2.0-0 libdbus-1-3 libfontconfig1 libfreetype6 libxkbcommon0 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 libxcb-xkb1 libxcb-render-util0 libxcb-image0 libx11-6 libxfixes3`, plus `libwayland-client0` and `xdg-desktop-portal` with a backend for your desktop under Wayland. Fonts, the colour emoji font included, come from the system. Settings live under `~/.config/Snapmockit`, presets and themes under `~/.config/snapmockit`, and the library at `~/Snapmockit/Library` unless you moved it; a first start moves what earlier builds kept under the SnapMock name and says so once. Help > Check for Updates reads the latest release.
 
+### Putting the AppImage in the menu
+
+The file carries its menu entry and icon but does not install them yet. To have Snapmockit in the desktop's main menu, copy the file to a fixed name, take the icons out of it, and write an entry that points at the copy; nothing needs a password:
+
+```bash
+mkdir -p ~/Applications ~/.local/share/applications ~/.local/share/icons/hicolor/256x256/apps ~/.local/share/icons/hicolor/scalable/apps
+cp Snapmockit-*.AppImage ~/Applications/Snapmockit.AppImage
+(cd /tmp && ~/Applications/Snapmockit.AppImage --appimage-extract 'usr/share/icons/hicolor/*/apps/*')
+cp /tmp/squashfs-root/usr/share/icons/hicolor/256x256/apps/io.github.dbower44022.snapmockit.png ~/.local/share/icons/hicolor/256x256/apps/
+cp /tmp/squashfs-root/usr/share/icons/hicolor/scalable/apps/io.github.dbower44022.snapmockit.svg ~/.local/share/icons/hicolor/scalable/apps/
+rm -rf /tmp/squashfs-root
+cat > ~/.local/share/applications/io.github.dbower44022.snapmockit.desktop <<EOF
+[Desktop Entry]
+Type=Application
+Name=Snapmockit
+GenericName=Screenshot Annotation Tool
+Comment=Capture, annotate, and mock up screenshots
+Exec=$HOME/Applications/Snapmockit.AppImage %F
+Icon=io.github.dbower44022.snapmockit
+Terminal=false
+Categories=Graphics;Utility;
+MimeType=application/x-snapmockit-project;
+Keywords=screenshot;capture;annotate;mockup;
+StartupNotify=true
+StartupWMClass=Snapmockit
+EOF
+update-desktop-database ~/.local/share/applications
+```
+
+The entry appears at once; if its icon does not, the running desktop has not rescanned its icon folders yet, and a restart of the desktop shell (Ctrl+Alt+Esc on Cinnamon under X11) or a fresh login shows it. A later release replaces the copy at `~/Applications/Snapmockit.AppImage` and the entry stays. To remove it, delete the entry file, the two icon files, and the copy.
+
 ## Developing
 
 ```bash

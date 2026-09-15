@@ -1,6 +1,6 @@
 # The End-to-End Pass on Real Work, and the 1.0.0 Release — Notes
 
-Last Updated: 09-15-26 09:48 · Revision 1.0
+Last Updated: 09-15-26 12:34 · Revision 1.1
 
 Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`, Section 1): the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, used by Doug for his real screenshot work over several sittings, every finding recorded and classified, every defect fixed with a test, and then the first release the product stands behind, `1.0.0`. The kickoff prompt is `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The record takes the shape of the General UI acceptance pass (`docs/General-UI-Implementation.md`, Section 16) where it fits: one row per finding, Doug's words quoted, the evidence named.
 
@@ -70,6 +70,11 @@ One row per finding, numbered in the order found. The class is one of defect (ag
 
 | # | Sitting | What happened, in Doug's words | Where | Requirement | Class | Fix commit or issue | State |
 |---|---|---|---|---|---|---|---|
+| 1 | 0 (before the first sitting, 09-15-26) | "Can I install this version of snapmockit on my linux pc so I can open it from the main menu?" and, once the entry was placed by hand, "I see the snapmockit, but no icon is shown" | The AppImage on the desktop: no menu entry and no icon until the user installs them | None: Technical Architecture PRD 7.3 names the AppImage form; no document asks for desktop integration | Follow-up | none | Deferred |
+
+### 5.1 Notes on the findings
+
+**Finding 1, 09-15-26 10:04 to 12:33.** The AppImage carries its desktop entry and icons inside but nothing installs them, and no AppImage helper is on this machine. Doug installed them by hand from a runbook page (https://claude.ai/artifact/MBvoDyV1Emp2C9zf7eCB9U): a copy of the released file at `~/Applications/Snapmockit.AppImage`, the 256 pixel PNG and the SVG extracted with `--appimage-extract` into `~/.local/share/icons/hicolor`, the desktop entry written to `~/.local/share/applications/io.github.dbower44022.snapmockit.desktop` with `Exec` naming the copy, and `update-desktop-database`. The entry appeared in the menu at once; its icon did not until Cinnamon was restarted (Ctrl+Alt+Esc), since the running desktop had not rescanned the icon directories, although a freshly started GTK program found the icon at every size. Doug: "That worked." The README gains the same steps (this commit). The follow-up for a later kickoff: an "Add to Menu" action, or a first-start offer, that writes the entry and icons the AppImage already carries, and removes them on request; the 1.0.0 release notes say the menu entry is installed by hand until then. With the entry installed, the application gives its desktop id to Qt (`desktop_entry_installed`), so the portal registration the AppImage notes' Section 8 describes now succeeds here.
 
 ## 6. Sittings
 
@@ -85,4 +90,5 @@ Owed. To be run by Doug from the checklist page against the released 0.9.0 file 
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.1 | 09-15-26 12:34 | Claude (Claude Code) | Finding 1 recorded (no menu install route; follow-up) with its resolution by hand; the README's menu steps noted. |
 | 1.0 | 09-15-26 09:48 | Claude (Claude Code) | Initial notes: the phase table, the four decisions as approved (1 A with C available, 2 B, 3 A, 4 A), the seven silences and two more, the starting state re-verified at 8c0ac91, the empty findings table, and the Wayland check owed. |
