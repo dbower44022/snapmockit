@@ -68,7 +68,7 @@ def test_desktop_entry_names_the_product_the_icon_and_the_project_type() -> None
     assert entry["Terminal"] == "false"
     assert set(entry["Categories"].rstrip(";").split(";")) == {"Graphics", "Utility"}
     assert entry["MimeType"].rstrip(";").split(";") == [MIME_TYPE]
-    assert entry["StartupWMClass"] == DESKTOP_ENTRY_ID
+    assert entry["StartupWMClass"] == APP_NAME  # Qt's WM_CLASS class is the application name
 
 
 @pytest.mark.skipif(

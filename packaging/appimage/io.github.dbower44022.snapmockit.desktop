@@ -10,4 +10,4 @@ Categories=Graphics;Utility;
 MimeType=application/x-snapmockit-project;
 Keywords=screenshot;capture;annotate;mockup;
 StartupNotify=true
-StartupWMClass=io.github.dbower44022.snapmockit
+StartupWMClass=Snapmockit

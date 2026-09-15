@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from snapmock.app import main, version_text
-from snapmock.config.constants import APP_NAME, APP_VERSION
+from snapmock.app import desktop_entry_installed, main, version_text
+from snapmock.config.constants import APP_NAME, APP_VERSION, DESKTOP_ENTRY_ID
 from snapmock.core.scene import SnapScene
 from snapmock.io.project_serializer import save_project
 from snapmock.main_window import MainWindow
@@ -67,3 +67,21 @@ def test_open_paths_opens_a_project_from_the_command_line(
     main_window.open_paths([path])
     assert main_window.active_document.file_path == path
     assert main_window.scene.canvas_size.width() == 300
+
+
+def test_desktop_entry_installed_looks_in_the_xdg_data_path(tmp_path: Path) -> None:
+    """The desktop entry's id is given to Qt only where the entry is installed."""
+    home = tmp_path / "home"
+    system = tmp_path / "usr" / "share"
+    env = {"XDG_DATA_HOME": str(home), "XDG_DATA_DIRS": f"{tmp_path / 'local'}:{system}"}
+    assert desktop_entry_installed(DESKTOP_ENTRY_ID, env) is False
+    entry = system / "applications" / f"{DESKTOP_ENTRY_ID}.desktop"
+    entry.parent.mkdir(parents=True)
+    entry.write_text("[Desktop Entry]\nType=Application\n", encoding="utf-8")
+    assert desktop_entry_installed(DESKTOP_ENTRY_ID, env) is True
+    assert desktop_entry_installed("io.example.other", env) is False
+    entry.unlink()
+    user_entry = home / "applications" / f"{DESKTOP_ENTRY_ID}.desktop"
+    user_entry.parent.mkdir(parents=True)
+    user_entry.write_text("[Desktop Entry]\n", encoding="utf-8")
+    assert desktop_entry_installed(DESKTOP_ENTRY_ID, env) is True

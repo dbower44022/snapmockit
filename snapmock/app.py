@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 
 from PyQt6.QtCore import QTimer
@@ -16,6 +18,25 @@ from snapmock.main_window import MainWindow
 from snapmock.ui.icons import application_icon
 
 log = logging.getLogger("snapmock")
+
+
+def desktop_entry_installed(
+    entry_id: str = DESKTOP_ENTRY_ID, environ: Mapping[str, str] | None = None
+) -> bool:
+    """Whether ``<entry_id>.desktop`` is in an applications directory of the XDG data path.
+
+    ``$XDG_DATA_HOME`` (default ``~/.local/share``) and ``$XDG_DATA_DIRS``
+    (default ``/usr/local/share:/usr/share``), as the desktop and its portal
+    look the entry up. True from a package that installed the entry, or from an
+    AppImage integrated into the menu; false from source and from a bare AppImage.
+    """
+    env = os.environ if environ is None else environ
+    data_home = env.get("XDG_DATA_HOME") or str(Path.home() / ".local" / "share")
+    data_dirs = env.get("XDG_DATA_DIRS") or "/usr/local/share:/usr/share"
+    for base in [data_home, *data_dirs.split(":")]:
+        if base and (Path(base) / "applications" / f"{entry_id}.desktop").is_file():
+            return True
+    return False
 
 
 def version_text() -> str:
@@ -38,12 +59,13 @@ def main(argv: list[str] | None = None) -> None:
     # entry's id with the desktop portal when the first window shows, once, from
     # the name it holds then; a name set afterwards registers a second time and
     # the portal refuses it ("Connection already associated with an application
-    # ID", seen from the AppImage on 09-14-26). On a host where the desktop entry
-    # is not installed the portal answers "App info not found" once; it is a
-    # warning, and it ends when the AppImage is integrated into the menu.
+    # ID", seen from the AppImage on 09-14-26). The id is given to Qt only where
+    # the desktop entry is installed, since the portal looks the entry up and
+    # answers "App info not found" for an AppImage that is not in the menu.
     QApplication.setApplicationName(APP_NAME)
     QApplication.setApplicationVersion(APP_VERSION)
-    QApplication.setDesktopFileName(DESKTOP_ENTRY_ID)
+    if desktop_entry_installed():
+        QApplication.setDesktopFileName(DESKTOP_ENTRY_ID)
     # The application is created before the forward because the write to the
     # channel completes only once an event loop is available to pump it, which
     # is how a Windows named pipe behaves (PRD 3.5).
