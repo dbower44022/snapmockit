@@ -1,6 +1,6 @@
 # Packaging: the Linux AppImage — Implementation Notes
 
-Last Updated: 09-14-26 23:56 · Revision 1.4
+Last Updated: 09-15-26 00:08 · Revision 1.5
 
 Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`, Section 1) for Linux: the AppImage that Technical Architecture PRD 7.3 names as the primary Linux distribution, built by a recipe in the repository, proven on this machine, built in continuous integration on every push, and published as a GitHub release on a tag, together with the migration of the two on-disk names the rename of 09-14-26 left as they were. The kickoff prompt is `docs/Packaging-AppImage-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -9,7 +9,7 @@ Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
 | 1 | The five decisions, this document, and the recipe under `packaging/appimage/` with its tests | Done 09-14-26: the suite at 2d10faa, 1652 passed, 13 skipped, 1 deselected, in 7 minutes 58 seconds from a scratch worktree | 860f370, 2d10faa, then the close-out commit |
-| 2 | The AppImage built here and run as a user would; every proof of the task recorded; size and start time measured | Done 09-14-26 but for the Wayland portal capture, deferred (Section 8.2); one note on the panel icon open | eb4e4ac, d3b100f, then the close-out commit |
+| 2 | The AppImage built here and run as a user would; every proof of the task recorded; size and start time measured | Done 09-14-26 but for the Wayland portal capture, deferred (Section 8.2); the icon note closed 09-15-26 as an instruction error | eb4e4ac, d3b100f, then the close-out commit |
 | 3 | The build in continuous integration: the AppImage as an artifact on every push, a smoke test on the runner, the release job on a `vX.Y.Z` tag | Not started | |
 | 4 | The migration of the on-disk names, and the first release, `v0.9.0` | Not started | |
 | Close-out | The PRD rows, the release-engineering notes, the display checks owed, what of 7.3 remains | Not started | |
@@ -113,7 +113,7 @@ Run by Doug from the checklist page `Snapmockit AppImage Display Checks` (https:
 
 Passing, as described and with no note: the window found the existing settings (theme and panel layout) and the existing library; Help > About showed the icon and version 0.1.0; Copy Version Info's Executable line named the AppImage file; Help > Check for Updates reached GitHub from inside the AppImage, reported "No release has been published yet. You are running 0.1.0.", and Open Repository Page opened the repository; Capture Full Screen and Capture Region through the X11 backend each landed a new tab; `--capture full` from the shell was forwarded to the running instance, which took the capture with no second window; a project was saved, closed, and reopened with its rectangle; PNG and PDF exports were written and the PDF opened in the document viewer; a Snagit file opened with its annotations; the file manager listed the AppImage and a double-click started it; Quit closed it. Every proof the task named is met except the Wayland portal capture.
 
-**The problem, step 2.1 (the icon):** Doug's note reads "The icon in the linux titlebar is correct, but there is not icon in the application titlebar." The window manager's title bar shows the icon; where the second place is (the panel's window list, or something inside the window) is being asked and recorded when answered.
+**The problem, step 2.1 (the icon), closed 09-15-26 00:08 as an instruction error:** Doug's note reads "The icon in the linux titlebar is correct, but there is not icon in the application titlebar." Asked to look at the four places an icon can appear, he answered: the left end of the main window's title bar shows no icon; the panel's button for the window, the Alt+Tab switcher, and the About dialog all show the mark. The title bar is the desktop's: Cinnamon's window manager draws a title bar icon only when its button layout includes the `menu` button, and this machine's layout (`org.cinnamon.desktop.wm.preferences button-layout`) is `:minimize,maximize,close`, so no window on this desktop has a title bar icon, Snapmockit's included. The checklist expected one where the desktop never draws one. The application's icon is set and the three places that read it show it; nothing to fix.
 
 ### 8.2 Measurements against Technical Architecture PRD Section 8
 
