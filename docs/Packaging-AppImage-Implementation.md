@@ -1,6 +1,6 @@
 # Packaging: the Linux AppImage — Implementation Notes
 
-Last Updated: 09-15-26 00:08 · Revision 1.5
+Last Updated: 09-15-26 00:11 · Revision 1.6
 
 Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`, Section 1) for Linux: the AppImage that Technical Architecture PRD 7.3 names as the primary Linux distribution, built by a recipe in the repository, proven on this machine, built in continuous integration on every push, and published as a GitHub release on a tag, together with the migration of the two on-disk names the rename of 09-14-26 left as they were. The kickoff prompt is `docs/Packaging-AppImage-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -10,7 +10,7 @@ Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`
 |---|---|---|---|
 | 1 | The five decisions, this document, and the recipe under `packaging/appimage/` with its tests | Done 09-14-26: the suite at 2d10faa, 1652 passed, 13 skipped, 1 deselected, in 7 minutes 58 seconds from a scratch worktree | 860f370, 2d10faa, then the close-out commit |
 | 2 | The AppImage built here and run as a user would; every proof of the task recorded; size and start time measured | Done 09-14-26 but for the Wayland portal capture, deferred (Section 8.2); the icon note closed 09-15-26 as an instruction error | eb4e4ac, d3b100f, then the close-out commit |
-| 3 | The build in continuous integration: the AppImage as an artifact on every push, a smoke test on the runner, the release job on a `vX.Y.Z` tag | Not started | |
+| 3 | The build in continuous integration: the AppImage as an artifact on every push, a smoke test on the runner, the release job on a `vX.Y.Z` tag | Jobs written 09-15-26; the first run on GitHub owed | b683422 |
 | 4 | The migration of the on-disk names, and the first release, `v0.9.0` | Not started | |
 | Close-out | The PRD rows, the release-engineering notes, the display checks owed, what of 7.3 remains | Not started | |
 
@@ -120,6 +120,20 @@ Passing, as described and with no note: the window found the existing settings (
 **Startup:** from process start to the main window mapped on the X11 display, measured three times with `wmctrl` polling at 50 ms, the sealed file with the FUSE mount, session restore on, on this machine (Intel i7-11700K): **1.70 s, 1.70 s, 1.63 s.** Section 8's target is under 2 seconds to interactive; the window is responsive when mapped. From the extracted AppDir on the offscreen platform the same path takes 1.0 s, so the mount and the display account for about 0.7 s. **Size:** 122.3 MB (128,264,696 bytes). Both recorded in the Technical Architecture PRD's 1.51 row.
 
 **Owed:** the Wayland portal capture (checklist section 7: log into Cinnamon on Wayland, start the AppImage, Capture Full Screen through the portal's consent dialog, Capture Active Window degrading to Region), when the machine can be logged out. It stays a display check of this work until then.
+
+## 9. The build in continuous integration (Phase 3)
+
+`.github/workflows/ci.yml` gains two jobs beside the checks and the wheel build, and runs on tags of the form `vX.Y.Z` as well as on pushes to `main` and pull requests.
+
+**`appimage`, on every run:** `ubuntu-latest` (the `ubuntu-24.04` image on 09-14-26), the same Qt host libraries the checks job installs (the smoke test builds a window offscreen), uv with its cache, `uv sync --locked --group packaging`, the recipe (`python packaging/appimage/build.py`), the smoke test, and `dist/*.AppImage` kept as the `snapmockit-appimage` artifact, missing files an error. The recipe reads nothing from GitHub's API: the base image and `appimagetool` come from release download addresses and the AppImage runtime from `appimagetool`'s own download, none of them rate limited the way the API is on a shared runner.
+
+**`packaging/appimage/smoke.sh`, the smoke test:** the file answers `--appimage-extract-and-run --version` with `Snapmockit <version>`, the version taken from the file's own name; then the file is extracted (`--appimage-extract`, no FUSE), the metainfo, the MIME file, and the 256 pixel icon are checked for, and the extracted image's bundled Python builds the main window on the offscreen platform with `APPDIR` set, as the smoke of Phase 1 did by hand. It runs here in 1.9 seconds against `dist/`, and `tests/test_ci_workflow.py` runs it whenever a built AppImage is in `dist/` (skipped otherwise).
+
+**`release`, on a tag only:** after `checks`, `build`, and `appimage` pass, with `contents: write`. The tag must be `v` followed by the version in `snapmock/__init__.py`, or the job fails before it publishes anything, since Check for Updates compares the release's tag with the running version and a mismatch would tell every user the wrong thing. The AppImage is downloaded from the artifact of the same run, the tag's annotation becomes the release notes (a bare tag gets a one-line note), and `gh release create --verify-tag` publishes an ordinary release (decision 5) titled `Snapmockit <version>` with the AppImage attached. Nothing is built on this machine for a release.
+
+**Tests:** `tests/test_ci_workflow.py` parses the workflow with PyYAML (added to the dev group with its stubs) and holds the triggers, the four jobs, the release job's needs, condition, and permission, the appimage job's three commands and its artifact, the release job's version check, download, and `gh release create` without `--prerelease`, and the smoke script's shape; and it runs the smoke script against a built AppImage when one is present.
+
+**Owed:** the first run of the `appimage` job on GitHub, recorded here when it is green, and the first release, which is Phase 4's.
 
 ## Change Log
 
