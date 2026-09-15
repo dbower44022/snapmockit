@@ -1,0 +1,88 @@
+# The End-to-End Pass on Real Work, and the 1.0.0 Release — Notes
+
+Last Updated: 09-15-26 09:48 · Revision 1.0
+
+Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`, Section 1): the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, used by Doug for his real screenshot work over several sittings, every finding recorded and classified, every defect fixed with a test, and then the first release the product stands behind, `1.0.0`. The kickoff prompt is `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The record takes the shape of the General UI acceptance pass (`docs/General-UI-Implementation.md`, Section 16) where it fits: one row per finding, Doug's words quoted, the evidence named.
+
+## 1. Phases
+
+| Phase | Scope | Status | Commits |
+|---|---|---|---|
+| 1 | The four decisions, this document, and the Wayland check (checklist section 7) | In progress from 09-15-26 09:47: decisions taken, this document written; the Wayland check owed to Doug's next log-out | this commit |
+| 2 | The sittings: Doug's real work on the 0.9.0 AppImage, each finding recorded, triaged, and fixed | Not started | |
+| 3 | The release: version 1.0.0, the tag, the release job, the smoke test, Check for Updates from 0.9.0, the README | Not started; blocked on decision 1's exit criterion and, under decision 3, on the Wayland check | |
+| Close-out | The PRD rows, the release-engineering notes, what remains of packaging and the platform backends, the next required step | Not started | |
+
+## 2. Decisions
+
+All four were presented with the consequential decision template on 09-15-26 at 09:47 and approved by Doug as recommended ("use all of your recommendations").
+
+### 2.1 What ends the pass: option A, findings-bound, with C available
+
+The pass ends after the first sitting in which Doug finds nothing new and every earlier finding is closed, with at least three sittings on at least three distinct pieces of real work. "Closed" means fixed and seen on the display in a later sitting, or reclassified by Doug as a departure or a follow-up. "Distinct pieces of work" means different documents or tasks, not repetitions of one. Doug may call the pass ended at any point (option C); when he does, the close-out records it as his call. The cost: the pass runs a sitting longer for every sitting that finds something. The alternatives were a fixed number of days regardless of what is open (B) and Doug's call alone (C).
+
+### 2.2 Where findings live: option B, GitHub issues for the defects
+
+The findings table in Section 5 is the one complete record. Each finding classified as a defect also becomes one issue on `github.com/dbower44022/snapmockit`, opened at triage, titled in Doug's words from the table, carrying the finding number in its body, and closed by the fix commit's message; the table's row points at the issue. Departures and follow-ups stay in the table only. A defect Doug reclassifies as a follow-up keeps its issue open with a `later` label. The cost: two places to keep in step for every defect, and the defects of a pre-1.0.0 product on public view. The alternatives were the table alone (A) and issues for everything (C).
+
+### 2.3 Whether the Wayland check gates 1.0.0: option A, yes
+
+The AppImage's capture through the desktop portal, section 7 of the checklist page `Snapmockit AppImage Display Checks`, must be seen once on this machine's Cinnamon on Wayland session before `v1.0.0` is tagged. Phase 2 proceeds without it. The marks are read back from the page and recorded in `docs/Packaging-AppImage-Implementation.md` (a new Section 8.4) and in Section 7 of this document. If the check fails, the failure is a defect of this pass and the check is rerun after the fix. The cost: one log-out Doug has not been able to make yet. The alternative was to ship on the X11 proof alone (B).
+
+### 2.4 What 1.0.0 ships: option A, the Linux AppImage alone
+
+As 0.9.0 did. The release notes name what changed since 0.9.0 in the user's words and say that the Windows and macOS packages do not exist yet. The wheel on PyPI (B) is the first packaging step after 1.0.0; the Flatpak (C) follows it. The cost: Linux users without AppImage tooling wait for the next packaging step.
+
+## 3. Silences decided
+
+The kickoff's seven, each taken as the kickoff states:
+
+1. A sitting is one continuous stretch of Doug's real work with the AppImage, however long; the session sets neither its length nor its content.
+2. The findings table's columns are those of Section 5.
+3. A defect in a capture backend this machine cannot exercise (Windows, macOS) is a follow-up, not a defect of this pass.
+4. Where a product requirements document's wording and Doug's expectation differ and Doug's is the better one, the finding is a departure recorded in that document, not a defect.
+5. Fix commits carry no version change; the version moves once, at Phase 3.
+6. The 0.9.0 AppImage stays at `dist/Snapmockit-0.9.0-x86_64.AppImage` through the work; a fix under test runs from source or from a locally built AppImage, and Doug's sittings use the released 0.9.0 until 1.0.0 exists.
+7. The 1.0.0 release notes name what changed since 0.9.0 for a user and say that the Windows and macOS packages do not exist yet.
+
+Two more, found at the start:
+
+8. The change log of `docs/Packaging-AppImage-Implementation.md` had stopped at revision 1.2 while its header read 2.0; no commit had written the rows for 1.3 to 2.0. The rows were back-filled from the commits that made each revision, as revision 2.1, in this phase's first commit. Doug approved the back-fill with the decisions.
+9. The checklist page's section 7 was written for the 0.1.0 build. It is repointed at the released 0.9.0 file before Doug runs it, so the Wayland proof is of the release.
+
+## 4. Starting state, re-verified 09-15-26 09:47
+
+Verified by running the code and the repository on this machine (Intel i7-11700K, Linux, Cinnamon on X11, Python 3.12.3, uv), not by reading it:
+
+- The repository head is 8c0ac91, two commits after the kickoff's 6577c65 (the brush-editing retest note and the kickoff prompt itself); the working tree is clean; the CI run of 8c0ac91 (34933591806) passed in 4 minutes 15 seconds.
+- `v0.9.0` is the latest release: published 2026-09-15 04:43 UTC, `prerelease=false`, one asset, `Snapmockit-0.9.0-x86_64.AppImage`, 128,272,888 bytes; `releases/latest` answers with it. The copy at `dist/Snapmockit-0.9.0-x86_64.AppImage` has the same size and its SHA-256 begins `ebe7c8e0f0b7427c`. The 0.1.0 build of 09-14-26 23:34 sits beside it.
+- `snapmock/__init__.py` reads 0.9.0; `APP_BUILD_DATE` reads 2026-09-15.
+- The on-disk names are migrated: `~/.config/Snapmockit`, `~/.config/snapmockit`, and `~/Snapmockit/Library` (22 files) exist; `~/.config/SnapMock`, `~/.config/snapmock`, and `~/SnapMock` do not.
+- **The pre-migration instance is still running:** process 214565, `uv run python -m snapmock`, up for eight days. It must be quit before the first sitting; its exit rewrites its settings to `~/.config/SnapMock/SnapMock.conf`, which the migration then leaves as stale because the new store exists, and which may be deleted by hand.
+- The session is X11 (`XDG_SESSION_TYPE=x11`); the Wayland check needs a log-out.
+- The repository's issue tracker is empty; no labels exist beyond GitHub's defaults.
+- The nine product requirements documents stand at: Basic Shape 1.28, Blur / Highlighter / Eyedropper 1.19, General UI 2.40, Library 1.2, Navigation and Raster Operations 1.3, Numbered Steps / Stamps / Emoji 1.7, Screen Capture 1.0, Technical Architecture 1.55, Text and Callout 1.9.
+- The suite at 080e2f3: 1669 passed, 14 skipped, 1 deselected, in 6 minutes 13 seconds from a scratch worktree; no code has changed since.
+
+## 5. Findings
+
+One row per finding, numbered in the order found. The class is one of defect (against a product requirements document, fixed here with a test), departure (kept by Doug's decision, recorded in the document), or follow-up (listed for a later kickoff). The state is one of open, fixed, kept, or deferred.
+
+| # | Sitting | What happened, in Doug's words | Where | Requirement | Class | Fix commit or issue | State |
+|---|---|---|---|---|---|---|---|
+
+## 6. Sittings
+
+One entry per sitting: the date, the work done in Doug's words, the files it touched, and the findings by number. A sitting with no finding is recorded too.
+
+*None yet.*
+
+## 7. The Wayland check (checklist section 7)
+
+Owed. To be run by Doug from the checklist page against the released 0.9.0 file when he can log out of the X11 session into Cinnamon on Wayland; its five marks are recorded here and in `docs/Packaging-AppImage-Implementation.md`, Section 8.4.
+
+## Change Log
+
+| Rev | Date (MM-DD-YY HH:MM) | Author | Change |
+|---|---|---|---|
+| 1.0 | 09-15-26 09:48 | Claude (Claude Code) | Initial notes: the phase table, the four decisions as approved (1 A with C available, 2 B, 3 A, 4 A), the seven silences and two more, the starting state re-verified at 8c0ac91, the empty findings table, and the Wayland check owed. |

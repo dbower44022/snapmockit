@@ -1,6 +1,6 @@
 # Packaging: the Linux AppImage — Implementation Notes
 
-Last Updated: 09-15-26 01:30 · Revision 2.0
+Last Updated: 09-15-26 09:50 · Revision 2.1
 
 Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`, Section 1) for Linux: the AppImage that Technical Architecture PRD 7.3 names as the primary Linux distribution, built by a recipe in the repository, proven on this machine, built in continuous integration on every push, and published as a GitHub release on a tag, together with the migration of the two on-disk names the rename of 09-14-26 left as they were. The kickoff prompt is `docs/Packaging-AppImage-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -173,6 +173,15 @@ Version `0.9.0` and build date `2026-09-15` in commit 080e2f3, its suite green f
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 2.1 | 09-15-26 09:50 | Claude (Claude Code) | Change log back-filled: the rows for revisions 1.3 to 2.0 were never written when those revisions were made (found at the start of the end-to-end pass, `docs/End-to-End-Pass.md`); each row below is taken from the commit that made the revision. No other content changed. |
+| 2.0 | 09-15-26 01:30 | Claude (Claude Code) | Section 8.3: Doug's section 8 run, Check for Updates from 0.1.0 finding v0.9.0 and the migration's first start of 0.9.0, six steps as described; the Wayland capture the one display check left owed. |
+| 1.9 | 09-15-26 00:45 | Claude (Claude Code) | Phase 4 and the close-out done: Section 10.1 (v0.9.0 released and found by Check for Updates headless) and Section 11 (the PRD rows, what of 7.3 remains, the display checks owed). |
+| 1.8 | 09-15-26 00:26 | Claude (Claude Code) | Section 10: the migration of the on-disk names (packaging decision 4) and its tests. |
+| 1.7 | 09-15-26 00:22 | Claude (Claude Code) | Phase 3 closed: the first CI run with the AppImage job green in 51 seconds recorded in Section 9. |
+| 1.6 | 09-15-26 00:11 | Claude (Claude Code) | Section 9: the CI jobs, the smoke script, and the workflow tests of Phase 3. |
+| 1.5 | 09-15-26 00:08 | Claude (Claude Code) | Section 8.1: the step 2.1 icon note closed as an instruction error (Cinnamon's button layout draws no title bar icon). |
+| 1.4 | 09-14-26 23:56 | Claude (Claude Code) | Phase 2 closed: Sections 8.1 and 8.2, the display run of 18 steps as described and the startup and size measurements. |
+| 1.3 | 09-14-26 23:35 | Claude (Claude Code) | Section 8: the second portal line and its fix, the desktop entry's id given to Qt only where the entry is installed. |
 | 1.2 | 09-14-26 23:29 | Claude (Claude Code) | Section 8 opened with the first two steps of Doug's run: the portal registration line from the first build, its cause, and the fix in `app.py`. |
 | 1.1 | 09-14-26 18:10 | Claude (Claude Code) | Phase 1 done: Sections 5 and 6 written (the recipe, its measurements, the host libraries, the entry point and icon changes, the tests); the glibc floor corrected to 2.34 from the built file; three follow-ups. |
 | 1.0 | 09-14-26 17:59 | Claude (Claude Code) | Initial notes: the phase table, the five decisions as approved (decision 5 corrected: an ordinary release, since `releases/latest` excludes pre-releases), the seven silences with silence 2's consequence for the entry point, and the starting state re-verified. |
