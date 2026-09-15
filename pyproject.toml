@@ -27,6 +27,8 @@ dev = [
     "mypy",
     "python-docx>=1.2.0",
     "types-psutil>=7.2.2.20260906",
+    "pyyaml>=6.0.3",
+    "types-pyyaml>=6.0.12.20260906",
 ]
 packaging = [
     "python-appimage>=1.4.6",

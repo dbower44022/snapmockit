@@ -1,12 +1,16 @@
 # Continuous integration (Technical Architecture PRD 1.49; docs/Release-Engineering.md).
 # Lint, format, type check, and the whole test suite on the offscreen Qt platform, on
-# every push and pull request; and a build of the wheel and sdist, so the packaging
-# metadata is proven on every change too.
+# every push and pull request; a build of the wheel and sdist, so the packaging
+# metadata is proven on every change too; the Linux AppImage built by the recipe under
+# packaging/appimage/, smoke-tested on the runner and kept as an artifact (packaging
+# decision 2; docs/Packaging-AppImage-Implementation.md); and, on a tag of the form
+# vX.Y.Z, a GitHub release carrying the AppImage, which Check for Updates reads.
 name: CI
 
 on:
   push:
     branches: ["main"]
+    tags: ["v*.*.*"]
   pull_request:
 
 concurrency:
@@ -75,3 +79,87 @@ jobs:
           name: snapmockit-dist
           path: dist/
           if-no-files-found: error
+
+  appimage:
+    name: Linux AppImage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # The smoke test builds the main window on the offscreen platform from the
+      # bundled Python, which takes the same host libraries the suite does.
+      - name: Qt runtime libraries and fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libegl1 libgl1 libglib2.0-0 libdbus-1-3 libfontconfig1 libfreetype6 \
+            libxkbcommon0 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 \
+            libxcb-shape0 libxcb-xkb1 libxcb-render-util0 libxcb-image0 \
+            fonts-dejavu-core
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install, with the packaging tools
+        run: uv sync --locked --group packaging
+
+      - name: Build the AppImage
+        run: uv run --group packaging python packaging/appimage/build.py
+
+      - name: Smoke test
+        run: bash packaging/appimage/smoke.sh dist/Snapmockit-*-x86_64.AppImage
+
+      - name: Show what was built
+        run: ls -l dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: snapmockit-appimage
+          path: dist/*.AppImage
+          if-no-files-found: error
+
+  release:
+    name: GitHub release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [checks, build, appimage]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # The tag names the version the package carries, or the release is not made:
+      # Check for Updates compares the release's tag with the running version.
+      - name: The tag is the package's version
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          version="$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' snapmock/__init__.py)"
+          echo "tag $tag, package $version"
+          [ "$tag" = "v$version" ] || { echo "the tag must be v$version" >&2; exit 1; }
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: snapmockit-appimage
+          path: dist/
+
+      - name: Release notes from the tag's message
+        run: |
+          git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
+          git tag -l --format='%(contents)' "${GITHUB_REF_NAME}" > release-notes.md
+          [ -s release-notes.md ] || echo "Snapmockit ${GITHUB_REF_NAME#v}." > release-notes.md
+          cat release-notes.md
+
+      - name: Publish the release with the AppImage
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/Snapmockit-*-x86_64.AppImage \
+            --title "Snapmockit ${GITHUB_REF_NAME#v}" \
+            --notes-file release-notes.md \
+            --verify-tag
