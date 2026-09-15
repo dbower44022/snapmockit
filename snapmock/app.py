@@ -34,13 +34,20 @@ def main(argv: list[str] | None = None) -> None:
         print(version_text())
         sys.exit(0)
     command, files = parse_command_line(argv)
+    # The names are set before the application exists: Qt registers the desktop
+    # entry's id with the desktop portal when the first window shows, once, from
+    # the name it holds then; a name set afterwards registers a second time and
+    # the portal refuses it ("Connection already associated with an application
+    # ID", seen from the AppImage on 09-14-26). On a host where the desktop entry
+    # is not installed the portal answers "App info not found" once; it is a
+    # warning, and it ends when the AppImage is integrated into the menu.
+    QApplication.setApplicationName(APP_NAME)
+    QApplication.setApplicationVersion(APP_VERSION)
+    QApplication.setDesktopFileName(DESKTOP_ENTRY_ID)
     # The application is created before the forward because the write to the
     # channel completes only once an event loop is available to pump it, which
     # is how a Windows named pipe behaves (PRD 3.5).
     app = QApplication(argv)
-    app.setApplicationName(APP_NAME)
-    app.setApplicationVersion(APP_VERSION)
-    app.setDesktopFileName(DESKTOP_ENTRY_ID)
     app.setWindowIcon(application_icon())
     if command is not None and try_forward(argv):
         sys.exit(0)

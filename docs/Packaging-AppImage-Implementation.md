@@ -1,6 +1,6 @@
 # Packaging: the Linux AppImage — Implementation Notes
 
-Last Updated: 09-14-26 18:10 · Revision 1.1
+Last Updated: 09-14-26 23:29 · Revision 1.2
 
 Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`, Section 1) for Linux: the AppImage that Technical Architecture PRD 7.3 names as the primary Linux distribution, built by a recipe in the repository, proven on this machine, built in continuous integration on every push, and published as a GitHub release on a tag, together with the migration of the two on-disk names the rename of 09-14-26 left as they were. The kickoff prompt is `docs/Packaging-AppImage-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -103,9 +103,14 @@ produces `dist/Snapmockit-<version>-x86_64.AppImage`. The steps, in `build.py`:
 - `APP_BUILD_DATE` in `config/constants.py` is set by hand ("2026-09-08"); the release process of Phase 4 sets it for `v0.9.0`, and a later step could derive it from the build.
 - `appimagetool` is fetched at its `continuous` tag by `python-appimage`; a pinned release would make the seal reproducible too.
 
+## 8. The Phase 2 display run
+
+**Steps 1.1 and 1.2, run by Doug on 09-14-26 at about 23:25 against the first build (2d10faa):** `--version` printed `Snapmockit 0.1.0`; the start printed one line, `qt.qpa.services: Failed to register with host portal QDBusError("org.freedesktop.portal.Error.Failed", "Could not register app ID: Connection already associated with an application ID")`. Reproduced here with a minimized window from the AppDir's Python: Qt 6.10 registers the desktop entry's id with the desktop portal's registry (`org.freedesktop.host.portal.Registry`) when the first window shows, once, from the name it holds at that moment; the entry point set the name after the application object existed, so Qt registered a second time on the same connection and the portal refused it. **Fixed:** `app.py` sets the application name, version, and desktop file name through the static setters before `QApplication` is constructed, and Qt registers once. What remains on a host where the desktop entry is not installed is the portal's own answer, `Could not register app ID: App info not found for 'io.github.dbower44022.snapmockit'`, one line, a warning: an AppImage that has not been integrated into the menu has no entry for the portal to find. Neither line stops anything; without the registration the portal's dialogs name the application generically. Without the desktop file name set at all Qt registers nothing and prints nothing, but the window then carries no class the desktop can match to the entry, and under Wayland its app id would be `python3.12`; the id is kept. The AppImage was rebuilt at 23:28 and the checklist's step 1.2 names the remaining line as expected.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.2 | 09-14-26 23:29 | Claude (Claude Code) | Section 8 opened with the first two steps of Doug's run: the portal registration line from the first build, its cause, and the fix in `app.py`. |
 | 1.1 | 09-14-26 18:10 | Claude (Claude Code) | Phase 1 done: Sections 5 and 6 written (the recipe, its measurements, the host libraries, the entry point and icon changes, the tests); the glibc floor corrected to 2.34 from the built file; three follow-ups. |
 | 1.0 | 09-14-26 17:59 | Claude (Claude Code) | Initial notes: the phase table, the five decisions as approved (decision 5 corrected: an ordinary release, since `releases/latest` excludes pre-releases), the seven silences with silence 2's consequence for the entry point, and the starting state re-verified. |
