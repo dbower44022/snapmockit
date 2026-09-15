@@ -1,6 +1,6 @@
 # Packaging: the Linux AppImage — Implementation Notes
 
-Last Updated: 09-15-26 00:45 · Revision 1.9
+Last Updated: 09-15-26 01:30 · Revision 2.0
 
 Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`, Section 1) for Linux: the AppImage that Technical Architecture PRD 7.3 names as the primary Linux distribution, built by a recipe in the repository, proven on this machine, built in continuous integration on every push, and published as a GitHub release on a tag, together with the migration of the two on-disk names the rename of 09-14-26 left as they were. The kickoff prompt is `docs/Packaging-AppImage-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -121,6 +121,10 @@ Passing, as described and with no note: the window found the existing settings (
 
 **Owed:** the Wayland portal capture (checklist section 7: log into Cinnamon on Wayland, start the AppImage, Capture Full Screen through the portal's consent dialog, Capture Active Window degrading to Region), when the machine can be logged out. It stays a display check of this work until then.
 
+### 8.3 The release found and the first start of 0.9.0, 09-15-26 01:24 to 01:29
+
+Run by Doug from section 8 of the same checklist page, marks read back. **Six steps, six as described, no note.** The 0.1.0 build's Help > About read 0.1.0; its Help > Check for Updates said "Snapmockit v0.9.0 is available. You are running Snapmockit 0.1.0." with Open Release Page, which opened the v0.9.0 release page listing the AppImage. The released 0.9.0 build's first start opened the window as it was, with the message along its bottom edge naming the three moves, and the Library panel listing the same captures; the file manager showed `Snapmockit` in the home folder and `Snapmockit` and `snapmockit` under `.config`, none of the SnapMock names; a second start showed no message and About read 0.9.0. Verified here on the disk afterwards: `~/.config/Snapmockit/Snapmockit.conf`, `~/.config/snapmockit/tool_state.json`, and `~/Snapmockit/Library` with its 22 files exist; `~/.config/SnapMock`, `~/.config/snapmock`, and `~/SnapMock` do not; the settings name the library only under the new path. The two display checks of Section 11 that this section covers are closed; the Wayland portal capture of section 7 is the one that remains.
+
 ## 9. The build in continuous integration (Phase 3)
 
 `.github/workflows/ci.yml` gains two jobs beside the checks and the wheel build, and runs on tags of the form `vX.Y.Z` as well as on pushes to `main` and pull requests.
@@ -161,7 +165,7 @@ Version `0.9.0` and build date `2026-09-15` in commit 080e2f3, its suite green f
 
 **What of 7.3 remains, and what this machine can build:** Flatpak (secondary Linux; this machine can build it, with `flatpak-builder` and the KDE or freedesktop runtime, a manifest, and the same desktop integration files; a Flathub submission is a separate step); PyPI (`uv publish` of the wheel and sdist the CI build already makes, from this machine or a workflow, once a PyPI account and token exist; the console entry point Section 3 of the kickoff noted is missing would be added then); the Windows MSI and portable ZIP (need a Windows machine, and the Windows capture backend's own display checks first; `docs/Windows-Backend-Kickoff-Prompt.md`); the macOS bundle (needs a Mac, and the macOS backend, deferred). This machine can build the Flatpak and publish to PyPI; it cannot build the Windows or macOS packages.
 
-**Display checks this work owes, all on the checklist page's sections 7 and 8:** Help > Check for Updates from the 0.1.0 AppImage finding v0.9.0 and Open Release Page opening it; the first start of 0.9.0 showing the migration's message once, with the settings and the library found at their new names and the old directories gone; a second start showing nothing; and the Wayland portal capture of section 7, when the machine can be logged out.
+**Display checks this work owes:** one, the Wayland portal capture of the checklist page's section 7, when the machine can be logged out. The others, Help > Check for Updates from the 0.1.0 AppImage finding v0.9.0, and the first start of 0.9.0 with the migration's message and the new names on disk, passed on 09-15-26 (Section 8.3).
 
 **The next required step** is step 4 of the release-engineering list: an end-to-end pass on real work on the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, before `1.0.0` is claimed. Its kickoff prompt is not yet written.
 

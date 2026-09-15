@@ -11,7 +11,7 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.54</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.55</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.55</td>
+        <td class="nowrap">09-15-26 01:30</td>
+        <td>Doug Bower</td>
+        <td>Two of the three display checks the 1.54 row left owed passed on the display (the menu's Check for Updates from 0.1.0; the migration's first start of 0.9.0); the Wayland portal capture remains.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.54</td>
         <td class="nowrap">09-15-26 00:45</td>
@@ -504,6 +511,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-15-26 01:30</td>
+        <td>7.3, 4.4</td>
+        <td>Verified</td>
+        <td><strong>Verified</strong> on Doug's display 09-15-26 (<code>docs/Packaging-AppImage-Implementation.md</code>, Section 8.3; General UI PRD 2.40): Check for Updates from the 0.1.0 AppImage found v0.9.0 through the Help menu, and the first start of the released 0.9.0 AppImage moved the settings store, the application data directory of 4.4, and the default library to the product's names with one message, the old directories gone and the settings naming the library only under the new path, a second start silent. Of the display checks this work owes, the Wayland portal capture alone remains, for when the machine can be logged out.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-15-26 00:45</td>
         <td>7.3, 8, 9, 10</td>
