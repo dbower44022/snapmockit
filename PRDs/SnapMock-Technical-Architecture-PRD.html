@@ -11,7 +11,7 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.50</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.51</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.51</td>
+        <td class="nowrap">09-14-26 23:56</td>
+        <td>Doug Bower</td>
+        <td>The Linux AppImage proven on the development machine (docs/Packaging-AppImage-Implementation.md, Section 8): every proof of 7.3's primary Linux form but the Wayland capture; Section 8's startup measured at 1.6 to 1.7 seconds from the sealed file; 122 MB.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.50</td>
         <td class="nowrap">09-14-26 18:08</td>
@@ -476,6 +483,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-14-26 23:56</td>
+        <td>7.3, 8</td>
+        <td>Verified</td>
+        <td><strong>Verified</strong> (09-14-26; <code>docs/Packaging-AppImage-Implementation.md</code>, Sections 8.1 and 8.2): the AppImage of the 1.50 row, built from d3b100f, run by Doug from a shell and from a file manager on Cinnamon on X11. It found the existing settings and library, showed its icon and version in About, reached GitHub through Check for Updates and reported that no release exists, captured the full screen and a region through the X11 backend, took a <code>--capture full</code> forwarded from the shell, saved and reopened a project, exported PNG and PDF, and read a Snagit file: 18 steps as described, one note on the icon's second place open, and the Wayland portal capture deferred until the machine can be logged out. <strong>Section 8</strong>, "Application startup &lt; 2 seconds to interactive": 1.70, 1.70, and 1.63 seconds from process start to the main window mapped, the sealed file with its FUSE mount and session restore on, on the development machine, measured by polling the window list at 50 ms; 1.0 second from the extracted AppDir on the offscreen platform. Met. The file is 122.3 MB. Two starts printed a line about the desktop portal's registry before the fixes of eb4e4ac and d3b100f, recorded in the notes' Section 8: the entry point now sets the application's names before Qt is constructed and gives Qt the desktop entry's id only where that entry is installed, so a bare AppImage prints nothing.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-14-26 18:08</td>
         <td>7.3, 8, 9, 10</td>
