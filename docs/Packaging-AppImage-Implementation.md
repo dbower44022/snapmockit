@@ -11,7 +11,7 @@ Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`
 | 1 | The five decisions, this document, and the recipe under `packaging/appimage/` with its tests | Done 09-14-26: the suite at 2d10faa, 1652 passed, 13 skipped, 1 deselected, in 7 minutes 58 seconds from a scratch worktree | 860f370, 2d10faa, then the close-out commit |
 | 2 | The AppImage built here and run as a user would; every proof of the task recorded; size and start time measured | Done 09-14-26 but for the Wayland portal capture, deferred (Section 8.2); the icon note closed 09-15-26 as an instruction error | eb4e4ac, d3b100f, then the close-out commit |
 | 3 | The build in continuous integration: the AppImage as an artifact on every push, a smoke test on the runner, the release job on a `vX.Y.Z` tag | Done 09-15-26: run 34928224677 green, the AppImage job in 51 seconds | b683422, then the close-out commit |
-| 4 | The migration of the on-disk names, and the first release, `v0.9.0` | Step 1 done 09-15-26 (the migration); step 2, the release, next | the migration commit |
+| 4 | The migration of the on-disk names, and the first release, `v0.9.0` | Step 1 done 09-15-26 (the migration); step 2, the release, next | b29ac86 |
 | Close-out | The PRD rows, the release-engineering notes, the display checks owed, what of 7.3 remains | Not started | |
 
 ## 2. Decisions
