@@ -11,7 +11,7 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.51</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.52</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.52</td>
+        <td class="nowrap">09-15-26 00:22</td>
+        <td>Doug Bower</td>
+        <td>The AppImage is built in continuous integration on every push, smoke-tested on the runner, kept as an artifact, and attached to a GitHub release on a vX.Y.Z tag (packaging decision 2); the first run green 09-15-26, the job in 51 seconds.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.51</td>
         <td class="nowrap">09-14-26 23:56</td>
@@ -483,6 +490,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-15-26 00:22</td>
+        <td>7.3, 9</td>
+        <td>Built</td>
+        <td><strong>Built</strong> (09-15-26; <code>docs/Packaging-AppImage-Implementation.md</code>, Section 9): <code>.github/workflows/ci.yml</code> gains the <code>appimage</code> job, which runs the recipe of the 1.50 row on <code>ubuntu-latest</code> on every push and pull request, runs <code>packaging/appimage/smoke.sh</code> against the file (<code>--version</code> through <code>--appimage-extract-and-run</code>, then the main window built on the offscreen platform from the extracted image's own Python, no FUSE), and keeps it as the <code>snapmockit-appimage</code> artifact; and the <code>release</code> job, which runs on a tag of the form <code>vX.Y.Z</code> after the checks, the wheel build, and the AppImage job, refuses a tag that is not <code>v</code> followed by the version in <code>snapmock/__init__.py</code>, and publishes an ordinary GitHub release titled with the version, the tag's message as its notes and the AppImage attached, through <code>gh release create --verify-tag</code>. The workflow runs on those tags as well as on pushes to main. Nothing is built on the development machine for a release. First run on GitHub 09-15-26, run 34928224677: green, the AppImage job in 51 seconds, the same 122.3 MB file as here. <code>tests/test_ci_workflow.py</code> holds the workflow's shape and runs the smoke script against a built AppImage; PyYAML joins the dev group for it, under Section 9's "used only for packaging/testing". Section 10 is unchanged: <code>smoke.sh</code> lives in the <code>packaging/appimage/</code> directory of the 1.50 row.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-14-26 23:56</td>
         <td>7.3, 8</td>

@@ -1,6 +1,6 @@
 # Packaging: the Linux AppImage — Implementation Notes
 
-Last Updated: 09-15-26 00:11 · Revision 1.6
+Last Updated: 09-15-26 00:22 · Revision 1.7
 
 Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`, Section 1) for Linux: the AppImage that Technical Architecture PRD 7.3 names as the primary Linux distribution, built by a recipe in the repository, proven on this machine, built in continuous integration on every push, and published as a GitHub release on a tag, together with the migration of the two on-disk names the rename of 09-14-26 left as they were. The kickoff prompt is `docs/Packaging-AppImage-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -10,7 +10,7 @@ Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`
 |---|---|---|---|
 | 1 | The five decisions, this document, and the recipe under `packaging/appimage/` with its tests | Done 09-14-26: the suite at 2d10faa, 1652 passed, 13 skipped, 1 deselected, in 7 minutes 58 seconds from a scratch worktree | 860f370, 2d10faa, then the close-out commit |
 | 2 | The AppImage built here and run as a user would; every proof of the task recorded; size and start time measured | Done 09-14-26 but for the Wayland portal capture, deferred (Section 8.2); the icon note closed 09-15-26 as an instruction error | eb4e4ac, d3b100f, then the close-out commit |
-| 3 | The build in continuous integration: the AppImage as an artifact on every push, a smoke test on the runner, the release job on a `vX.Y.Z` tag | Jobs written 09-15-26; the first run on GitHub owed | b683422 |
+| 3 | The build in continuous integration: the AppImage as an artifact on every push, a smoke test on the runner, the release job on a `vX.Y.Z` tag | Done 09-15-26: run 34928224677 green, the AppImage job in 51 seconds | b683422, then the close-out commit |
 | 4 | The migration of the on-disk names, and the first release, `v0.9.0` | Not started | |
 | Close-out | The PRD rows, the release-engineering notes, the display checks owed, what of 7.3 remains | Not started | |
 
@@ -133,7 +133,7 @@ Passing, as described and with no note: the window found the existing settings (
 
 **Tests:** `tests/test_ci_workflow.py` parses the workflow with PyYAML (added to the dev group with its stubs) and holds the triggers, the four jobs, the release job's needs, condition, and permission, the appimage job's three commands and its artifact, the release job's version check, download, and `gh release create` without `--prerelease`, and the smoke script's shape; and it runs the smoke script against a built AppImage when one is present.
 
-**Owed:** the first run of the `appimage` job on GitHub, recorded here when it is green, and the first release, which is Phase 4's.
+**The first run on GitHub, 09-15-26 (run 34928224677, on b683422 and the notes commit after it):** all four jobs as expected. The `appimage` job took 51 seconds from start to finish (04:17:00 to 04:17:51 UTC), the apt install, uv, the base image, the pip installs, the seal, and the smoke test included; the runner built the same 122.3 MB file this machine builds and the smoke test passed on it; the artifact `snapmockit-appimage` holds it (127,536,751 bytes as GitHub stores it). The checks job took 4 minutes 16 seconds and the wheel build 13 seconds; the release job was skipped, as it is on every push that is not a tag. The first release is Phase 4's.
 
 ## Change Log
 
