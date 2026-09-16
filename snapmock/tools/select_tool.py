@@ -669,50 +669,56 @@ class SelectTool(BaseTool):
     # --- drag movement ---
 
     def _handle_drag_move(self, scene_pos: QPointF, event: QMouseEvent) -> bool:
-        raw_delta = scene_pos - self._drag_start
+        """Move the dragged items so their total displacement follows the pointer.
+
+        Everything is computed from the whole movement since the press, never from one
+        event's increment: with Snap to Grid on, the increment was once rounded to the
+        grid on its own and the remainder thrown away, so a pointer moving a few pixels
+        per event moved nothing at all and a flick jumped a grid step (end-to-end pass
+        finding 3). The snapped total is the grid multiple nearest the raw total; the
+        items are moved by the difference from what has been applied so far.
+        """
+        raw_total = scene_pos - self._press_pos
 
         # Check if we've passed the drag threshold
-        total = self._drag_total + raw_delta
-        if abs(total.x()) < DRAG_THRESHOLD and abs(total.y()) < DRAG_THRESHOLD:
+        if abs(raw_total.x()) < DRAG_THRESHOLD and abs(raw_total.y()) < DRAG_THRESHOLD:
             return True
 
         # Shift constrains to dominant axis
         shift = bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
         if shift:
-            if self._constrain_axis is None and (abs(total.x()) > 10 or abs(total.y()) > 10):
-                self._constrain_axis = "x" if abs(total.x()) >= abs(total.y()) else "y"
+            if self._constrain_axis is None and (
+                abs(raw_total.x()) > 10 or abs(raw_total.y()) > 10
+            ):
+                self._constrain_axis = "x" if abs(raw_total.x()) >= abs(raw_total.y()) else "y"
             if self._constrain_axis == "x":
-                raw_delta = QPointF(raw_delta.x(), 0)
+                raw_total = QPointF(raw_total.x(), 0)
             elif self._constrain_axis == "y":
-                raw_delta = QPointF(0, raw_delta.y())
+                raw_total = QPointF(0, raw_total.y())
         else:
             self._constrain_axis = None
 
-        # View > Snap to Grid: the total movement lands on grid multiples
+        target = QPointF(raw_total)
         view = self._view
+        # View > Snap to Grid: the total movement lands on grid multiples
         if view is not None and view.snap_to_grid:
             grid = view._grid_size  # noqa: SLF001
-            new_total_x = self._drag_total.x() + raw_delta.x()
-            new_total_y = self._drag_total.y() + raw_delta.y()
-            snapped_x = round(new_total_x / grid) * grid
-            snapped_y = round(new_total_y / grid) * grid
-            raw_delta = QPointF(
-                snapped_x - self._drag_total.x(),
-                snapped_y - self._drag_total.y(),
+            target = QPointF(
+                round(raw_total.x() / grid) * grid, round(raw_total.y() / grid) * grid
             )
         # View > Snap to Guides: an edge or the centre of the selection lands on a guide
         if view is not None and view.snap_to_guides:
-            moved = self._selection_bounding_rect(self._drag_items).translated(raw_delta)
-            raw_delta += view.snap_rect_offset(moved)
+            at_rest = self._selection_bounding_rect(self._drag_items).translated(
+                -self._drag_total.x(), -self._drag_total.y()
+            )
+            target += view.snap_rect_offset(at_rest.translated(target))
 
-        for item in self._drag_items:
-            item.moveBy(raw_delta.x(), raw_delta.y())
-        self._drag_start = scene_pos
-        self._drag_total = QPointF(
-            self._drag_total.x() + raw_delta.x(),
-            self._drag_total.y() + raw_delta.y(),
-        )
-        self._update_handles()
+        delta = target - self._drag_total
+        if delta.x() != 0 or delta.y() != 0:
+            for item in self._drag_items:
+                item.moveBy(delta.x(), delta.y())
+            self._drag_total = QPointF(target)
+            self._update_handles()
 
         # The ΔX / ΔY readout, on the widget over the viewport the drawing tools use, and
         # never a Qt tooltip window: on Linux the tooltip took the view's focus and a

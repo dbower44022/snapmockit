@@ -397,3 +397,48 @@ def test_cancel_during_a_drag_takes_the_readout(qtbot: QtBot, scene: SnapScene) 
     assert overlay is not None and not overlay.isHidden()
     tool.cancel()
     assert overlay.isHidden()
+
+
+# ---- Snap to Grid over a slow drag (end-to-end pass finding 3, the cause) ----
+
+
+def test_a_slow_drag_with_snap_to_grid_on_still_moves_the_item(
+    qtbot: QtBot, scene: SnapScene
+) -> None:
+    """With Snap to Grid on, the item lands on grid multiples of the whole movement since
+    the press, so a pointer that moves 3 px per event still carries the item along.
+    Before the fix each event's own increment was rounded to the grid and the remainder
+    thrown away, so slow movement moved nothing and only a flick moved a grid step."""
+    view = _view_for(qtbot, scene)
+    item = _filled_rectangle(scene)
+    view.set_grid_size(20)
+    view.set_snap_to_grid(True)
+    tool = SelectTool()
+    tool.activate(scene, SelectionManager(scene))
+    tool.mouse_press(_mouse(view, QEvent.Type.MouseButtonPress, QPointF(150, 150)))
+    seen: list[float] = []
+    for i in range(1, 40):
+        tool.mouse_move(_mouse(view, QEvent.Type.MouseMove, QPointF(150 + 2 * i, 150 + 3 * i)))
+        seen.append(item.pos().y())
+    # 78 px right and 117 px down since the press, on the 20 px grid
+    assert item.pos() == QPointF(180, 220)
+    # and the item moved during the drag in grid steps, not only at the end
+    assert sorted(set(seen)) == [100, 120, 140, 160, 180, 200, 220]
+    tool.mouse_release(_mouse(view, QEvent.Type.MouseButtonRelease, QPointF(228, 267)))
+    assert item.pos() == QPointF(180, 220)
+    assert scene.command_stack.undo_text.endswith("Move 1 item")
+
+
+def test_a_slow_drag_without_snap_follows_the_pointer_exactly(
+    qtbot: QtBot, scene: SnapScene
+) -> None:
+    view = _view_for(qtbot, scene)
+    item = _filled_rectangle(scene)
+    tool = SelectTool()
+    tool.activate(scene, SelectionManager(scene))
+    tool.mouse_press(_mouse(view, QEvent.Type.MouseButtonPress, QPointF(150, 150)))
+    for i in range(1, 40):
+        tool.mouse_move(_mouse(view, QEvent.Type.MouseMove, QPointF(150 + 2 * i, 150 + 3 * i)))
+    assert item.pos() == QPointF(178, 217)
+    tool.mouse_release(_mouse(view, QEvent.Type.MouseButtonRelease, QPointF(228, 267)))
+    assert item.pos() == QPointF(178, 217)
