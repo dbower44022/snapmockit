@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import QCheckBox, QLabel, QSpinBox, QToolBar
 from snapmock.config.constants import DRAG_THRESHOLD
 from snapmock.tools.base_tool import BaseTool
 from snapmock.ui.cursors import raster_select_cursor
+from snapmock.ui.dimension_overlay import dimension_overlay, existing_dimension_overlay
 from snapmock.ui.selection_overlay import SelectionOverlay
 
 if TYPE_CHECKING:
@@ -78,6 +79,15 @@ class RasterSelectTool(BaseTool):
             self._overlay = None
         self._state = _RasterState.IDLE
         self._active_handle = None
+        self._hide_size_readout()
+
+    def _hide_size_readout(self) -> None:
+        """Take the W / H readout down: the selection is drawn or cancelled."""
+        view = self._view
+        viewport = view.viewport() if view is not None else None
+        overlay = existing_dimension_overlay(viewport) if viewport is not None else None
+        if overlay is not None:
+            overlay.hide_feedback()
 
     def _scene_pos(self, event: QMouseEvent) -> QPointF | None:
         view = self._view
@@ -181,18 +191,14 @@ class RasterSelectTool(BaseTool):
             overlay = self._ensure_overlay()
             overlay.set_selection_rect(rect)
 
-            # Dimensions tooltip
-            from PyQt6.QtWidgets import QToolTip
-
+            # The W / H readout, on the widget over the viewport and never a Qt tooltip
+            # window (end-to-end pass finding 3, with the Select tool's move readout)
             view = self._view
-            if view is not None:
-                vp = view.viewport()
-                if vp is not None:
-                    global_pos = vp.mapToGlobal(view.mapFromScene(clamped))
-                    QToolTip.showText(
-                        global_pos,
-                        f"W: {rect.width():.0f}  H: {rect.height():.0f}",
-                    )
+            viewport = view.viewport() if view is not None else None
+            if viewport is not None:
+                dimension_overlay(viewport).show_measurement(
+                    event.pos(), f"W: {rect.width():.0f}  H: {rect.height():.0f}", False, None
+                )
             return True
 
         if self._state == _RasterState.MOVING and self._overlay is not None:
@@ -210,6 +216,7 @@ class RasterSelectTool(BaseTool):
 
     def mouse_release(self, event: QMouseEvent) -> bool:
         if self._state == _RasterState.DRAWING:
+            self._hide_size_readout()
             pos = self._scene_pos(event)
             if pos is not None and self._overlay is not None:
                 rect = self._overlay.selection_rect

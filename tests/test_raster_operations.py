@@ -393,3 +393,31 @@ def test_select_tool_rubber_band(qtbot: object) -> None:
     assert sm.count > 0, f"Expected item to be selected via rubber-band, count = {sm.count}"
 
     view.close()
+
+
+def test_raster_selection_size_readout_is_the_overlay_not_a_tooltip(qtbot: object) -> None:
+    """The W / H readout while a raster selection is drawn is the widget over the viewport,
+    never a Qt tooltip window (end-to-end pass finding 3, with the Select tool's move)."""
+    from PyQt6.QtWidgets import QToolTip
+
+    from snapmock.ui.dimension_overlay import existing_dimension_overlay
+
+    scene, view, sm, tm = _setup_scene_with_view_and_image()
+    tool = RasterSelectTool()
+    tm.register(tool)
+    tm.activate("raster_select")
+    viewport = view.viewport()
+    assert viewport is not None
+
+    view.mousePressEvent(_make_mouse_event(QMouseEvent.Type.MouseButtonPress, QPoint(100, 100)))
+    view.mouseMoveEvent(_make_mouse_event(QMouseEvent.Type.MouseMove, QPoint(180, 150)))
+    overlay = existing_dimension_overlay(viewport)
+    assert overlay is not None and not overlay.isHidden()
+    assert overlay.text.startswith("W: ") and "H: " in overlay.text
+    assert not QToolTip.isVisible()
+    view.mouseReleaseEvent(
+        _make_mouse_event(QMouseEvent.Type.MouseButtonRelease, QPoint(180, 150))
+    )
+    assert overlay.isHidden()
+    assert tool._state.name == "ACTIVE"
+    view.close()

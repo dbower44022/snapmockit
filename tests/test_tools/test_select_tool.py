@@ -15,7 +15,7 @@ from snapmock.items.group_item import GroupItem
 from snapmock.items.rectangle_item import RectangleItem
 from snapmock.items.text_item import TextItem
 from snapmock.tools.select_tool import SelectTool, _State
-from snapmock.ui.transform_handles import HandlePosition
+from snapmock.ui.transform_handles import ROTATE_HANDLE_OFFSET, HandlePosition
 
 
 @pytest.fixture()
@@ -302,3 +302,98 @@ def test_delete_removes_the_group_with_its_members(qtbot: QtBot, scene: SnapScen
     assert set(scene.annotation_items()) == {group, c}
     assert a.parentItem() is group
     assert layer.item_ids == [c.item_id, group.item_id]
+
+
+# ---- the ΔX / ΔY readout while dragging (end-to-end pass finding 3) ----
+
+
+def _filled_rectangle(scene: SnapScene) -> RectangleItem:
+    """A 200 by 120 rectangle at (100, 100) whose interior takes a press."""
+    layer = scene.layer_manager.active_layer
+    assert layer is not None
+    item = RectangleItem(QRectF(0, 0, 200, 120))
+    item.fill_color = item.stroke_color
+    item.setPos(100, 100)
+    scene.command_stack.push(AddItemCommand(scene, item, layer.layer_id))
+    return item
+
+
+def test_drag_readout_is_the_overlay_not_a_tooltip(qtbot: QtBot, scene: SnapScene) -> None:
+    """The move readout is the widget over the viewport the drawing tools use, never a Qt
+    tooltip window, which on Linux takes the view's focus on every move and made a drag
+    jump (Technical Architecture PRD 3.4; end-to-end pass finding 3)."""
+    from PyQt6.QtWidgets import QToolTip
+
+    from snapmock.ui.dimension_overlay import existing_dimension_overlay
+
+    view = _view_for(qtbot, scene)
+    item = _filled_rectangle(scene)
+    tool = SelectTool()
+    tool.activate(scene, SelectionManager(scene))
+    viewport = view.viewport()
+    assert viewport is not None
+
+    tool.mouse_press(_mouse(view, QEvent.Type.MouseButtonPress, QPointF(150, 150)))
+    assert tool._state is _State.DRAGGING
+    tool.mouse_move(_mouse(view, QEvent.Type.MouseMove, QPointF(170, 180)))
+    assert item.pos() == QPointF(120, 130)
+    overlay = existing_dimension_overlay(viewport)
+    assert overlay is not None and not overlay.isHidden()
+    assert overlay.text == "ΔX: +20  ΔY: +30"
+    assert not overlay.constrained
+    assert not QToolTip.isVisible()
+    tool.mouse_release(_mouse(view, QEvent.Type.MouseButtonRelease, QPointF(170, 180)))
+    assert overlay.isHidden()
+    assert item.pos() == QPointF(120, 130)
+
+
+def test_resize_and_rotate_readouts_are_the_overlay_too(qtbot: QtBot, scene: SnapScene) -> None:
+    from PyQt6.QtWidgets import QToolTip
+
+    from snapmock.ui.dimension_overlay import existing_dimension_overlay
+
+    view = _view_for(qtbot, scene)
+    _filled_rectangle(scene)
+    tool = SelectTool()
+    tool.activate(scene, SelectionManager(scene))
+    viewport = view.viewport()
+    assert viewport is not None
+    tool.mouse_press(_mouse(view, QEvent.Type.MouseButtonPress, QPointF(150, 150)))
+    tool.mouse_release(_mouse(view, QEvent.Type.MouseButtonRelease, QPointF(150, 150)))
+    assert tool._handles is not None
+    for corner, expected in ((True, " × "), (False, "°")):
+        frame = tool._handles.current_rect
+        handle_pos = (
+            frame.bottomRight()
+            if corner
+            else QPointF(frame.center().x(), frame.top() - ROTATE_HANDLE_OFFSET)
+        )
+        tool.mouse_press(_mouse(view, QEvent.Type.MouseButtonPress, handle_pos))
+        assert tool._state is _State.HANDLE_DRAG
+        tool.mouse_move(_mouse(view, QEvent.Type.MouseMove, handle_pos + QPointF(30, 20)))
+        overlay = existing_dimension_overlay(viewport)
+        assert overlay is not None and not overlay.isHidden()
+        assert expected in overlay.text, overlay.text
+        assert not QToolTip.isVisible()
+        tool.mouse_release(
+            _mouse(view, QEvent.Type.MouseButtonRelease, handle_pos + QPointF(30, 20))
+        )
+        assert overlay.isHidden()
+
+
+def test_cancel_during_a_drag_takes_the_readout(qtbot: QtBot, scene: SnapScene) -> None:
+    from snapmock.ui.dimension_overlay import existing_dimension_overlay
+
+    view = _view_for(qtbot, scene)
+    _filled_rectangle(scene)
+    tool = SelectTool()
+    tool.activate(scene, SelectionManager(scene))
+    viewport = view.viewport()
+    assert viewport is not None
+
+    tool.mouse_press(_mouse(view, QEvent.Type.MouseButtonPress, QPointF(150, 150)))
+    tool.mouse_move(_mouse(view, QEvent.Type.MouseMove, QPointF(190, 150)))
+    overlay = existing_dimension_overlay(viewport)
+    assert overlay is not None and not overlay.isHidden()
+    tool.cancel()
+    assert overlay.isHidden()

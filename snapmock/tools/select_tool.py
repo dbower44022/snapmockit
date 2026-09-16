@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from PyQt6.QtCore import QPointF, QRectF, Qt
 from PyQt6.QtGui import QBrush, QColor, QCursor, QKeyEvent, QMouseEvent, QPen, QTransform
-from PyQt6.QtWidgets import QGraphicsRectItem, QToolTip
+from PyQt6.QtWidgets import QGraphicsRectItem
 
 from snapmock.commands.move_items import MoveItemsCommand
 from snapmock.config.constants import DEFAULT_BLUR_BRUSH_SIZE, DRAG_THRESHOLD, MIN_TEXT_BOX_HEIGHT
@@ -23,6 +23,7 @@ from snapmock.items.text_item import TextItem
 from snapmock.tools.base_tool import BaseTool
 from snapmock.tools.blur_edit import BlurBrushSession, brush_editable
 from snapmock.tools.point_edit import PointEditSession, PointHandlesItem, session_for
+from snapmock.ui.dimension_overlay import dimension_overlay, existing_dimension_overlay
 from snapmock.ui.transform_handles import (
     CORNER_HANDLES,
     EDGE_HANDLES,
@@ -162,6 +163,7 @@ class SelectTool(BaseTool):
         self._state = _State.IDLE
         self._drag_items = []
         self._constrain_axis = None
+        self._hide_readout()
 
     def _on_selection_changed(self, _items: list[object]) -> None:
         brush = self._brush_session
@@ -712,15 +714,37 @@ class SelectTool(BaseTool):
         )
         self._update_handles()
 
-        # Move delta tooltip
+        # The ΔX / ΔY readout, on the widget over the viewport the drawing tools use, and
+        # never a Qt tooltip window: on Linux the tooltip took the view's focus and a
+        # repaint on every move, and the drag jumped (Technical Architecture PRD 3.4;
+        # end-to-end pass finding 3)
         if view is not None:
-            vp = view.viewport()
-            if vp is not None:
-                global_pos = vp.mapToGlobal(view.mapFromScene(scene_pos))
+            viewport = view.viewport()
+            if viewport is not None:
                 dx = self._drag_total.x()
                 dy = self._drag_total.y()
-                QToolTip.showText(global_pos, f"\u0394X: {dx:+.0f}  \u0394Y: {dy:+.0f}")
+                dimension_overlay(viewport).show_measurement(
+                    event.pos(), f"\u0394X: {dx:+.0f}  \u0394Y: {dy:+.0f}", False, None
+                )
         return True
+
+    def _show_readout(self, cursor: QPointF, text: str) -> None:
+        """Put *text* beside the cursor at scene position *cursor*, on the widget over the
+        viewport the drawing tools use (the rotate and resize readouts; the move readout
+        is placed from its event above)."""
+        view = self._view
+        viewport = view.viewport() if view is not None else None
+        if view is None or viewport is None:
+            return
+        dimension_overlay(viewport).show_measurement(view.mapFromScene(cursor), text, False, None)
+
+    def _hide_readout(self) -> None:
+        """Take the drag readout down: the drag is over or cancelled."""
+        view = self._view
+        viewport = view.viewport() if view is not None else None
+        overlay = existing_dimension_overlay(viewport) if viewport is not None else None
+        if overlay is not None:
+            overlay.hide_feedback()
 
     def _set_cursor(self, cursor: Qt.CursorShape) -> None:
         view = self._view
@@ -741,6 +765,7 @@ class SelectTool(BaseTool):
         self._state = _State.IDLE
         self._drag_items = []
         self._constrain_axis = None
+        self._hide_readout()
         self._update_handles()
         return True
 
@@ -866,13 +891,7 @@ class SelectTool(BaseTool):
             xform.rotate(angle)
             item.setTransform(xform)
 
-        # Tooltip
-        view = self._view
-        if view is not None:
-            vp = view.viewport()
-            if vp is not None:
-                global_pos = vp.mapToGlobal(view.mapFromScene(cursor))
-                QToolTip.showText(global_pos, f"{angle:+.1f}°")
+        self._show_readout(cursor, f"{angle:+.1f}°")
 
     def _apply_corner_resize(self, cursor: QPointF, proportional: bool, from_center: bool) -> None:
         """Resize from a corner handle."""
@@ -906,18 +925,9 @@ class SelectTool(BaseTool):
                 xform.scale(sx, sy)
                 item.setTransform(xform)
 
-        # Tooltip
         new_rect_w = orig_rect.width() * sx
         new_rect_h = orig_rect.height() * sy
-        view = self._view
-        if view is not None:
-            vp = view.viewport()
-            if vp is not None:
-                global_pos = vp.mapToGlobal(view.mapFromScene(cursor))
-                QToolTip.showText(
-                    global_pos,
-                    f"{new_rect_w:.0f} × {new_rect_h:.0f}",
-                )
+        self._show_readout(cursor, f"{new_rect_w:.0f} × {new_rect_h:.0f}")
 
     def _apply_edge_resize(self, cursor: QPointF, skew: bool, shift: bool = False) -> None:
         """Resize from an edge midpoint handle. Ctrl = shear."""
@@ -952,12 +962,7 @@ class SelectTool(BaseTool):
 
         new_w = orig_rect.width() * sx
         new_h = orig_rect.height() * sy
-        view = self._view
-        if view is not None:
-            vp = view.viewport()
-            if vp is not None:
-                global_pos = vp.mapToGlobal(view.mapFromScene(cursor))
-                QToolTip.showText(global_pos, f"{new_w:.0f} × {new_h:.0f}")
+        self._show_readout(cursor, f"{new_w:.0f} × {new_h:.0f}")
 
     def _apply_skew(self, cursor: QPointF) -> None:
         """Apply shear when Ctrl+edge drag."""
@@ -1041,6 +1046,7 @@ class SelectTool(BaseTool):
         from snapmock.commands.macro_command import MacroCommand
         from snapmock.commands.transform_item import TransformItemCommand
 
+        self._hide_readout()
         commands: list[Any] = []
         for item, orig_pos, orig_xform in self._handle_item_originals:
             new_pos = QPointF(item.pos())
