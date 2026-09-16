@@ -1,6 +1,6 @@
 # The End-to-End Pass on Real Work, and the 1.0.0 Release — Notes
 
-Last Updated: 09-16-26 01:36 · Revision 1.13
+Last Updated: 09-16-26 08:59 · Revision 1.14
 
 Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`, Section 1): the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, used by Doug for his real screenshot work over several sittings, every finding recorded and classified, every defect fixed with a test, and then the first release the product stands behind, `1.0.0`. The kickoff prompt is `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The record takes the shape of the General UI acceptance pass (`docs/General-UI-Implementation.md`, Section 16) where it fits: one row per finding, Doug's words quoted, the evidence named.
 
@@ -8,8 +8,8 @@ Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`
 
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
-| 1 | The four decisions, this document, and the Wayland check (checklist section 7) | In progress from 09-15-26 09:47: decisions taken, this document written; the Wayland check owed to Doug's next log-out | this commit |
-| 2 | The sittings: Doug's real work on the 0.9.0 AppImage, each finding recorded, triaged, and fixed | Not started | |
+| 1 | The four decisions, this document, and the Wayland check (checklist section 7) | Steps 1 and 3 done 09-15-26 (def7507); step 2, the Wayland check, owed to Doug's next log-out and carried, as the kickoff allows; it blocks Phase 3 under decision 3 | def7507 |
+| 2 | The sittings: Doug's real work, each finding recorded, triaged, and fixed | In progress: sitting 1 of 09-15-26 to 09-16-26 done (Section 6), findings 1 to 8 all classified, every defect fixed and seen on the display but finding 8's, felt in the next sitting; two more sittings on distinct work are the minimum under decision 1 | 2e43326 to 2470d86 |
 | 3 | The release: version 1.0.0, the tag, the release job, the smoke test, Check for Updates from 0.9.0, the README | Not started; blocked on decision 1's exit criterion and, under decision 3, on the Wayland check | |
 | Close-out | The PRD rows, the release-engineering notes, what remains of packaging and the platform backends, the next required step | Not started | |
 
