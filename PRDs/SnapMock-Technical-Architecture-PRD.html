@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.55</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.56</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.49</dd>
-    <dt>Last Updated</dt>    <dd>09-14-26 17:04</dd>
+    <dt>Document version</dt><dd>1.56</dd>
+    <dt>Last Updated</dt>    <dd>09-15-26 21:56</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.56</td>
+        <td class="nowrap">09-15-26 21:56</td>
+        <td>Doug Bower</td>
+        <td>End-to-end pass finding 3 (docs/End-to-End-Pass.md): the Select tool's move, resize, and rotate readouts and the raster selection's size readout leave Qt's tooltip for the Section 3.9 dimension overlay, so a drag's real-time preview of 3.4 holds on Linux. The header's document version and date, stale since 1.49, brought level with the revision table.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.55</td>
         <td class="nowrap">09-15-26 01:30</td>
@@ -511,6 +518,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-15-26 21:56</td>
+        <td>3.4, 3.9</td>
+        <td>Fixed</td>
+        <td><strong>Fixed</strong> (09-15-26; end-to-end pass finding 3, <code>docs/End-to-End-Pass.md</code> Section 5; issue #2; commit 8ff6705): on the released 0.9.0 AppImage under Cinnamon on X11, a dragged item moved erratically and worse vertically, against 3.4.2's "all transforms are previewed in real-time during drag". The Select tool's move readout (ΔX / ΔY), its resize and rotate readouts, and the raster selection tool's size readout were shown through <code>QToolTip</code> on every mouse move: a separate top-level window placed just below the cursor, which on Linux costs the view its focus and a repaint per move (the guard in <code>SnapView.focusOutEvent</code> of 09-07-26 already named it). All four now draw on the dimension overlay of 3.9 (<code>ui/dimension_overlay.py</code>), the widget over the viewport the drawing tools were moved to on 09-12-26, and are hidden at the release and on cancel. Headless a drag move costs 0.5 ms before and after; the proof is Doug's retest on the display, owed to the pass's next sitting. Tests: <code>tests/test_tools/test_select_tool.py</code> (the move readout's text, the resize and rotate readouts, cancel) and <code>tests/test_raster_operations.py</code> (the size readout), each asserting no tooltip is visible.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-15-26 01:30</td>
         <td>7.3, 4.4</td>
