@@ -821,7 +821,7 @@ class MainWindow(QMainWindow):
         self._register("edit.undo", self._undo_action)
 
         self._redo_action = QAction("&Redo", self)
-        self._redo_action.setShortcut(QKeySequence(SHORTCUTS["edit.redo"]))
+        self._redo_action.setShortcuts(key_sequences("edit.redo"))
         self._redo_action.triggered.connect(self._edit_redo)
         edit_menu.addAction(self._redo_action)
         self._register("edit.redo", self._redo_action)

@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import pytest
-from PyQt6.QtCore import QEvent, QRectF, Qt
-from PyQt6.QtGui import QKeyEvent
+from PyQt6.QtCore import QEvent, QPointF, QRectF, Qt
+from PyQt6.QtGui import QKeyEvent, QMouseEvent
 from pytestqt.qtbot import QtBot
 
 from snapmock.commands.add_item import AddItemCommand
@@ -151,3 +151,88 @@ def test_arrow_keys_pan_the_canvas_from_the_view_when_nothing_is_selected(
     assert h_bar.value() == 220  # the main window's pan step, not the scroll area's
     QTest.keyClick(view, Qt.Key.Key_Down, Qt.KeyboardModifier.ShiftModifier)
     assert v_bar.value() == 300
+
+
+# ---- double-click on text, and Ctrl+Y (end-to-end pass findings 6 and 7) ----
+
+
+def test_double_click_on_a_text_item_through_the_view_starts_editing(
+    main_window: MainWindow,
+) -> None:
+    """Text PRD 2.4: a double-click with the Select tool enters inline editing. The Select
+    tool looked for the tool manager on the view's parent widget, which has been the
+    document tabs' stacked widget since the Library work, so nothing happened
+    (end-to-end pass finding 6)."""
+    from snapmock.items.text_item import TextItem
+
+    window = main_window
+    window.tool_manager.activate("select")
+    window.resize(1200, 800)
+    window.show()
+    view = window.view
+    layer = window.scene.layer_manager.active_layer
+    assert layer is not None
+    item = TextItem()
+    item.text = "Hello there"
+    item.setPos(100, 100)
+    window.scene.command_stack.push(AddItemCommand(window.scene, item, layer.layer_id))
+    centre = item.mapToScene(item.boundingRect().center())
+    vp_pos = QPointF(view.mapFromScene(centre))
+
+    def mouse(
+        kind: QEvent.Type, buttons: Qt.MouseButton = Qt.MouseButton.LeftButton
+    ) -> QMouseEvent:
+        return QMouseEvent(
+            kind,
+            vp_pos,
+            vp_pos,
+            Qt.MouseButton.LeftButton,
+            buttons,
+            Qt.KeyboardModifier.NoModifier,
+        )
+
+    view.mousePressEvent(mouse(QEvent.Type.MouseButtonPress))
+    view.mouseReleaseEvent(mouse(QEvent.Type.MouseButtonRelease, Qt.MouseButton.NoButton))
+    view.mousePressEvent(mouse(QEvent.Type.MouseButtonPress))
+    view.mouseDoubleClickEvent(mouse(QEvent.Type.MouseButtonDblClick))
+    view.mouseReleaseEvent(mouse(QEvent.Type.MouseButtonRelease, Qt.MouseButton.NoButton))
+    assert window.tool_manager.active_tool_id == "text"
+    assert item.is_editing
+    assert getattr(window.tool_manager.active_tool, "editing_item", None) is item
+    window.tool_manager.activate("select")
+    assert not item.is_editing
+    window.scene.command_stack.mark_clean()
+
+
+def test_ctrl_y_redoes_beside_ctrl_shift_z(main_window: MainWindow) -> None:
+    """Redo keeps Ctrl+Shift+Z (General UI PRD 3.2) and gains Ctrl+Y, the key Doug and most
+    applications use (end-to-end pass finding 7, a departure in his favour)."""
+    from PyQt6.QtGui import QKeySequence
+    from PyQt6.QtTest import QTest
+    from PyQt6.QtWidgets import QApplication
+
+    window = main_window
+    window.tool_manager.activate("select")
+    window.resize(1200, 800)
+    window.show()
+    QApplication.setActiveWindow(window)  # a window shortcut fires in the active window
+    item = _add(window, 100)
+    assert window.scene.command_stack.can_undo
+    QTest.keyClick(window, Qt.Key.Key_Z, Qt.KeyboardModifier.ControlModifier)
+    assert not window.scene.command_stack.can_undo
+    assert item.scene() is None
+    QTest.keyClick(window, Qt.Key.Key_Y, Qt.KeyboardModifier.ControlModifier)
+    assert item.scene() is window.scene
+    QTest.keyClick(window, Qt.Key.Key_Z, Qt.KeyboardModifier.ControlModifier)
+    QTest.keyClick(
+        window,
+        Qt.Key.Key_Z,
+        Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier,
+    )
+    assert item.scene() is window.scene
+    redo = window._redo_action  # noqa: SLF001
+    assert [s.toString() for s in redo.shortcuts()] == [
+        QKeySequence("Ctrl+Shift+Z").toString(),
+        QKeySequence("Ctrl+Y").toString(),
+    ]
+    window.scene.command_stack.mark_clean()

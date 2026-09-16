@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Text &amp; Callout Annotation Tools</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.9</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.10</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Text Box · Callout Bubble</dd>
-    <dt>Document version</dt><dd>1.9</dd>
-    <dt>Last Updated</dt>    <dd>09-11-26 12:53</dd>
+    <dt>Document version</dt><dd>1.10</dd>
+    <dt>Last Updated</dt>    <dd>09-16-26 00:54</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.10</td>
+        <td class="nowrap">09-16-26 00:54</td>
+        <td>Doug Bower</td>
+        <td>End-to-end pass finding 6 (docs/End-to-End-Pass.md): a double-click on a text box or callout with the Select tool enters inline editing again (2.4); it had found no tool manager on the view's parent since the document tabs arrived, and did nothing.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.9</td>
         <td class="nowrap">09-11-26 12:53</td>
@@ -125,6 +132,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-16-26 00:54</td>
+        <td>2.4, 3.5, 4.6</td>
+        <td>Fixed</td>
+        <td><strong>Fixed</strong> (09-16-26; end-to-end pass finding 6, issue #4). Doug, on the local build from be076ee: "Double click on a text object, should begin to edit the text." Reproduced headless through the view's press, release, press, double-click, release sequence: the Select tool's double-click handler looked for the tool manager on the view's parent widget, which has been the document tabs' stacked widget since the Library work rather than the main window, so the Text tool was never activated and 2.4's "double-click a TextItem or CalloutItem with the Select tool to enter inline text editing mode" did nothing; a double-click had only ever worked before the tabs. The handler now reaches the tool manager through the window, as the marker items' editor route does, and the Text tool starts editing the selected item on activation as before. Test in <code>tests/test_navigation_keys.py</code>. Doug's retest on the display is owed.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-11-26 12:53</td>
         <td>2.2, 3.5, 3.6, 7.1</td>

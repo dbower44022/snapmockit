@@ -651,13 +651,14 @@ class SelectTool(BaseTool):
                 self._group_hint = True
                 self._show_status_hint()
                 return True
-            # Double-click on text/callout: switch to text tool
+            # Double-click on text/callout: the Text tool, which starts editing the selected
+            # item on activation (Text PRD 2.4). Through the window: the view's parent has
+            # been the document tabs' stacked widget since the Library work, and looking
+            # there found no tool manager, so nothing happened (end-to-end pass finding 6)
             if isinstance(item, (TextItem, CalloutItem)):
-                view = self._view
-                if view is not None:
-                    parent = view.parentWidget()
-                    if parent is not None and hasattr(parent, "tool_manager"):
-                        parent.tool_manager.activate("text")
+                manager = getattr(self._window(), "tool_manager", None)
+                if manager is not None:
+                    manager.activate("text")
                 return True
             # Double-click on a marker item: its editor (Numbered Steps PRD 2.8; kickoff
             # silence 9), through the window so the placing tool shares the route

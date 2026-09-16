@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.44</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.45</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.44</dd>
-    <dt>Last Updated</dt>    <dd>09-16-26 00:30</dd>
+    <dt>Document version</dt><dd>2.45</dd>
+    <dt>Last Updated</dt>    <dd>09-16-26 00:54</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.45</td>
+        <td class="nowrap">09-16-26 00:54</td>
+        <td>Doug Bower</td>
+        <td>End-to-end pass finding 7 (departure in Doug's favour): Redo answers Ctrl+Y as well as 3.2's Ctrl+Shift+Z, as Delete answers Backspace beside Del; the Shortcuts dialog lists both.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.44</td>
         <td class="nowrap">09-16-26 00:30</td>
@@ -465,6 +472,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-16-26 00:54</td>
+        <td>3.2, 11.5</td>
+        <td>Departure</td>
+        <td><strong>Departure</strong> (09-16-26; end-to-end pass finding 7). Doug: "ctrl-y should redo an action that was undone using ctrl-z." The Edit menu table binds Redo to Ctrl+Shift+Z alone; Ctrl+Y is the key most applications on Windows and Linux use, and Doug reached for it. Redo now carries Ctrl+Y as an alternate sequence beside Ctrl+Shift+Z, through the same alternate-shortcut table that gives Delete its Backspace, so the menu shows the primary key and the Shortcuts dialog of 11.5 lists both. Nothing else changes. Test in <code>tests/test_navigation_keys.py</code>: Ctrl+Z, Ctrl+Y, Ctrl+Z, Ctrl+Shift+Z through the active window.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-16-26 00:30</td>
         <td>3.3, 12</td>

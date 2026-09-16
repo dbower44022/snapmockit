@@ -99,6 +99,8 @@ SHORTCUTS: dict[str, str] = {
 
 ALTERNATE_SHORTCUTS: dict[str, list[str]] = {
     "edit.delete": ["Backspace"],
+    # Ctrl+Y beside Ctrl+Shift+Z, the key most applications use (end-to-end pass finding 7)
+    "edit.redo": ["Ctrl+Y"],
     # General UI PRD 3.3 binds Zoom In to Ctrl++; Ctrl+= is the same key without Shift.
     "view.zoom_in": ["Ctrl++"],
 }
