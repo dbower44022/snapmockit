@@ -172,6 +172,20 @@ class SnapScene(QGraphicsScene):
 
         return [i for i in self.items() if isinstance(i, SnapGraphicsItem)]
 
+    def is_fixed_in_place(self, item: QGraphicsItem) -> bool:
+        """Whether *item* is an image on a Background layer, which never moves.
+
+        The image is the canvas (General UI PRD 6.2; end-to-end pass finding 11): no
+        selection takes it, so no move, resize, nudge, or delete reaches it. Raster edits
+        and the canvas operations still act on it.
+        """
+        from snapmock.items.raster_region_item import RasterRegionItem
+
+        if not isinstance(item, RasterRegionItem) or item.parentItem() is not None:
+            return False
+        layer = self.layer_manager.layer_by_id(item.layer_id)
+        return layer is not None and layer.is_background
+
     def items_on_layer(self, layer_id: str) -> list[QGraphicsItem]:
         """The top-level annotation items on *layer_id*."""
         return [i for i in self.annotation_items() if i.layer_id == layer_id]

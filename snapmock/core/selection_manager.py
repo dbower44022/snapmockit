@@ -47,7 +47,7 @@ class SelectionManager(QObject):
         """Select an item. If *add* is False, deselect everything else first."""
         if not add:
             self._deselect_all_internal()
-        if item not in self._selected:
+        if item not in self._selected and not self._scene.is_fixed_in_place(item):
             self._selected.append(item)
             item.setSelected(True)
         self.selection_changed.emit(self._selected)
@@ -61,7 +61,7 @@ class SelectionManager(QObject):
         if item in self._selected:
             self._selected.remove(item)
             item.setSelected(False)
-        else:
+        elif not self._scene.is_fixed_in_place(item):
             self._selected.append(item)
             item.setSelected(True)
         self.selection_changed.emit(self._selected)
@@ -70,6 +70,8 @@ class SelectionManager(QObject):
         """Replace the selection with *items*."""
         self._deselect_all_internal()
         for item in items:
+            if self._scene.is_fixed_in_place(item):
+                continue
             self._selected.append(item)
             item.setSelected(True)
         self.selection_changed.emit(self._selected)

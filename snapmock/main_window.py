@@ -1956,6 +1956,12 @@ class MainWindow(QMainWindow):
         if locked:
             self._deselect_items_on_layer(layer_id)
 
+    def _on_layer_type_changed(self, layer_id: str, _layer_type: str) -> None:
+        """A layer made Background lets go of its image (end-to-end pass finding 11)."""
+        for item in self._selection_manager.items:
+            if self._scene.is_fixed_in_place(item):
+                self._selection_manager.toggle(item)
+
     def _on_layer_visibility_changed(self, layer_id: str, visible: bool) -> None:
         if not visible:
             self._deselect_items_on_layer(layer_id)
@@ -2791,6 +2797,14 @@ class MainWindow(QMainWindow):
             and hasattr(active, "has_active_selection")
             and active.has_active_selection
         ):
+            # A lock prevents interactive editing (Navigation PRD 5.5.2, 7; pass finding 10)
+            layer = self._scene.layer_manager.active_layer
+            if layer is not None and not self._require(
+                "Cut",
+                (not layer.locked, "an unlocked active layer"),
+                (layer.visible, "a visible active layer"),
+            ):
+                return
             self._copy_raster_selection(active)
             self._cut_raster_selection(active)
             return
@@ -2999,7 +3013,10 @@ class MainWindow(QMainWindow):
         items: list[QGraphicsItem] = [
             i
             for i in self._scene.annotation_items()
-            if active is not None and i.layer_id == active.layer_id and not i.locked
+            if active is not None
+            and i.layer_id == active.layer_id
+            and not i.locked
+            and not self._scene.is_fixed_in_place(i)
         ]
         if self._require("Select All", (bool(items), "at least one item on the active layer")):
             self._selection_manager.select_items(items)
@@ -3009,7 +3026,9 @@ class MainWindow(QMainWindow):
         lm = self._scene.layer_manager
         usable = {layer.layer_id for layer in lm.layers if layer.visible and not layer.locked}
         items: list[QGraphicsItem] = [
-            i for i in self._scene.annotation_items() if i.layer_id in usable and not i.locked
+            i
+            for i in self._scene.annotation_items()
+            if i.layer_id in usable and not i.locked and not self._scene.is_fixed_in_place(i)
         ]
         if self._require("Select All Layers", (bool(items), "at least one item on the canvas")):
             self._selection_manager.select_items(items)
@@ -4060,6 +4079,7 @@ class MainWindow(QMainWindow):
         doc.scene.command_stack.stack_changed.connect(self._on_stack_changed)
         lm = doc.scene.layer_manager
         lm.layer_lock_changed.connect(self._on_layer_lock_changed)
+        lm.layer_type_changed.connect(self._on_layer_type_changed)
         lm.layer_visibility_changed.connect(self._on_layer_visibility_changed)
         lm.active_layer_changed.connect(self._on_active_layer_changed)
 

@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.45</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.46</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.45</dd>
-    <dt>Last Updated</dt>    <dd>09-16-26 00:54</dd>
+    <dt>Document version</dt><dd>2.46</dd>
+    <dt>Last Updated</dt>    <dd>09-16-26 09:37</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.46</td>
+        <td class="nowrap">09-16-26 09:37</td>
+        <td>Doug Bower</td>
+        <td>End-to-end pass finding 11 (Doug's decision A of 09-16-26): the image on a Background layer is fixed in place (6.2). No selection takes it, by click, rubber band, Tab, Select All, or any other route, so no move, resize, nudge, or delete reaches it, and the Select tool shows the forbidden cursor over it; an image already selected when its layer becomes Background is deselected. Raster edits (the Blur tool, the Eyedropper, a raster selection) and the canvas operations (Crop, Resize Canvas, Resize Image) still act on it, and an annotation on a Background layer still moves. The cost Doug accepted: a capture is repositioned with Crop or Resize Canvas, or through Duplicate Layer, whose copy is an annotation layer whose image moves; the Item Info layer dropdown cannot move the image off the Background layer, since the image cannot be selected. Rejected: fixing only the result of Flatten All (B), and leaving the image movable (C).</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.45</td>
         <td class="nowrap">09-16-26 00:54</td>
@@ -2271,6 +2278,12 @@ provide contrast against the canvas color.</p>
   Import Image" in gray text. The canvas color is the fill color of the working area and
   is included in exports behind any transparent content.</li>
   <li>When an image is loaded as the background layer, it fills the canvas exactly.</li>
+  <li>The image on a Background layer is the canvas and is fixed in place: the Select tool
+  does not select it (the forbidden cursor shows over it), and no other route selects it,
+  so it is never moved, resized, nudged, or deleted as an item. Raster edits and the
+  canvas operations (Crop, Resize Canvas, Resize Image) still act on it. To reposition a
+  capture, crop or resize the canvas, or duplicate the layer (the copy is an annotation
+  layer, 3.4) and move the copy.</li>
   <li>Transparent areas are rendered as a checkerboard pattern (alternating light gray and
   white 8x8 pixel squares) to visually distinguish transparency from white.</li>
   <li>The canvas boundary is indicated by a subtle 1px dark gray border and a drop shadow

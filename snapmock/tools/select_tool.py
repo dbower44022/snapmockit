@@ -407,15 +407,18 @@ class SelectTool(BaseTool):
         for gitem in self._scene.items(scene_pos):
             if isinstance(gitem, SnapGraphicsItem):
                 item = self._top_level(gitem)
-                # Skip items on locked/hidden layers
+                # Skip items on locked/hidden layers, and the Background image
                 layer = self._scene.layer_manager.layer_by_id(item.layer_id)
                 if layer is not None and (layer.locked or not layer.visible):
+                    continue
+                if self._scene.is_fixed_in_place(item):
                     continue
                 return item
         return None
 
     def _locked_item_at(self, scene_pos: QPointF) -> bool:
-        """Whether a visible item on a locked layer is under *scene_pos*."""
+        """Whether a visible item on a locked layer, or the Background image, is under
+        *scene_pos* (the image is fixed in place, end-to-end pass finding 11)."""
         if self._scene is None:
             return False
         for gitem in self._scene.items(scene_pos):
@@ -423,6 +426,8 @@ class SelectTool(BaseTool):
                 item = self._top_level(gitem)
                 layer = self._scene.layer_manager.layer_by_id(item.layer_id)
                 if layer is not None and layer.locked and layer.visible:
+                    return True
+                if layer is not None and layer.visible and self._scene.is_fixed_in_place(item):
                     return True
         return False
 
@@ -854,6 +859,8 @@ class SelectTool(BaseTool):
                 item = self._top_level(gitem)
                 layer = self._scene.layer_manager.layer_by_id(item.layer_id)
                 if layer is not None and (layer.locked or not layer.visible):
+                    continue
+                if self._scene.is_fixed_in_place(item):
                     continue
                 found[item] = None
         items_in_rect: list[SnapGraphicsItem] = list(found)
@@ -1351,7 +1358,11 @@ class SelectTool(BaseTool):
         order = {item_id: n for n, item_id in enumerate(active.item_ids)}
         # Top-level items only: a group is one stop and its members are none
         candidates = sorted(
-            (i for i in self._scene.annotation_items() if i.layer_id == active.layer_id),
+            (
+                i
+                for i in self._scene.annotation_items()
+                if i.layer_id == active.layer_id and not self._scene.is_fixed_in_place(i)
+            ),
             key=lambda i: (order.get(i.item_id, len(order)), i.zValue()),
         )
         if not candidates:
