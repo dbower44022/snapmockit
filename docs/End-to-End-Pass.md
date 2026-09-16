@@ -1,6 +1,6 @@
 # The End-to-End Pass on Real Work, and the 1.0.0 Release — Notes
 
-Last Updated: 09-16-26 09:11 · Revision 1.15
+Last Updated: 09-16-26 09:12 · Revision 1.16
 
 Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`, Section 1): the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, used by Doug for his real screenshot work over several sittings, every finding recorded and classified, every defect fixed with a test, and then the first release the product stands behind, `1.0.0`. The kickoff prompt is `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The record takes the shape of the General UI acceptance pass (`docs/General-UI-Implementation.md`, Section 16) where it fits: one row per finding, Doug's words quoted, the evidence named.
 
@@ -83,6 +83,7 @@ One row per finding, numbered in the order found. The class is one of defect (ag
 | 7 | 1 (09-16-26 00:47) | "ctrl-y should redo an action that was undone using ctrl-z" | Edit > Redo's shortcut | General UI PRD 3.2 (Redo: Ctrl+Shift+Z) | Departure (Doug's key is the better one) | built in the same commit (General UI PRD 2.45) | Built; seen on the display 09-16-26 01:27 |
 | 8 | 1 (09-16-26 01:27), found by the session in Doug's diagnostic run | From the drag report Doug pasted: repaints of 10 to 13 ms per mouse move, the shadow's path signature about 7 ms of it and the grid's line-by-line drawing up to 5 ms | Painting during a drag: `items/shadow.py` (the cache key) and `core/view.py` (the grid) | Technical Architecture PRD 8 (canvas interaction at 60 FPS) | Defect | [#5](https://github.com/dbower44022/snapmockit/issues/5), fixed in the commit after 39e2f58 | Fixed; to be felt in the next sitting |
 | 9 | 2 (09-16-26 09:02) | "Shen the user presses the shft key and scrolls the wheel, the UI accelerates the canvas vertical pan to be faster.  Instead, I would like it to horizontally pan the canvas." | The canvas view's wheel handling with Shift held (`core/view.py`) | Navigation and Raster Operations PRD 3.4 (Shift + scroll wheel scrolls horizontally) | Defect | [#6](https://github.com/dbower44022/snapmockit/issues/6), fixed in 8bab3bf | Fixed; to be seen on the display |
+| 10 | 2 (09-16-26 09:10) | "The edit-cut with a single locked layer allowed the cut, but then the cursor was invisible." | Edit > Cut with a raster selection (`main_window._cut_raster_selection`); the cursor afterwards | Navigation and Raster Operations PRD 5.5.2 and 7 (a lock prevents interactive editing); General UI PRD 1.3 | Defect | [#7](https://github.com/dbower44022/snapmockit/issues/7) | Open: the cut reproduced; the cursor not yet |
 
 ### 5.1 Notes on the findings
 
@@ -116,6 +117,8 @@ One row per finding, numbered in the order found. The class is one of defect (ag
 
 **Finding 9, 09-16-26 09:02 to 09:15.** Doug asked for Shift+wheel to pan the canvas sideways; Navigation PRD 3.4 already says so, so the finding is a defect, not a departure. The view handed every wheel event without Ctrl to the scroll area, which reads Shift as a page-sized scroll: on this desktop a faster vertical scroll, and on the offscreen platform a page-sized horizontal jump (1028 pixels where one notch is 123). `SnapView.wheelEvent` now scrolls the horizontal bar itself on Shift, by the plain wheel's step (the desktop's wheel lines times the bar's single step), reading either delta so a platform that already turns Shift+wheel sideways gets the same step, keeping the remainder of a high-resolution wheel's partial notches, and taking a touchpad's pixel delta as it comes. Three tests in `tests/test_navigation_keys.py`: Shift+wheel with a vertical and with a horizontal delta moves one notch right and back with the vertical bar still, both failing before the fix; the plain wheel still scrolls down. No product requirements document changes. The full suite from a scratch worktree at 8bab3bf: 1688 passed, 14 skipped, 1 deselected, in 5 minutes 47 seconds; ruff and mypy clean. The eighth local build, from 8bab3bf at 09:04: 128,285,176 bytes, SHA-256 beginning `94e6c12794a87fed`; Doug's retest of Shift+wheel on it is owed.
 
+**Finding 10, 09-16-26 09:10, triage.** Reproduced without the display for the cut: one layer, locked, holding a screenshot; a raster selection drawn over it with the Raster Selection tool; Edit > Cut erases the pixels and pushes "Raster cut". `_cut_raster_selection` never reads the lock, and the Raster Selection tool's press does not refuse a locked layer as the drawing tools do. The item route is already guarded (items on a locked layer cannot be selected, and a lock deselects them). The invisible cursor did not reproduce: afterwards the viewport still carries the tool's own cursor, no override cursor is set, and no modal or popup window is open. Asked of Doug: which tool and selection the cut came from, and where the cursor was invisible.
+
 ## 6. Sittings
 
 One entry per sitting: the date, the work done in Doug's words, the files it touched, and the findings by number. A sitting with no finding is recorded too. (The heading of this section was lost to an editing slip on 09-16-26 and restored at the session's close.)
@@ -132,6 +135,7 @@ Owed. To be run by Doug from the checklist page against the released 0.9.0 file 
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.16 | 09-16-26 09:12 | Claude (Claude Code) | Finding 10 (Cut on a locked layer, then an invisible cursor; issue #7) recorded and triaged. |
 | 1.15 | 09-16-26 09:11 | Claude (Claude Code) | Finding 9 (Shift+wheel scrolled vertically; issue #6) recorded, fixed with three tests. |
 | 1.14 | 09-16-26 09:00 | Claude (Claude Code) | Session close-out of 09-16-26: the phase table brought to the state of the work, sitting 1 written as the shakedown it was, Section 6's lost heading restored, and where the next session starts. |
 | 1.13 | 09-16-26 01:36 | Claude (Claude Code) | Finding 8 fixed: the shadow's cache key and the grid's drawing; Technical Architecture PRD 1.59. |
