@@ -11,7 +11,12 @@ from PyQt6.QtGui import QBrush, QColor, QCursor, QKeyEvent, QMouseEvent, QPen, Q
 from PyQt6.QtWidgets import QGraphicsRectItem
 
 from snapmock.commands.move_items import MoveItemsCommand
-from snapmock.config.constants import DEFAULT_BLUR_BRUSH_SIZE, DRAG_THRESHOLD, MIN_TEXT_BOX_HEIGHT
+from snapmock.config.constants import (
+    DEFAULT_BLUR_BRUSH_SIZE,
+    DRAG_THRESHOLD,
+    GRID_SIZE_DEFAULT,
+    MIN_TEXT_BOX_HEIGHT,
+)
 from snapmock.items.base_item import SnapGraphicsItem
 from snapmock.items.blur_item import BlurItem
 from snapmock.items.callout_item import CalloutItem
@@ -1258,8 +1263,11 @@ class SelectTool(BaseTool):
         if key == Qt.Key.Key_Escape and self.leave_point_edit():
             return True
 
-        # Arrow key nudge
-        nudge = 10 if shift else 1
+        # Arrow key nudge: one pixel, or one grid step with Shift (Doug's decision of
+        # 09-15-26, end-to-end pass finding 4: the grid step, where the PRDs said 10 px)
+        view = self._view
+        grid = view._grid_size if view is not None else GRID_SIZE_DEFAULT  # noqa: SLF001
+        nudge = grid if shift else 1
         delta: QPointF | None = None
 
         if key == Qt.Key.Key_Left:

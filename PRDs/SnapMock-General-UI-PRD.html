@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.42</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.43</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.42</dd>
-    <dt>Last Updated</dt>    <dd>09-15-26 23:49</dd>
+    <dt>Document version</dt><dd>2.43</dd>
+    <dt>Last Updated</dt>    <dd>09-16-26 00:07</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.43</td>
+        <td class="nowrap">09-16-26 00:07</td>
+        <td>Doug Bower</td>
+        <td>End-to-end pass findings 4 and 5: Section 12's Shift+Arrow row reads one grid step, not 10 px (Doug's decision, option A: Arrow stays 1 px, Ctrl+Arrow stays Arrange's); the arrow keys reach the nudge and the pan from the focused canvas view (Navigation PRD 1.4).</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.42</td>
         <td class="nowrap">09-15-26 23:49</td>
@@ -451,6 +458,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-16-26 00:07</td>
+        <td>12, 3.6</td>
+        <td>Changed</td>
+        <td><strong>Changed</strong> (09-15-26; end-to-end pass finding 4, a departure in Doug's favour; Navigation PRD 1.4): the Section 12 row "Shift + Arrow Keys: nudge selected items 10px" reads "one grid step" (the View grid size, 10 px by default, 20 in a settings file that says so). Doug asked for Ctrl+Arrow as the one-pixel nudge as well; Ctrl+Up and Ctrl+Down are Bring Forward and Send Backward in 3.6, and Arrow already nudges one pixel, so by his choice (option A) the Arrange keys stay and Ctrl+Arrow is unchanged. Finding 5, the arrows scrolling the canvas from the focused view instead of nudging, is fixed in the same commit (Navigation PRD 1.4, issue #3).</td>
+      </tr>
       <tr>
         <td class="nowrap">09-15-26 23:49</td>
         <td>3.3, 6.5</td>

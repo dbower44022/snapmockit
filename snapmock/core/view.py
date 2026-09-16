@@ -1018,6 +1018,44 @@ class SnapView(QGraphicsView):
             return True
         return super().event(event)
 
+    _NAVIGATION_KEYS = frozenset(
+        {
+            Qt.Key.Key_Left,
+            Qt.Key.Key_Right,
+            Qt.Key.Key_Up,
+            Qt.Key.Key_Down,
+            Qt.Key.Key_Home,
+            Qt.Key.Key_End,
+            Qt.Key.Key_PageUp,
+            Qt.Key.Key_PageDown,
+        }
+    )
+
+    def keyPressEvent(self, event: QKeyEvent | None) -> None:  # noqa: N802
+        """The active tool first, then the main window; never the scroll area's own keys.
+
+        With the canvas focused, which a click on an item leaves it, the scroll-area base
+        class took the arrow keys and scrolled, so the arrows moved the canvas and never
+        the selection (Navigation PRD 2.4 and 3.5; end-to-end pass finding 5). An item
+        being edited in place keeps its keys; otherwise the tool gets the key, and a
+        navigation key the tool declines is left for the main window, which pans when
+        nothing is selected.
+        """
+        if event is None:
+            super().keyPressEvent(event)
+            return
+        scene = self.scene()
+        if scene is not None and scene.focusItem() is not None:
+            super().keyPressEvent(event)
+            return
+        if self._tool_manager is not None and self._tool_manager.handle_key_press(event):
+            event.accept()
+            return
+        if event.key() in self._NAVIGATION_KEYS:
+            event.ignore()
+            return
+        super().keyPressEvent(event)
+
     def resizeEvent(self, event: object) -> None:  # noqa: N802
         super().resizeEvent(event)  # type: ignore[arg-type]
         self._position_rulers()

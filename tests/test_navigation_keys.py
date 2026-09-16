@@ -96,3 +96,58 @@ def test_alt_is_a_momentary_eyedropper(window: MainWindow) -> None:
     assert window.tool_manager.active_tool_id == "eyedropper"
     window.keyReleaseEvent(_release(Qt.Key.Key_Alt))
     assert window.tool_manager.active_tool_id == "rectangle"
+
+
+# ---- arrow keys through the focused canvas view (end-to-end pass findings 4 and 5) ----
+
+
+def test_arrow_keys_nudge_the_selection_when_the_view_has_focus(window: MainWindow) -> None:
+    """A key press reaches the focused canvas view first. The view's scroll-area base
+    class used to take the arrow keys and scroll, so with the canvas focused, which a
+    click on an item leaves it, the arrows moved the canvas and never the item
+    (Navigation PRD 2.4 and 3.5; end-to-end pass finding 5). Shift+Arrow moves one grid
+    step, by Doug's decision (finding 4, option A)."""
+    from PyQt6.QtTest import QTest
+
+    window.resize(1200, 800)
+    window.show()
+    view = window.view
+    view.set_zoom(100)
+    view.set_grid_size(20)
+    item = _add(window, 100)
+    window.selection_manager.select(item)
+    view.setFocus()
+    h_bar = view.horizontalScrollBar()
+    assert h_bar is not None
+    scrolled = h_bar.value()
+    QTest.keyClick(view, Qt.Key.Key_Right)
+    assert item.pos().x() == 101
+    QTest.keyClick(view, Qt.Key.Key_Down, Qt.KeyboardModifier.ShiftModifier)
+    assert item.pos().y() == 20
+    QTest.keyClick(view, Qt.Key.Key_Left, Qt.KeyboardModifier.ShiftModifier)
+    assert item.pos().x() == 81
+    assert h_bar.value() == scrolled
+    assert window.scene.command_stack.undo_text.endswith("Move 1 item")
+    window.scene.command_stack.mark_clean()  # or the close prompt blocks the teardown
+
+
+def test_arrow_keys_pan_the_canvas_from_the_view_when_nothing_is_selected(
+    window: MainWindow,
+) -> None:
+    from PyQt6.QtTest import QTest
+
+    window.resize(1200, 800)
+    window.show()
+    view = window.view
+    view.set_zoom(300)  # a canvas larger than the viewport, so there is somewhere to pan
+    window.selection_manager.deselect_all()
+    view.setFocus()
+    h_bar = view.horizontalScrollBar()
+    v_bar = view.verticalScrollBar()
+    assert h_bar is not None and v_bar is not None
+    h_bar.setValue(200)
+    v_bar.setValue(200)
+    QTest.keyClick(view, Qt.Key.Key_Right)
+    assert h_bar.value() == 220  # the main window's pan step, not the scroll area's
+    QTest.keyClick(view, Qt.Key.Key_Down, Qt.KeyboardModifier.ShiftModifier)
+    assert v_bar.value() == 300

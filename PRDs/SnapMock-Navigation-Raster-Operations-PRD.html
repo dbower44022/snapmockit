@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Navigation &amp; Raster Operations</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.3</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.4</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Select / Move · Pan · Zoom · Raster selection · Crop · Resize canvas · Copy, cut, paste, duplicate</dd>
-    <dt>Document version</dt><dd>1.3</dd>
-    <dt>Last Updated</dt>    <dd>09-10-26 13:14</dd>
+    <dt>Document version</dt><dd>1.4</dd>
+    <dt>Last Updated</dt>    <dd>09-16-26 00:07</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.4</td>
+        <td class="nowrap">09-16-26 00:07</td>
+        <td>Doug Bower</td>
+        <td>End-to-end pass findings 4 and 5 (docs/End-to-End-Pass.md): Section 2.4's Shift+Arrow nudge is one grid step, not 10 pixels, by Doug's decision; and the arrow keys now reach the nudge of 2.4 and the pan of 3.5 from the focused canvas view, which had scrolled on its own instead.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.3</td>
         <td class="nowrap">09-10-26 13:14</td>
@@ -87,6 +94,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-16-26 00:07</td>
+        <td>2.4, 3.5</td>
+        <td>Changed / Fixed</td>
+        <td><strong>Changed</strong> (finding 4, a departure in Doug's favour, option A of the choice put to him 09-15-26): Shift+Arrow nudges the selection by one grid step (the View grid size) instead of 10 pixels; Arrow stays one pixel; Ctrl+Arrow keeps Bring Forward and Send Backward (General UI PRD 3.6), since Arrow already does what a one-pixel Ctrl nudge would. <strong>Fixed</strong> (finding 5, issue #3): with the canvas view focused, which a click on an item leaves it, the arrow keys scrolled the canvas whether or not anything was selected, because the view's scroll-area base class took them before the main window's handler could nudge or pan; reproduced headless. The view now gives a key to the active tool first, leaves a navigation key the tool declines (arrows, Home, End, Page Up, Page Down) to the main window, which pans by 3.5's rule when nothing is selected, and never lets the scroll area act on them; an item being edited in place keeps its keys. Tests in <code>tests/test_navigation_keys.py</code>: arrows and Shift+arrows through the focused view move a selected item and not the canvas; without a selection they pan by the main window's step. Doug's retest on the display is owed.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-10-26 13:14</td>
         <td>4.3.2, 4.6</td>
