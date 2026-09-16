@@ -534,6 +534,9 @@ class CalloutItem(ShadowMixin, RichTextMixin, SnapGraphicsItem):
         self._padding = max(0.0, self._padding * avg)
         self._tail_width = max(4.0, self._tail_width * avg)
 
+    def geometry_rect(self) -> QRectF:
+        return QRectF(self._effective_rect())
+
     def boundingRect(self) -> QRectF:
         # The tail's own rectangle, not a null rectangle at the tip (a null rectangle
         # drops out of a union, so the tail was outside the bounding rect before the

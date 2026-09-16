@@ -50,6 +50,9 @@ class EllipseItem(VectorItem):
         body = self._rect.adjusted(-margin, -margin, margin, margin)
         return body.united(self.shadow_rect(body))
 
+    def geometry_rect(self) -> QRectF:
+        return QRectF(self._rect)
+
     def shape(self) -> QPainterPath:
         return self.hit_shape(self.outline())
 

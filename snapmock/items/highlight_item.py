@@ -151,6 +151,9 @@ class HighlightItem(VectorItem):
         body = self._path.boundingRect().adjusted(-margin, -margin, margin, margin)
         return body.united(self.shadow_rect(body))
 
+    def geometry_rect(self) -> QRectF:
+        return self._path.boundingRect()
+
     def shape(self) -> QPainterPath:
         stroker = QPainterPathStroker()
         stroker.setWidth(self._stroke_width + 4)

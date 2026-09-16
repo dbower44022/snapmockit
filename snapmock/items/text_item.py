@@ -381,6 +381,9 @@ class TextItem(ShadowMixin, RichTextMixin, SnapGraphicsItem):
         body = frame.adjusted(-half, -half, half, half)
         return body.united(self.shadow_rect(body))
 
+    def geometry_rect(self) -> QRectF:
+        return QRectF(0, 0, self._item_width(), self._frame_height())
+
     def shape(self) -> QPainterPath:
         """Return the clickable shape for hit testing.
 

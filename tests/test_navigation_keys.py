@@ -123,9 +123,9 @@ def test_arrow_keys_nudge_the_selection_when_the_view_has_focus(window: MainWind
     QTest.keyClick(view, Qt.Key.Key_Right)
     assert item.pos().x() == 101
     QTest.keyClick(view, Qt.Key.Key_Down, Qt.KeyboardModifier.ShiftModifier)
-    assert item.pos().y() == 20
+    assert item.pos().y() == 20  # from the line at 0, a whole step
     QTest.keyClick(view, Qt.Key.Key_Left, Qt.KeyboardModifier.ShiftModifier)
-    assert item.pos().x() == 81
+    assert item.pos().x() == 100  # from 101, to the line
     assert h_bar.value() == scrolled
     assert window.scene.command_stack.undo_text.endswith("Move 1 item")
     window.scene.command_stack.mark_clean()  # or the close prompt blocks the teardown

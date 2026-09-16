@@ -351,14 +351,14 @@ def test_select_drag_snaps_to_guides_and_grid_only_when_the_toggles_say(qtbot: Q
     # Snap to Grid lands the selection frame's corner on the grid (end-to-end pass decision 5)
     view.set_snap_to_guides(False)
     view.set_snap_to_grid(True)
-    frame = item.sceneBoundingRect()
+    edges = item.scene_geometry_rect()  # the rectangle's own line, not the handles' frame
     grip = QPointF(item.pos().x() + 11, item.pos().y())
     _press(view, grip)
     _drag(view, grip + QPointF(13, 0))
     _release(view, grip + QPointF(13, 0))
-    moved = item.sceneBoundingRect()
-    assert moved.left() == pytest.approx(round((frame.left() + 13) / 10) * 10)
-    assert moved.top() == pytest.approx(round(frame.top() / 10) * 10)
+    moved = item.scene_geometry_rect()
+    assert moved.left() == pytest.approx(round((edges.left() + 13) / 10) * 10)
+    assert moved.top() == pytest.approx(round(edges.top() / 10) * 10)
 
 
 def test_rectangle_creation_snaps_to_guides(qtbot: QtBot) -> None:

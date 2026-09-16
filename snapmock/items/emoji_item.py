@@ -165,6 +165,9 @@ class EmojiItem(ShadowMixin, SnapGraphicsItem):
         rect = self.emoji_rect().adjusted(-1, -1, 1, 1)
         return rect.united(self.shadow_rect(rect)).united(self._min_hit_rect())
 
+    def geometry_rect(self) -> QRectF:
+        return QRectF(self.emoji_rect())
+
     def shape(self) -> QPainterPath:
         """The square (Section 4.8), never smaller than 24 by 24 px."""
         path = QPainterPath()

@@ -373,6 +373,9 @@ class BlurItem(SnapGraphicsItem):
         b = self._border_width / 2.0 + 1.0
         return self.effect_rect().united(self.region_rect().adjusted(-b, -b, b, b))
 
+    def geometry_rect(self) -> QRectF:
+        return QRectF(self.region_rect())
+
     def shape(self) -> QPainterPath:
         """The region's own shape: a blur is always visible, so it needs no padding (2.9)."""
         return self.region_path()

@@ -415,20 +415,22 @@ def test_a_slow_drag_with_snap_to_grid_on_still_moves_the_item(
     view.set_snap_to_grid(True)
     tool = SelectTool()
     tool.activate(scene, SelectionManager(scene))
-    frame = item.sceneBoundingRect()  # the stroke's half width puts its corner off the grid
-    assert frame.topLeft() != QPointF(100, 100)
+    # the handles' frame sits half a stroke outside the rectangle's own line; the line is
+    # what snaps (decision 5 as Doug corrected it)
+    assert item.sceneBoundingRect().topLeft() != item.scene_geometry_rect().topLeft()
+    assert item.scene_geometry_rect().topLeft() == QPointF(100, 100)
     tool.mouse_press(_mouse(view, QEvent.Type.MouseButtonPress, QPointF(150, 150)))
     seen: list[float] = []
     for i in range(1, 40):
         tool.mouse_move(_mouse(view, QEvent.Type.MouseMove, QPointF(150 + 2 * i, 150 + 3 * i)))
-        seen.append(item.sceneBoundingRect().top())
-    # 78 px right and 117 px down since the press: the frame's corner lands on the grid
-    # line nearest where the pointer carried it (decision 5, option B)
-    assert item.sceneBoundingRect().topLeft() == QPointF(180, 220)
+        seen.append(item.pos().y())
+    # 78 px right and 117 px down since the press: the rectangle's own corner lands on
+    # the grid line nearest where the pointer carried it (decision 5, option B)
+    assert item.pos() == QPointF(180, 220)
     # and the item moved during the drag in grid steps, not only at the end
     assert sorted(set(seen)) == [100, 120, 140, 160, 180, 200, 220]
     tool.mouse_release(_mouse(view, QEvent.Type.MouseButtonRelease, QPointF(228, 267)))
-    assert item.sceneBoundingRect().topLeft() == QPointF(180, 220)
+    assert item.pos() == QPointF(180, 220)
     assert scene.command_stack.undo_text.endswith("Move 1 item")
 
 
@@ -440,7 +442,6 @@ def test_snap_to_grid_puts_an_off_grid_item_onto_the_grid(qtbot: QtBot, scene: S
     assert layer is not None
     item = RectangleItem(QRectF(0, 0, 200, 120))
     item.fill_color = item.stroke_color
-    item.stroke_width = 2  # a whole-pixel half width, so the frame sits on whole pixels
     item.setPos(107, 133)
     scene.command_stack.push(AddItemCommand(scene, item, layer.layer_id))
     view.set_grid_size(20)
@@ -450,8 +451,71 @@ def test_snap_to_grid_puts_an_off_grid_item_onto_the_grid(qtbot: QtBot, scene: S
     tool.mouse_press(_mouse(view, QEvent.Type.MouseButtonPress, QPointF(150, 180)))
     tool.mouse_move(_mouse(view, QEvent.Type.MouseMove, QPointF(163, 191)))
     tool.mouse_release(_mouse(view, QEvent.Type.MouseButtonRelease, QPointF(163, 191)))
-    # the frame's corner was at (106, 132), carried to (119, 143): nearest grid (120, 140)
-    assert item.sceneBoundingRect().topLeft() == QPointF(120, 140)
+    # the rectangle's corner was at (107, 133), carried to (120, 144): nearest grid (120, 140)
+    assert item.pos() == QPointF(120, 140)
+
+
+def test_shift_arrow_snaps_to_the_next_grid_line_then_steps(
+    qtbot: QtBot, scene: SnapScene
+) -> None:
+    """Finding 4 as Doug corrected it: Shift+Arrow takes the items' own top-left corner to
+    the next grid line in the arrow's direction, one pixel if that is the distance, and a
+    whole step once the corner is on a line; Arrow alone stays one pixel."""
+    view = _view_for(qtbot, scene)
+    layer = scene.layer_manager.active_layer
+    assert layer is not None
+    item = RectangleItem(QRectF(0, 0, 200, 120))
+    item.setPos(107, 133)
+    scene.command_stack.push(AddItemCommand(scene, item, layer.layer_id))
+    view.set_grid_size(20)
+    tool = SelectTool()
+    tool.activate(scene, SelectionManager(scene))
+    tool._selection_manager.select(item)  # noqa: SLF001
+
+    def press(key: Qt.Key, shift: bool = True) -> None:
+        mods = Qt.KeyboardModifier.ShiftModifier if shift else Qt.KeyboardModifier.NoModifier
+        assert tool.key_press(QKeyEvent(QEvent.Type.KeyPress, key, mods))
+
+    press(Qt.Key.Key_Right)
+    assert item.pos() == QPointF(120, 133)  # 13 px, to the line
+    press(Qt.Key.Key_Right)
+    assert item.pos() == QPointF(140, 133)  # a whole step, from the line
+    press(Qt.Key.Key_Left)
+    assert item.pos() == QPointF(120, 133)
+    press(Qt.Key.Key_Down)
+    assert item.pos() == QPointF(120, 140)  # 7 px
+    press(Qt.Key.Key_Up)
+    assert item.pos() == QPointF(120, 120)
+    press(Qt.Key.Key_Up)
+    assert item.pos() == QPointF(120, 100)
+    press(Qt.Key.Key_Right, shift=False)
+    assert item.pos() == QPointF(121, 100)  # Arrow alone: one pixel
+    press(Qt.Key.Key_Left)
+    assert item.pos() == QPointF(120, 100)  # back to the line, 1 px
+    # snapping works whether or not View > Snap to Grid is on: Shift asks for the grid
+    assert not view.snap_to_grid
+
+
+def test_geometry_rect_is_the_shape_without_its_padding(qtbot: QtBot, scene: SnapScene) -> None:
+    from snapmock.items.group_item import GroupItem
+
+    layer = scene.layer_manager.active_layer
+    assert layer is not None
+    a = RectangleItem(QRectF(0, 0, 50, 30))
+    a.stroke_width = 6
+    a.setPos(10, 10)
+    b = RectangleItem(QRectF(0, 0, 20, 20))
+    b.setPos(100, 100)
+    for it in (a, b):
+        scene.command_stack.push(AddItemCommand(scene, it, layer.layer_id))
+    assert a.geometry_rect() == QRectF(0, 0, 50, 30)
+    assert a.boundingRect().left() < 0 and a.boundingRect().width() > 50
+    assert a.scene_geometry_rect() == QRectF(10, 10, 50, 30)
+    command = GroupItemsCommand(scene, [a, b])
+    scene.command_stack.push(command)
+    group = command.group
+    assert isinstance(group, GroupItem)
+    assert group.scene_geometry_rect() == QRectF(10, 10, 110, 110)
 
 
 def test_a_slow_drag_without_snap_follows_the_pointer_exactly(

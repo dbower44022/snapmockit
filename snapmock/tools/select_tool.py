@@ -41,6 +41,19 @@ if TYPE_CHECKING:
     from snapmock.core.selection_manager import SelectionManager
 
 
+def _next_grid_line(value: float, grid: float, direction: float) -> float:
+    """The grid line one step from *value* in *direction* (-1, 0, or +1 for none): the
+    next line strictly beyond *value*, or the line a whole step away when *value* is on
+    one already, so a Shift+Arrow nudge snaps first and steps after."""
+    if direction == 0:
+        return value
+    steps = value / grid
+    nearest = round(steps)
+    if abs(steps - nearest) < 1e-6:
+        return (nearest + direction) * grid
+    return (math.floor(steps) + 1) * grid if direction > 0 else math.floor(steps) * grid
+
+
 class _State(Enum):
     IDLE = auto()
     RUBBER_BAND = auto()
@@ -353,6 +366,17 @@ class SelectTool(BaseTool):
         rect = items[0].sceneBoundingRect()
         for item in items[1:]:
             rect = rect.united(item.sceneBoundingRect())
+        return rect
+
+    def _selection_geometry_rect(self, items: list[SnapGraphicsItem]) -> QRectF:
+        """The items' own edges in the scene, without stroke, shadow, or hit padding: what
+        snapping puts on the grid (decision 5 as Doug corrected it: the rectangle's line,
+        not the handles' frame)."""
+        if not items:
+            return QRectF()
+        rect = items[0].scene_geometry_rect()
+        for item in items[1:]:
+            rect = rect.united(item.scene_geometry_rect())
         return rect
 
     def _scene_pos(self, event: QMouseEvent) -> QPointF | None:
@@ -708,15 +732,18 @@ class SelectTool(BaseTool):
         at_rest = self._selection_bounding_rect(self._drag_items).translated(
             -self._drag_total.x(), -self._drag_total.y()
         )
-        # View > Snap to Grid: the selection frame's top-left corner lands on the grid
-        # line nearest where the pointer has carried it (end-to-end pass decision 5,
+        # View > Snap to Grid: the top-left corner of the items' own edges lands on the
+        # grid line nearest where the pointer has carried it (end-to-end pass decision 5,
         # option B: the item lands on the grid wherever it started, as guides work)
         if view is not None and view.snap_to_grid:
             grid = view._grid_size  # noqa: SLF001
-            corner = at_rest.topLeft() + raw_total
+            edges = self._selection_geometry_rect(self._drag_items).translated(
+                -self._drag_total.x(), -self._drag_total.y()
+            )
+            corner = edges.topLeft() + raw_total
             target = QPointF(
-                round(corner.x() / grid) * grid - at_rest.left(),
-                round(corner.y() / grid) * grid - at_rest.top(),
+                round(corner.x() / grid) * grid - edges.left(),
+                round(corner.y() / grid) * grid - edges.top(),
             )
         # View > Snap to Guides: an edge or the centre of the selection lands on a guide
         if view is not None and view.snap_to_guides:
@@ -1263,25 +1290,33 @@ class SelectTool(BaseTool):
         if key == Qt.Key.Key_Escape and self.leave_point_edit():
             return True
 
-        # Arrow key nudge: one pixel, or one grid step with Shift (Doug's decision of
-        # 09-15-26, end-to-end pass finding 4: the grid step, where the PRDs said 10 px)
-        view = self._view
-        grid = view._grid_size if view is not None else GRID_SIZE_DEFAULT  # noqa: SLF001
-        nudge = grid if shift else 1
-        delta: QPointF | None = None
+        # Arrow key nudge: one pixel, or with Shift to the next grid line (Doug's decision
+        # of 09-15-26, end-to-end pass finding 4, as corrected 09-16-26: the items' own
+        # top-left corner goes to the next grid line in the arrow's direction, so an edge
+        # one pixel from the grid moves one pixel, and a full step once it is on it)
+        arrows = {
+            Qt.Key.Key_Left: QPointF(-1, 0),
+            Qt.Key.Key_Right: QPointF(1, 0),
+            Qt.Key.Key_Up: QPointF(0, -1),
+            Qt.Key.Key_Down: QPointF(0, 1),
+        }
+        try:
+            direction = arrows.get(Qt.Key(key))
+        except ValueError:
+            direction = None
 
-        if key == Qt.Key.Key_Left:
-            delta = QPointF(-nudge, 0)
-        elif key == Qt.Key.Key_Right:
-            delta = QPointF(nudge, 0)
-        elif key == Qt.Key.Key_Up:
-            delta = QPointF(0, -nudge)
-        elif key == Qt.Key.Key_Down:
-            delta = QPointF(0, nudge)
-
-        if delta is not None:
+        if direction is not None:
             items = [i for i in self._selection_manager.items if isinstance(i, SnapGraphicsItem)]
             if items:
+                delta = direction
+                if shift:
+                    view = self._view
+                    grid = view._grid_size if view is not None else GRID_SIZE_DEFAULT  # noqa: SLF001
+                    corner = self._selection_geometry_rect(items).topLeft()
+                    delta = QPointF(
+                        _next_grid_line(corner.x(), grid, direction.x()) - corner.x(),
+                        _next_grid_line(corner.y(), grid, direction.y()) - corner.y(),
+                    )
                 cmd = MoveItemsCommand(items, delta)
                 self._scene.command_stack.push(cmd)
                 self._update_handles()

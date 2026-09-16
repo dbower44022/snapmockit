@@ -260,6 +260,9 @@ class StampItem(ShadowMixin, SnapGraphicsItem):
         rect = self.stamp_rect().adjusted(-1, -1, 1, 1)
         return rect.united(self.shadow_rect(rect)).united(self._min_hit_rect())
 
+    def geometry_rect(self) -> QRectF:
+        return QRectF(self.stamp_rect())
+
     def shape(self) -> QPainterPath:
         """The stamp's rectangle (Section 3.10), never smaller than 24 by 24 px."""
         path = QPainterPath()

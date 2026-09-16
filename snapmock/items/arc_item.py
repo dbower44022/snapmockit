@@ -237,6 +237,9 @@ class ArcItem(VectorItem):
         )
         return body.united(self.shadow_rect(body))
 
+    def geometry_rect(self) -> QRectF:
+        return self.outline().boundingRect().united(QRectF(self._start, self._end).normalized())
+
     def shape(self) -> QPainterPath:
         """A band around the outline, stroke width plus 4 px; the whole inside of a filled
         Chord or Pie (the Rectangle's rule, 5.6); the heads."""

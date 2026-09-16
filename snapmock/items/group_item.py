@@ -168,6 +168,12 @@ class GroupItem(SnapGraphicsItem):
     def boundingRect(self) -> QRectF:
         return self.childrenBoundingRect()
 
+    def geometry_rect(self) -> QRectF:
+        rect = QRectF()
+        for member in self.members:
+            rect = rect.united(member.mapRectToParent(member.geometry_rect()))
+        return rect
+
     def shape(self) -> QPainterPath:
         path = QPainterPath()
         path.setFillRule(Qt.FillRule.WindingFill)

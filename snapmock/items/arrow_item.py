@@ -457,6 +457,13 @@ class ArrowItem(VectorItem):
         )
         return body.united(self.shadow_rect(body))
 
+    def geometry_rect(self) -> QRectF:
+        return (
+            self.line_path()
+            .boundingRect()
+            .united(QRectF(self._line.p1(), self._line.p2()).normalized())
+        )
+
     def shape(self) -> QPainterPath:
         filled, lines, _shaft = self.head_paths()
         stroker = QPainterPathStroker()

@@ -251,6 +251,19 @@ class SnapGraphicsItem(QGraphicsObject):
         path.addRect(self.boundingRect())
         return path
 
+    def geometry_rect(self) -> QRectF:
+        """The item's own edges in local coordinates: the shape a user sees as the item,
+        without the stroke's half width, the shadow, or the hit padding that widen
+        :meth:`boundingRect`. Snapping works on this rectangle, so a snapped rectangle's
+        line sits on the grid line and not half a stroke beside it (end-to-end pass
+        decision 5, as Doug corrected it 09-16-26). The default is the bounding rect;
+        every item with padding overrides it."""
+        return self.boundingRect()
+
+    def scene_geometry_rect(self) -> QRectF:
+        """:meth:`geometry_rect` in scene coordinates (the box of it, under a rotation)."""
+        return self.mapRectToScene(self.geometry_rect())
+
     # --- serialization ---
 
     @abstractmethod

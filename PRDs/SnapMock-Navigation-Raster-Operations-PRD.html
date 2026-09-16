@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Navigation &amp; Raster Operations</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.4</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.5</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Select / Move · Pan · Zoom · Raster selection · Crop · Resize canvas · Copy, cut, paste, duplicate</dd>
-    <dt>Document version</dt><dd>1.4</dd>
-    <dt>Last Updated</dt>    <dd>09-16-26 00:07</dd>
+    <dt>Document version</dt><dd>1.5</dd>
+    <dt>Last Updated</dt>    <dd>09-16-26 00:30</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.5</td>
+        <td class="nowrap">09-16-26 00:30</td>
+        <td>Doug Bower</td>
+        <td>Section 2.4's Shift+Arrow nudge, as Doug corrected it on his retest: the selection's own top-left corner goes to the next grid line in the arrow's direction, one pixel if that is the distance and a whole step once on a line (General UI PRD 2.44).</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.4</td>
         <td class="nowrap">09-16-26 00:07</td>
@@ -94,6 +101,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-16-26 00:30</td>
+        <td>2.4</td>
+        <td>Corrected</td>
+        <td><strong>Corrected</strong> (09-16-26; Doug's retest of the 1.4 row's Shift+Arrow): "The shft-Arrow (Nudge to grid) for a selected object moves by a grid element, not snap to next grid element." Shift+Arrow now snaps: the top-left corner of the items' own edges (their geometry, without stroke or shadow padding) goes to the next grid line in the arrow's direction, the distance to it when the corner is off the grid and a whole step when it is on one. Arrow alone stays one pixel. Each press is one MoveItemsCommand as before.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-16-26 00:07</td>
         <td>2.4, 3.5</td>

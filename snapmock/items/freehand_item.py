@@ -481,6 +481,9 @@ class FreehandItem(VectorItem):
             return QRectF(self._preview_bounds)
         return self._tight_bounding_rect()
 
+    def geometry_rect(self) -> QRectF:
+        return self._path.boundingRect()
+
     def shape(self) -> QPainterPath:
         """The stroke's band, stroke width plus 4 px and never under 8 px, and the inside
         of a closed stroke with a fill (9.9)."""

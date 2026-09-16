@@ -230,6 +230,9 @@ class PolygonItem(VectorItem):
         body = self.outline().boundingRect().adjusted(-margin, -margin, margin, margin)
         return body.united(self.shadow_rect(body))
 
+    def geometry_rect(self) -> QRectF:
+        return self.outline().boundingRect()
+
     def shape(self) -> QPainterPath:
         """The filled polygon when the fill is not transparent, else a band around the
         outline, the Rectangle's rule (8.7)."""

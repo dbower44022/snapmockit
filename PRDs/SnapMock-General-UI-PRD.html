@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.43</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.44</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.43</dd>
-    <dt>Last Updated</dt>    <dd>09-16-26 00:07</dd>
+    <dt>Document version</dt><dd>2.44</dd>
+    <dt>Last Updated</dt>    <dd>09-16-26 00:30</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.44</td>
+        <td class="nowrap">09-16-26 00:30</td>
+        <td>Doug Bower</td>
+        <td>Doug's retest of 09-16-26 corrects two rows: Snap to Grid (3.3) puts the item's own edges on the grid, not the handles' frame that sits half a stroke outside them; Shift+Arrow (12) snaps the item's corner to the next grid line in the arrow's direction, one pixel if that is the distance, then a whole step.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.43</td>
         <td class="nowrap">09-16-26 00:07</td>
@@ -458,6 +465,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-16-26 00:30</td>
+        <td>3.3, 12</td>
+        <td>Corrected</td>
+        <td><strong>Corrected</strong> (09-16-26; end-to-end pass, Doug's retest of decision 5 and finding 4). Doug: "It snaps the selection rectangle, not the rectangle lines them selves. So snap to grid never puts the rectangle on a grid line." The 2.42 rule snapped the frame the transform handles draw, which is the bounding rect: half a stroke, the shadow, and the hit padding outside the shape's own line. Every item now answers <code>geometry_rect</code>, its own edges without that padding (a rectangle's rect, a line's endpoints, a text box's frame, a group's members' union), and Snap to Grid puts the top-left corner of the selection's own edges on the grid, so a snapped rectangle's line lies on the grid line. And of Shift+Arrow: "If there is only one pixel between a object element and the grid and the user presses shft-arrow, in the direction of the line, the object should move one pixel so it snaps to the nearest grid element, not move an entire grid distance." Shift+Arrow now takes the same corner to the next grid line in the arrow's direction: the distance to it when the corner is off the grid, a whole step when it is on one; the 2.43 row's "one grid step" is superseded. Shift+Arrow snaps whether or not View > Snap to Grid is on, since the key asks for the grid. Arrow alone stays one pixel. Tests in <code>tests/test_tools/test_select_tool.py</code> and <code>tests/test_navigation_keys.py</code>.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-16-26 00:07</td>
         <td>12, 3.6</td>

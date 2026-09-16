@@ -55,6 +55,9 @@ class LineItem(VectorItem):
         )
         return body.united(self.shadow_rect(body))
 
+    def geometry_rect(self) -> QRectF:
+        return QRectF(self._line.p1(), self._line.p2()).normalized()
+
     def shape(self) -> QPainterPath:
         stroker = QPainterPathStroker()
         stroker.setWidth(max(self._stroke_width, 4.0))

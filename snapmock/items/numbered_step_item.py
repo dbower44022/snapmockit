@@ -509,6 +509,9 @@ class NumberedStepItem(VectorItem):
 
     # ------------------------------------------------------------ QGraphicsItem
 
+    def geometry_rect(self) -> QRectF:
+        return self.badge_path().boundingRect()
+
     def boundingRect(self) -> QRectF:
         half = self._stroke_width / 2 + 1.0
         body = self.badge_path().boundingRect().adjusted(-half, -half, half, half)
