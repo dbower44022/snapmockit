@@ -415,18 +415,43 @@ def test_a_slow_drag_with_snap_to_grid_on_still_moves_the_item(
     view.set_snap_to_grid(True)
     tool = SelectTool()
     tool.activate(scene, SelectionManager(scene))
+    frame = item.sceneBoundingRect()  # the stroke's half width puts its corner off the grid
+    assert frame.topLeft() != QPointF(100, 100)
     tool.mouse_press(_mouse(view, QEvent.Type.MouseButtonPress, QPointF(150, 150)))
     seen: list[float] = []
     for i in range(1, 40):
         tool.mouse_move(_mouse(view, QEvent.Type.MouseMove, QPointF(150 + 2 * i, 150 + 3 * i)))
-        seen.append(item.pos().y())
-    # 78 px right and 117 px down since the press, on the 20 px grid
-    assert item.pos() == QPointF(180, 220)
+        seen.append(item.sceneBoundingRect().top())
+    # 78 px right and 117 px down since the press: the frame's corner lands on the grid
+    # line nearest where the pointer carried it (decision 5, option B)
+    assert item.sceneBoundingRect().topLeft() == QPointF(180, 220)
     # and the item moved during the drag in grid steps, not only at the end
     assert sorted(set(seen)) == [100, 120, 140, 160, 180, 200, 220]
     tool.mouse_release(_mouse(view, QEvent.Type.MouseButtonRelease, QPointF(228, 267)))
-    assert item.pos() == QPointF(180, 220)
+    assert item.sceneBoundingRect().topLeft() == QPointF(180, 220)
     assert scene.command_stack.undo_text.endswith("Move 1 item")
+
+
+def test_snap_to_grid_puts_an_off_grid_item_onto_the_grid(qtbot: QtBot, scene: SnapScene) -> None:
+    """Decision 5, option B: a selection that starts 7 px off the grid lands on it after
+    a move, as guides work, rather than staying 7 px off (the 3.3 rule as first built)."""
+    view = _view_for(qtbot, scene)
+    layer = scene.layer_manager.active_layer
+    assert layer is not None
+    item = RectangleItem(QRectF(0, 0, 200, 120))
+    item.fill_color = item.stroke_color
+    item.stroke_width = 2  # a whole-pixel half width, so the frame sits on whole pixels
+    item.setPos(107, 133)
+    scene.command_stack.push(AddItemCommand(scene, item, layer.layer_id))
+    view.set_grid_size(20)
+    view.set_snap_to_grid(True)
+    tool = SelectTool()
+    tool.activate(scene, SelectionManager(scene))
+    tool.mouse_press(_mouse(view, QEvent.Type.MouseButtonPress, QPointF(150, 180)))
+    tool.mouse_move(_mouse(view, QEvent.Type.MouseMove, QPointF(163, 191)))
+    tool.mouse_release(_mouse(view, QEvent.Type.MouseButtonRelease, QPointF(163, 191)))
+    # the frame's corner was at (106, 132), carried to (119, 143): nearest grid (120, 140)
+    assert item.sceneBoundingRect().topLeft() == QPointF(120, 140)
 
 
 def test_a_slow_drag_without_snap_follows_the_pointer_exactly(

@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.41</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.42</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.41</dd>
-    <dt>Last Updated</dt>    <dd>09-15-26 22:22</dd>
+    <dt>Document version</dt><dd>2.42</dd>
+    <dt>Last Updated</dt>    <dd>09-15-26 23:49</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.42</td>
+        <td class="nowrap">09-15-26 23:49</td>
+        <td>Doug Bower</td>
+        <td>End-to-end pass decision 5 (option B, chosen by Doug 09-15-26): Snap to Grid lands the moved selection's top-left corner on the grid, as guides do, rather than moving it by grid multiples; the 3.3 row of 09-08-26 is changed accordingly.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.41</td>
         <td class="nowrap">09-15-26 22:22</td>
@@ -444,6 +451,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-15-26 23:49</td>
+        <td>3.3, 6.5</td>
+        <td>Changed</td>
+        <td><strong>Changed</strong> (09-15-26; end-to-end pass decision 5, option B; <code>docs/End-to-End-Pass.md</code> Section 2.5): with View > Snap to Grid on, a dragged selection lands on the grid wherever it started. The frame the transform handles draw has its top-left corner put on the grid line nearest where the pointer has carried it, at every move, so an item 7 pixels off the grid is on the grid after one move; the 3.3 row of 09-08-26, which moved the selection by grid multiples and kept it 7 pixels off, is superseded. Snap to Guides (6.5) is applied after the grid, on the frame so moved. A drag without snapping is unchanged; the corners of a new shape and a resize already snapped as points. Tests: <code>tests/test_tools/test_select_tool.py</code> (an off-grid item landing on the grid; a slow drag stepping along the grid) and <code>tests/test_guides.py</code>. Doug's retest on the display is owed with the finding 3 build.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-15-26 22:22</td>
         <td>3.3, 16.2</td>

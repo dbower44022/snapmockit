@@ -675,8 +675,8 @@ class SelectTool(BaseTool):
         event's increment: with Snap to Grid on, the increment was once rounded to the
         grid on its own and the remainder thrown away, so a pointer moving a few pixels
         per event moved nothing at all and a flick jumped a grid step (end-to-end pass
-        finding 3). The snapped total is the grid multiple nearest the raw total; the
-        items are moved by the difference from what has been applied so far.
+        finding 3). With Snap to Grid the selection frame's top-left corner lands on the
+        grid; the items are moved by the difference from what has been applied so far.
         """
         raw_total = scene_pos - self._press_pos
 
@@ -700,17 +700,21 @@ class SelectTool(BaseTool):
 
         target = QPointF(raw_total)
         view = self._view
-        # View > Snap to Grid: the total movement lands on grid multiples
+        at_rest = self._selection_bounding_rect(self._drag_items).translated(
+            -self._drag_total.x(), -self._drag_total.y()
+        )
+        # View > Snap to Grid: the selection frame's top-left corner lands on the grid
+        # line nearest where the pointer has carried it (end-to-end pass decision 5,
+        # option B: the item lands on the grid wherever it started, as guides work)
         if view is not None and view.snap_to_grid:
             grid = view._grid_size  # noqa: SLF001
+            corner = at_rest.topLeft() + raw_total
             target = QPointF(
-                round(raw_total.x() / grid) * grid, round(raw_total.y() / grid) * grid
+                round(corner.x() / grid) * grid - at_rest.left(),
+                round(corner.y() / grid) * grid - at_rest.top(),
             )
         # View > Snap to Guides: an edge or the centre of the selection lands on a guide
         if view is not None and view.snap_to_guides:
-            at_rest = self._selection_bounding_rect(self._drag_items).translated(
-                -self._drag_total.x(), -self._drag_total.y()
-            )
             target += view.snap_rect_offset(at_rest.translated(target))
 
         delta = target - self._drag_total
