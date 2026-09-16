@@ -1,6 +1,6 @@
 # The End-to-End Pass on Real Work, and the 1.0.0 Release — Notes
 
-Last Updated: 09-15-26 21:56 · Revision 1.4
+Last Updated: 09-15-26 22:06 · Revision 1.5
 
 Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`, Section 1): the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, used by Doug for his real screenshot work over several sittings, every finding recorded and classified, every defect fixed with a test, and then the first release the product stands behind, `1.0.0`. The kickoff prompt is `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The record takes the shape of the General UI acceptance pass (`docs/General-UI-Implementation.md`, Section 16) where it fits: one row per finding, Doug's words quoted, the evidence named.
 
@@ -42,7 +42,7 @@ The kickoff's seven, each taken as the kickoff states:
 3. A defect in a capture backend this machine cannot exercise (Windows, macOS) is a follow-up, not a defect of this pass.
 4. Where a product requirements document's wording and Doug's expectation differ and Doug's is the better one, the finding is a departure recorded in that document, not a defect.
 5. Fix commits carry no version change; the version moves once, at Phase 3.
-6. The 0.9.0 AppImage stays at `dist/Snapmockit-0.9.0-x86_64.AppImage` through the work; a fix under test runs from source or from a locally built AppImage, and Doug's sittings use the released 0.9.0 until 1.0.0 exists.
+6. The 0.9.0 AppImage stays at `dist/Snapmockit-0.9.0-x86_64.AppImage` through the work; a fix under test runs from source or from a locally built AppImage. **Amended by Doug on 09-15-26 (option B of the choice put to him after finding 3):** his sittings run a locally built AppImage from the fixed commit, installed over `~/Applications/Snapmockit.AppImage`, since 0.9.0's dragging made real work hard; each sitting entry names the commit its build came from, and the released 0.9.0 file stays in `dist/` for the Check for Updates proof of Phase 3. Local builds land in `dist/local/`, never over the released file. The first: built at 22:05 from a9261c2, 128,281,080 bytes, SHA-256 beginning `96bfb67492c73c1c`; About reads 0.9.0 like the release, so the build is told by its commit in this record and by its behaviour.
 7. The 1.0.0 release notes name what changed since 0.9.0 for a user and say that the Windows and macOS packages do not exist yet.
 
 Two more, found at the start:
@@ -98,6 +98,7 @@ Owed. To be run by Doug from the checklist page against the released 0.9.0 file 
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.5 | 09-15-26 22:06 | Claude (Claude Code) | Silence 6 amended by Doug: the sittings run a locally built AppImage from the fixed commit; the first build recorded. |
 | 1.4 | 09-15-26 21:56 | Claude (Claude Code) | Finding 3 fixed (commit 8ff6705, Technical Architecture PRD 1.56); the display retest owed. |
 | 1.3 | 09-15-26 21:44 | Claude (Claude Code) | Finding 3 recorded and triaged: erratic item dragging, a defect against Technical Architecture PRD 3.4, issue #2. |
 | 1.2 | 09-15-26 21:28 | Claude (Claude Code) | Finding 2 recorded and fixed: the README rewritten for a downloader (issue #1). |
