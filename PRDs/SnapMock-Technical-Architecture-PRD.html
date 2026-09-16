@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.56</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.57</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.56</dd>
-    <dt>Last Updated</dt>    <dd>09-15-26 21:56</dd>
+    <dt>Document version</dt><dd>1.57</dd>
+    <dt>Last Updated</dt>    <dd>09-15-26 22:22</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.57</td>
+        <td class="nowrap">09-15-26 22:22</td>
+        <td>Doug Bower</td>
+        <td>End-to-end pass finding 3, the cause: the 1.56 row's tooltip was not it; the Select tool's drag discarded the sub-grid remainder of every mouse move under Snap to Grid, so a slow drag moved nothing (3.4). Fixed by snapping the whole movement since the press; the 1.56 change stays as an improvement.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.56</td>
         <td class="nowrap">09-15-26 21:56</td>
@@ -518,6 +525,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-15-26 22:22</td>
+        <td>3.4</td>
+        <td>Fixed</td>
+        <td><strong>Fixed</strong> (09-15-26; end-to-end pass finding 3, commit db54948; General UI PRD 2.41). The 1.56 row named Qt's tooltip as the likely cause of the erratic drag, inferred and not proven; Doug's retest of that fix on the display still dragged badly, and a headless trace through the main window then showed the cause: with Snap to Grid on (the first-run default of General UI PRD 16.2) the Select tool rounded each mouse move's increment to the grid and discarded the remainder, so a drag of 117 pixels in 3-pixel steps moved the item 0. The drag now snaps the whole movement since the press and moves the items by the difference from what has been applied, so 3.4.2's "previewed in real-time during drag" holds with snapping on. The readouts stay on the dimension overlay of 3.9 (the 1.56 change), which is the better place for them regardless. Doug's retest on the display is owed again, of the build from db54948.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-15-26 21:56</td>
         <td>3.4, 3.9</td>
