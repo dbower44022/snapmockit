@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 from PyQt6.QtCore import QRectF
-from PyQt6.QtGui import QImage, QPainter
+from PyQt6.QtGui import QColor, QImage, QPainter
 from PyQt6.QtWidgets import QApplication
 from pytestqt.qtbot import QtBot
 
@@ -56,8 +56,10 @@ def _view(qtbot: QtBot, scene: SnapScene) -> SnapView:
     view.resize(600, 400)
     qtbot.addWidget(view)
     view.show()
+    qtbot.waitExposed(view)
     view.set_grid_visible(True)
     view.set_grid_size(20)
+    view.set_grid_style(QColor("black"), 100)  # not the theme's, which another test may leave
     view.set_zoom(300)
     return view
 
@@ -82,14 +84,15 @@ def test_the_grid_image_is_reused_while_the_view_is_unchanged(
     second_image = _draw_grid(view, scene)
     assert view._grid_cache is first  # noqa: SLF001
     assert second_image == first_image
-    # the grid was drawn: some pixels carry a line
+    # the grid was drawn into the tile: some of its pixels carry a line
+    assert first.width() > 50 and first.height() > 50
     painted = sum(
         1
-        for y in range(0, 400, 3)
-        for x in range(0, 600, 3)
-        if first_image.pixelColor(x, y).alpha()
+        for y in range(0, first.height(), 2)
+        for x in range(0, first.width(), 2)
+        if first.pixelColor(x, y).alpha()
     )
-    assert painted > 100
+    assert painted > 50
     # a scroll, a zoom, or a grid size change draws afresh
     bar = view.horizontalScrollBar()
     assert bar is not None
