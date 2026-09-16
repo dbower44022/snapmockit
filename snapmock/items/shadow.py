@@ -138,6 +138,7 @@ class ShadowMixin:
     _shadow_offset_y: float
     _shadow_blur: float
     _shadow_cache_key: tuple[Any, ...] | None
+    _shadow_cache_path: QPainterPath | None
     _shadow_cache_image: QImage | None
     _shadow_cache_rect: QRectF
 
@@ -156,6 +157,7 @@ class ShadowMixin:
         self._shadow_offset_y = float(offset)
         self._shadow_blur = float(blur)
         self._shadow_cache_key = None
+        self._shadow_cache_path = None
         self._shadow_cache_image = None
         self._shadow_cache_rect = QRectF()
 
@@ -239,13 +241,17 @@ class ShadowMixin:
         local_rect = bounds.adjusted(-spread, -spread, spread, spread)
         width = min(_MAX_SHADOW_IMAGE, max(1, math.ceil(local_rect.width() * scale)))
         height = min(_MAX_SHADOW_IMAGE, max(1, math.ceil(local_rect.height() * scale)))
-        key = (
-            _path_signature(path),
-            self._shadow_color.rgba(),
-            round(self._shadow_blur, 3),
-            round(scale, 3),
-        )
-        if key != self._shadow_cache_key or self._shadow_cache_image is None:
+        # The cache key holds the colour, the blur, and the scale; the path is kept and
+        # compared natively, which is microseconds where a Python walk over the stroked
+        # outline's elements was 7 ms a paint (end-to-end pass finding 8)
+        key = (self._shadow_color.rgba(), round(self._shadow_blur, 3), round(scale, 3))
+        cached_path = getattr(self, "_shadow_cache_path", None)
+        if (
+            key != self._shadow_cache_key
+            or self._shadow_cache_image is None
+            or cached_path is None
+            or cached_path != path
+        ):
             image = QImage(width, height, QImage.Format.Format_ARGB32_Premultiplied)
             image.fill(Qt.GlobalColor.transparent)
             image_painter = QPainter(image)
@@ -257,6 +263,7 @@ class ShadowMixin:
             self._shadow_cache_image = blur_image(image, self._shadow_blur * scale)
             self._shadow_cache_rect = QRectF(local_rect)
             self._shadow_cache_key = key
+            self._shadow_cache_path = QPainterPath(path)
         target = self._shadow_cache_rect.translated(
             QPointF(self._shadow_offset_x, self._shadow_offset_y)
         )
@@ -289,12 +296,3 @@ class ShadowMixin:
         self._shadow_offset_y = float(data.get("shadow_offset_y", self._shadow_offset_y))
         self._shadow_blur = max(0.0, float(data.get("shadow_blur", self._shadow_blur)))
         self._shadow_cache_key = None
-
-
-def _path_signature(path: QPainterPath) -> tuple[Any, ...]:
-    """A hashable summary of *path*: its element count, types, and rounded points."""
-    parts: list[Any] = [path.elementCount()]
-    for index in range(path.elementCount()):
-        element = path.elementAt(index)
-        parts.append((element.type.name, round(element.x, 2), round(element.y, 2)))
-    return tuple(parts)

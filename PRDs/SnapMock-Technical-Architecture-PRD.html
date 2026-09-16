@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.58</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.59</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.58</dd>
-    <dt>Last Updated</dt>    <dd>09-16-26 00:30</dd>
+    <dt>Document version</dt><dd>1.59</dd>
+    <dt>Last Updated</dt>    <dd>09-16-26 01:36</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.59</td>
+        <td class="nowrap">09-16-26 01:36</td>
+        <td>Doug Bower</td>
+        <td>End-to-end pass finding 8 (Section 8's canvas interaction at 60 FPS): a repaint during a drag no longer walks the shadow path's elements for its cache key (the path is compared natively) and the grid is drawn once per view of the canvas into an image and blitted after; measured on Doug's display before, and headless before and after.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.58</td>
         <td class="nowrap">09-16-26 00:30</td>
@@ -532,6 +539,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-16-26 01:36</td>
+        <td>8, 3.9</td>
+        <td>Fixed</td>
+        <td><strong>Fixed</strong> (09-16-26; end-to-end pass finding 8, issue #5). Doug's drag diagnostic run on the display (build/drag_diag.py, outside the repository) showed repaints of 10 to 13 ms per mouse move while one rectangle was dragged: the shadow helper's cache key rebuilt a Python tuple from every element of the stroked outline on every paint (2,555,110 <code>round</code> calls over 500 paints, about 7 ms each), and the grid was drawn one <code>drawLine</code> at a time (85,191 calls over 450 paints on a zoomed screenshot, about 5 ms each). Mouse moves arrived every 15 to 18 ms, so the drag ran at the paint rate, inside Section 8's 60 FPS with one item and nothing to spare. Now the shadow cache keeps the path it was rendered from and compares the new path to it natively, invalidating on any change of the path, the colour, the blur, or the scale as before; and the grid's lines are gathered into two batches and drawn once into an image the size of the painted area, keyed on the transform, the painted rectangle, the grid size, the pens, and the canvas, and blitted on every repaint with the same view, so a scroll, a zoom, a theme change, or a grid size change draws afresh (an image rather than a pixmap: a pixmap's blit shifted the lines half a pixel on the offscreen platform). Measured headless on this machine: a dashed rounded rectangle's paint with its shadow 1.74 ms to 0.24 ms; the grid over a 1200 by 800 viewport at 300 percent 4.07 ms to 0.35 ms on a repeat. Tests in <code>tests/test_paint_cost.py</code>: the shadow image reused while the path is unchanged and replaced when it changes; the grid image reused while the view is unchanged and replaced on a scroll or a grid size change; the cached grid pixel-identical to a direct drawing.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-16-26 00:30</td>
         <td>3.1, 3.4</td>

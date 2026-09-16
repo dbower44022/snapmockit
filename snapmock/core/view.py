@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import (
     QEvent,
+    QLineF,
     QMimeData,
     QPoint,
     QPointF,
@@ -24,12 +25,14 @@ from PyQt6.QtGui import (
     QDragMoveEvent,
     QDropEvent,
     QFont,
+    QImage,
     QKeyEvent,
     QMouseEvent,
     QPainter,
     QPaintEvent,
     QPen,
     QPixmap,
+    QTransform,
     QWheelEvent,
 )
 from PyQt6.QtWidgets import QGraphicsView, QWidget
@@ -96,6 +99,8 @@ class SnapView(QGraphicsView):
 
         # Grid / ruler state
         self._grid_visible: bool = False
+        self._grid_cache: QImage | None = None
+        self._grid_cache_key: tuple[object, ...] | None = None
         self._grid_size: int = GRID_SIZE_DEFAULT
         self._rulers_visible: bool = False
 
@@ -961,44 +966,92 @@ class SnapView(QGraphicsView):
         if pixel_spacing < GRID_MIN_PIXEL_SPACING:
             return
 
+        # The lines are drawn once into an image the size of the painted area in device
+        # pixels and blitted on every repaint with the same view of the canvas: one call
+        # per line cost up to 5 ms a repaint on a zoomed canvas, and a drag repaints the
+        # same area at every mouse move (end-to-end pass finding 8). The key holds
+        # everything the drawing depends on, so a scroll, a zoom, a theme, or a grid
+        # size change draws afresh. An image, not a pixmap: a pixmap's blit shifted the
+        # lines by half a pixel on the offscreen platform, an image's is exact.
+        transform = painter.worldTransform()
+        # one pixel of margin: a line on the clip's edge rasterizes into the next pixel
+        device_rect = transform.mapRect(clip).toAlignedRect().adjusted(-1, -1, 1, 1)
+        if device_rect.isEmpty():
+            return
+        key: tuple[object, ...] = (
+            device_rect.getRect(),
+            round(transform.m11(), 6),
+            round(transform.m22(), 6),
+            round(transform.dx(), 3),
+            round(transform.dy(), 3),
+            grid_size,
+            show_minor,
+            minor_pen.color().rgba(),
+            major_pen.color().rgba(),
+            canvas.getRect(),
+        )
+        if key != self._grid_cache_key or self._grid_cache is None:
+            tile = QImage(device_rect.size(), QImage.Format.Format_ARGB32_Premultiplied)
+            tile.fill(Qt.GlobalColor.transparent)
+            tile_painter = QPainter(tile)
+            tile_painter.setRenderHints(painter.renderHints())
+            tile_painter.setTransform(
+                transform * QTransform.fromTranslate(-device_rect.x(), -device_rect.y())
+            )
+            self._paint_grid_lines(
+                tile_painter, clip, canvas, grid_size, show_minor, minor_pen, major_pen
+            )
+            tile_painter.end()
+            self._grid_cache = tile
+            self._grid_cache_key = key
         painter.save()
+        painter.resetTransform()
+        painter.drawImage(device_rect.topLeft(), self._grid_cache)
+        painter.restore()
 
+    @staticmethod
+    def _paint_grid_lines(
+        painter: QPainter,
+        clip: QRectF,
+        canvas: QRectF,
+        grid_size: int,
+        show_minor: bool,
+        minor_pen: QPen,
+        major_pen: QPen,
+    ) -> None:
+        """The grid's lines over *clip*, gathered and drawn in two batches, one per pen."""
+        painter.save()
         left = int(clip.left() / grid_size) * grid_size
         top_val = int(clip.top() / grid_size) * grid_size
+        y0, y1 = max(clip.top(), canvas.top()), min(clip.bottom(), canvas.bottom())
+        x0, x1 = max(clip.left(), canvas.left()), min(clip.right(), canvas.right())
+        major: list[QLineF] = []
+        minor: list[QLineF] = []
 
         x = float(left)
         while x <= clip.right():
-            if x >= canvas.left() and x <= canvas.right():
-                grid_idx = round(x / grid_size)
-                if grid_idx % GRID_MAJOR_MULTIPLE == 0:
-                    painter.setPen(major_pen)
+            if canvas.left() <= x <= canvas.right():
+                if round(x / grid_size) % GRID_MAJOR_MULTIPLE == 0:
+                    major.append(QLineF(x, y0, x, y1))
                 elif show_minor:
-                    painter.setPen(minor_pen)
-                else:
-                    x += grid_size
-                    continue
-                painter.drawLine(
-                    QPointF(x, max(clip.top(), canvas.top())),
-                    QPointF(x, min(clip.bottom(), canvas.bottom())),
-                )
+                    minor.append(QLineF(x, y0, x, y1))
             x += grid_size
 
         y = float(top_val)
         while y <= clip.bottom():
-            if y >= canvas.top() and y <= canvas.bottom():
-                grid_idx = round(y / grid_size)
-                if grid_idx % GRID_MAJOR_MULTIPLE == 0:
-                    painter.setPen(major_pen)
+            if canvas.top() <= y <= canvas.bottom():
+                if round(y / grid_size) % GRID_MAJOR_MULTIPLE == 0:
+                    major.append(QLineF(x0, y, x1, y))
                 elif show_minor:
-                    painter.setPen(minor_pen)
-                else:
-                    y += grid_size
-                    continue
-                painter.drawLine(
-                    QPointF(max(clip.left(), canvas.left()), y),
-                    QPointF(min(clip.right(), canvas.right()), y),
-                )
+                    minor.append(QLineF(x0, y, x1, y))
             y += grid_size
+
+        if minor:
+            painter.setPen(minor_pen)
+            painter.drawLines(*minor)
+        if major:
+            painter.setPen(major_pen)
+            painter.drawLines(*major)
 
         painter.restore()
 
