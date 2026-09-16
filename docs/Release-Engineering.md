@@ -1,6 +1,6 @@
 # Release Engineering Notes
 
-Last Updated: 09-15-26 09:48 · Revision 1.9
+Last Updated: 09-16-26 09:00 · Revision 1.10
 
 The work that turns the finished application into a product: its identity, continuous integration, packaging, and the first release. Every feature row of the nine product requirements documents was built or recorded as a departure by 09-14-26 (`docs/Freehand-Remainder-Implementation.md`, Section 8.1, names the last of them); this document holds what follows, in the order Doug set on 09-14-26: the identity, then continuous integration, then packaging, then an end-to-end pass on real work, then the two platform backends when their machines exist.
 
@@ -11,7 +11,7 @@ The work that turns the finished application into a product: its identity, conti
 | 1 | The identity: the name, the repository, the licence, the version's one source, the README | Done | faf8e1b, then this commit |
 | 2 | Continuous integration: lint, format, types, the suite on the offscreen platform, and the wheel and sdist, on every push | Done: green on GitHub 09-14-26 | 632b30b, 74bc47d |
 | 3 | Packaging: the Linux AppImage first (Technical Architecture PRD 7.3), then Flatpak, PyPI, the Windows MSI or portable ZIP, and the macOS bundle | Linux AppImage done 09-15-26: released as v0.9.0 (`docs/Packaging-AppImage-Implementation.md`); Flatpak, PyPI, Windows, and macOS remain | 860f370 to 080e2f3 |
-| 4 | An end-to-end pass on real work, on the released AppImage `Snapmockit-0.9.0-x86_64.AppImage`, then the 1.0.0 release | In progress from 09-15-26: the four decisions taken, the notes at `docs/End-to-End-Pass.md`; Phase 1 running, the Wayland check owed | see the notes |
+| 4 | An end-to-end pass on real work, on the released AppImage `Snapmockit-0.9.0-x86_64.AppImage`, then the 1.0.0 release | In progress: decisions taken 09-15-26; sitting 1 (09-15-26 to 09-16-26) recorded with eight findings, seven fixed or built and one follow-up (`docs/End-to-End-Pass.md`); Phase 1's Wayland check owed; two more sittings on real work the minimum before 1.0.0 | def7507 to 2470d86 |
 | 5 | The Windows and macOS capture backends, when their machines exist | Waiting | |
 
 ## 2. The identity (09-14-26)
@@ -26,6 +26,7 @@ Doug confirmed four of the five facts as the code held them and changed one: **t
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.10 | 09-16-26 09:00 | Claude (Claude Code) | Step 4's first sitting recorded: eight findings, the Wayland check owed, two sittings to go at least. |
 | 1.9 | 09-15-26 09:48 | Claude (Claude Code) | Step 4 started: the four decisions taken as recommended and the notes document written. |
 | 1.8 | 09-15-26 01:34 | Claude (Claude Code) | Step 4's kickoff prompt written, `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). |
 | 1.7 | 09-15-26 00:45 | Claude (Claude Code) | Step 3 done for Linux: the AppImage released as v0.9.0 with the on-disk names migrated; step 4 pointed at the released file. |

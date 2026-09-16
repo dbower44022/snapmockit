@@ -115,7 +115,13 @@ One row per finding, numbered in the order found. The class is one of defect (ag
 
 One entry per sitting: the date, the work done in Doug's words, the files it touched, and the findings by number. A sitting with no finding is recorded too.
 
-*None yet.*
+## 6. Sittings
+
+One entry per sitting: the date, the work done in Doug's words, the files it touched, and the findings by number. A sitting with no finding is recorded too. (The heading of this section was lost to an editing slip on 09-16-26 and restored at the session's close.)
+
+**Sitting 1, 09-15-26 12:30 to 09-16-26 01:51, on the released 0.9.0 AppImage from the menu and then on the local builds under the amended silence 6 (a9261c2, db54948, 59c27f3, 0fe0990, be076ee, 242235c, 2075e0f).** The work, in Doug's words: installing the AppImage so he "can open it from the main menu", then the drawing and moving of rectangles, text, and arrows that the retests asked for; no document of his own was named, so this sitting is the pass's shakedown and does not count as one of decision 1's three pieces of real work. Files touched: none of Doug's; the retest canvases were discarded. Findings 1 to 8: 1 (menu install, follow-up), 2 (README for a downloader, documentation defect, fixed), 3 (erratic dragging under Snap to Grid, defect, fixed, "The drag works very well"), 4 (Shift+Arrow to the grid, departure, built and corrected), 5 (arrows scrolled the canvas, defect, fixed), 6 (double-click on text did not edit, defect, fixed), 7 (Ctrl+Y, departure, built), 8 (repaint cost during a drag, defect from Doug's diagnostic run, fixed). Decision 2.5 (Snap to Grid puts the shape's own line on the grid) taken and corrected on his retest. Seen on the display by 01:27: 3, 4, 5, 6, 7, and 2.5; owed: 8, felt only as headroom.
+
+**Where the next session starts.** Phase 2, sitting 2: Doug's next piece of real work on the build from 2075e0f (or a newer one), described in his words, with every finding recorded here. Phase 1's Wayland check stays owed. The retest page (https://claude.ai/artifact/394jKsqdydbikiQ3QCV8oq) carries every display check made so far; the install steps are its section 1. The drag diagnostic at `build/drag_diag.py` is outside the repository and may be deleted when finding 8 has been felt.
 
 ## 7. The Wayland check (checklist section 7)
 
@@ -125,6 +131,7 @@ Owed. To be run by Doug from the checklist page against the released 0.9.0 file 
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.14 | 09-16-26 09:00 | Claude (Claude Code) | Session close-out of 09-16-26: the phase table brought to the state of the work, sitting 1 written as the shakedown it was, Section 6's lost heading restored, and where the next session starts. |
 | 1.13 | 09-16-26 01:36 | Claude (Claude Code) | Finding 8 fixed: the shadow's cache key and the grid's drawing; Technical Architecture PRD 1.59. |
 | 1.12 | 09-16-26 01:28 | Claude (Claude Code) | Doug's retest of 01:27 closes the corrections and findings 5 to 7 on the display; finding 8 (paint cost during a drag: the shadow's signature and the grid) recorded from his diagnostic run, issue #5. |
 | 1.11 | 09-16-26 00:54 | Claude (Claude Code) | Findings 6 (double-click on text edits again; issue #4) and 7 (Ctrl+Y redoes) recorded, fixed, and built; Text PRD 1.10, General UI PRD 2.45. |
