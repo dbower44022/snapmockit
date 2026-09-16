@@ -236,3 +236,71 @@ def test_ctrl_y_redoes_beside_ctrl_shift_z(main_window: MainWindow) -> None:
         QKeySequence("Ctrl+Y").toString(),
     ]
     window.scene.command_stack.mark_clean()
+
+
+# ---- Shift+wheel scrolls sideways (end-to-end pass finding 9) ----
+
+
+def _wheel(view: object, delta: tuple[int, int], modifiers: Qt.KeyboardModifier) -> None:
+    from PyQt6.QtCore import QPoint
+    from PyQt6.QtGui import QWheelEvent
+    from PyQt6.QtWidgets import QApplication, QGraphicsView
+
+    assert isinstance(view, QGraphicsView)
+    viewport = view.viewport()
+    assert viewport is not None
+    centre = QPointF(viewport.width() / 2, viewport.height() / 2)
+    event = QWheelEvent(
+        centre,
+        QPointF(viewport.mapToGlobal(centre.toPoint())),
+        QPoint(0, 0),
+        QPoint(*delta),
+        Qt.MouseButton.NoButton,
+        modifiers,
+        Qt.ScrollPhase.NoScrollPhase,
+        False,
+    )
+    QApplication.sendEvent(viewport, event)
+
+
+@pytest.mark.parametrize("delta", [(0, -120), (-120, 0)])
+def test_shift_wheel_scrolls_the_canvas_horizontally(
+    window: MainWindow, delta: tuple[int, int]
+) -> None:
+    """Navigation PRD 3.4: Shift + scroll wheel scrolls horizontally. The scroll area read
+    Shift as a page-sized vertical scroll instead (end-to-end pass finding 9). The second
+    case is a platform that already turns Shift+wheel into a horizontal delta."""
+    from PyQt6.QtWidgets import QApplication
+
+    window.resize(1200, 800)
+    window.show()
+    view = window.view
+    view.set_zoom(300)
+    h_bar = view.horizontalScrollBar()
+    v_bar = view.verticalScrollBar()
+    assert h_bar is not None and v_bar is not None
+    h_bar.setValue(200)
+    v_bar.setValue(200)
+    step = QApplication.wheelScrollLines() * h_bar.singleStep()
+    shift = Qt.KeyboardModifier.ShiftModifier
+    _wheel(view, delta, shift)  # one notch down: to the right
+    assert (h_bar.value(), v_bar.value()) == (200 + step, 200)
+    _wheel(view, (-delta[0], -delta[1]), shift)  # one notch up: back to the left
+    assert (h_bar.value(), v_bar.value()) == (200, 200)
+
+
+def test_plain_wheel_still_scrolls_the_canvas_vertically(window: MainWindow) -> None:
+    from PyQt6.QtWidgets import QApplication
+
+    window.resize(1200, 800)
+    window.show()
+    view = window.view
+    view.set_zoom(300)
+    h_bar = view.horizontalScrollBar()
+    v_bar = view.verticalScrollBar()
+    assert h_bar is not None and v_bar is not None
+    h_bar.setValue(200)
+    v_bar.setValue(200)
+    _wheel(view, (0, -120), Qt.KeyboardModifier.NoModifier)
+    step = QApplication.wheelScrollLines() * v_bar.singleStep()
+    assert (h_bar.value(), v_bar.value()) == (200, 200 + step)

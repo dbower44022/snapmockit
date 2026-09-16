@@ -35,7 +35,7 @@ from PyQt6.QtGui import (
     QTransform,
     QWheelEvent,
 )
-from PyQt6.QtWidgets import QGraphicsView, QWidget
+from PyQt6.QtWidgets import QApplication, QGraphicsView, QWidget
 
 from snapmock.config.constants import (
     CANVAS_SHADOW_OFFSET,
@@ -95,6 +95,7 @@ class SnapView(QGraphicsView):
         )
         self._panning: bool = False
         self._pan_start: QPoint = QPoint()
+        self._wheel_remainder: int = 0  # Shift+wheel angle not yet a whole notch
         self._tool_manager: ToolManager | None = None
 
         # Grid / ruler state
@@ -1139,8 +1140,32 @@ class SnapView(QGraphicsView):
             elif delta < 0:
                 self.zoom_out()
             event.accept()
+        elif event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+            self._scroll_horizontally(event)
         else:
             super().wheelEvent(event)
+
+    def _scroll_horizontally(self, event: QWheelEvent) -> None:
+        """Shift+wheel scrolls sideways by the plain wheel's step (Navigation PRD 3.4).
+
+        The scroll area reads Shift as a page-sized scroll, so the wheel is handled here.
+        Some platforms already deliver Shift+wheel as a horizontal delta; either is read.
+        """
+        h_bar = self.horizontalScrollBar()
+        if h_bar is None:
+            return
+        pixels = event.pixelDelta()
+        if not pixels.isNull():
+            h_bar.setValue(h_bar.value() - (pixels.y() or pixels.x()))
+        else:
+            angle = event.angleDelta()
+            self._wheel_remainder += angle.y() or angle.x()
+            step = QApplication.wheelScrollLines() * h_bar.singleStep()
+            notches = int(self._wheel_remainder / 120)
+            if notches:
+                self._wheel_remainder -= notches * 120
+                h_bar.setValue(h_bar.value() - notches * step)
+        event.accept()
 
     # --- mouse event routing ---
 
