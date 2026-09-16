@@ -1,6 +1,6 @@
 # The End-to-End Pass on Real Work, and the 1.0.0 Release — Notes
 
-Last Updated: 09-15-26 23:48 · Revision 1.7
+Last Updated: 09-15-26 23:55 · Revision 1.8
 
 Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`, Section 1): the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, used by Doug for his real screenshot work over several sittings, every finding recorded and classified, every defect fixed with a test, and then the first release the product stands behind, `1.0.0`. The kickoff prompt is `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The record takes the shape of the General UI acceptance pass (`docs/General-UI-Implementation.md`, Section 16) where it fits: one row per finding, Doug's words quoted, the evidence named.
 
@@ -35,7 +35,7 @@ As 0.9.0 did. The release notes name what changed since 0.9.0 in the user's word
 
 ### 2.5 What Snap to Grid snaps: option B, the moved selection lands on the grid
 
-Put to Doug on 09-15-26 after finding 3, and chosen by him at 23:47 ("B."). General UI PRD 3.3's row of 09-08-26 read that the total movement lands on grid multiples, so a selection that started 7 pixels off the grid stayed 7 pixels off after every move. Now the selection frame's top-left corner lands on the grid line nearest where the pointer has carried it, as guides work and as a user positioning a callout expects; the frame is the one the transform handles draw, so what the user sees snap is what snaps. Snap to Guides is applied after it, on the frame so moved. A drag without snapping is unchanged. The cost: a change to the 3.3 row (General UI PRD 2.42) and to two tests that held the old rule. The alternative was to keep the rule as written.
+Put to Doug on 09-15-26 after finding 3, and chosen by him at 23:47 ("B."). General UI PRD 3.3's row of 09-08-26 read that the total movement lands on grid multiples, so a selection that started 7 pixels off the grid stayed 7 pixels off after every move. Now the selection frame's top-left corner lands on the grid line nearest where the pointer has carried it, as guides work and as a user positioning a callout expects; the frame is the one the transform handles draw, so what the user sees snap is what snaps. Snap to Guides is applied after it, on the frame so moved. A drag without snapping is unchanged. The cost: a change to the 3.3 row (General UI PRD 2.42) and to two tests that held the old rule. The alternative was to keep the rule as written. Built in commit 59c27f3; the full suite from a scratch worktree at it: 1676 passed, 14 skipped, 1 deselected, in 5 minutes 40 seconds; ruff and mypy clean. The third local build, from 59c27f3 at 23:49: 128,281,080 bytes, SHA-256 beginning `30277dfc08787d71`; Doug's retest of it (the retest page, section 3) is owed.
 
 ## 3. Silences decided
 
@@ -109,6 +109,7 @@ Owed. To be run by Doug from the checklist page against the released 0.9.0 file 
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.8 | 09-15-26 23:55 | Claude (Claude Code) | Decision 2.5's suite result and the third local build recorded. |
 | 1.7 | 09-15-26 23:48 | Claude (Claude Code) | Finding 3 seen on the display; decision 2.5 (Snap to Grid lands the selection on the grid, option B); finding 4 (arrow keys) recorded and its Ctrl conflict put to Doug. |
 | 1.6 | 09-15-26 22:22 | Claude (Claude Code) | Finding 3's cause found and fixed (commit db54948): the Select tool's grid snapping discarded each move's remainder; the tooltip diagnosis recorded as wrong; General UI PRD 2.41, Technical Architecture PRD 1.57; the second local build. |
 | 1.5 | 09-15-26 22:06 | Claude (Claude Code) | Silence 6 amended by Doug: the sittings run a locally built AppImage from the fixed commit; the first build recorded. |
