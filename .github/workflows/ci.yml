@@ -19,12 +19,21 @@ concurrency:
 
 jobs:
   checks:
-    name: Lint, types, tests
+    # Both interpreters on every push: 3.12 is what the package declares, what the
+    # AppImage bundles, and what development runs on; 3.13 is what the KDE runtime
+    # the Flatpak is built on carries (Flatpak decision 1; Technical Architecture
+    # PRD Section 9), so the Flatpak's interpreter is never untested.
+    name: Lint, types, tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
     env:
       QT_QPA_PLATFORM: offscreen
       PYTHONUNBUFFERED: "1"
+      UV_PYTHON: ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v4
 

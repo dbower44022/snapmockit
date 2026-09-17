@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.60</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.61</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.60</dd>
-    <dt>Last Updated</dt>    <dd>09-17-26 13:25</dd>
+    <dt>Document version</dt><dd>1.61</dd>
+    <dt>Last Updated</dt>    <dd>09-17-26 13:46</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.61</td>
+        <td class="nowrap">09-17-26 13:46</td>
+        <td>Doug Bower</td>
+        <td>Section 9's language row: the application is tested on Python 3.12 and 3.13 on every push, since the KDE runtime the Flatpak of 7.3 is built on carries 3.13 (Flatpak decision 1, docs/Packaging-Flatpak-Implementation.md); the whole suite passed under 3.13 unchanged on 09-17-26, 1707 passed.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.60</td>
         <td class="nowrap">09-17-26 13:25</td>
@@ -2322,7 +2329,7 @@ deferred to a post-1.0 release.</p>
     <tr><th>Component</th><th>Technology</th><th>Version</th><th>Justification</th></tr>
   </thead>
   <tbody>
-    <tr><th>Language</th><td>Python</td><td>3.10+</td><td>Cross-platform, large ecosystem, low barrier to open source contribution.</td></tr>
+    <tr><th>Language</th><td>Python</td><td>3.12+</td><td>Cross-platform, large ecosystem, low barrier to open source contribution. The package requires 3.12; continuous integration runs the whole suite on 3.12, which the AppImage bundles, and on 3.13, which the KDE runtime the Flatpak is built on carries (Flatpak decision 1).</td></tr>
     <tr><th>GUI Framework</th><td>PyQt6</td><td>6.5+</td><td>Mature, cross-platform, native look and feel, powerful QGraphicsScene/QGraphicsView framework.</td></tr>
     <tr><th>Image Processing</th><td>Pillow (PIL)</td><td>10.0+</td><td>Used for raster operations beyond what Qt provides (e.g., advanced filters, format conversion).</td></tr>
     <tr><th>Raster Effects</th><td>NumPy</td><td>1.24+</td><td>High-performance pixel manipulation for blur, pixelate, and other raster effects.</td></tr>

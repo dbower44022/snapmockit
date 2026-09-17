@@ -45,6 +45,14 @@ def test_workflow_has_the_four_jobs_and_their_needs(workflow: dict[str, object])
     assert jobs["release"]["permissions"] == {"contents": "write"}
 
 
+def test_checks_job_runs_on_both_interpreters(workflow: dict[str, object]) -> None:
+    """3.12, the package's own, and 3.13, the KDE runtime's (Flatpak decision 1)."""
+    checks = workflow["jobs"]["checks"]  # type: ignore[index]
+    assert checks["strategy"]["matrix"]["python-version"] == ["3.12", "3.13"]
+    assert checks["strategy"]["fail-fast"] is False
+    assert checks["env"]["UV_PYTHON"] == "${{ matrix.python-version }}"
+
+
 def test_appimage_job_builds_with_the_recipe_smokes_and_keeps_the_file(
     workflow: dict[str, object],
 ) -> None:

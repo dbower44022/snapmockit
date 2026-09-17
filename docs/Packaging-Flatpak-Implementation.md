@@ -1,6 +1,6 @@
 # Packaging: the Linux Flatpak — Implementation Notes
 
-Last Updated: 09-17-26 13:38 · Revision 1.0
+Last Updated: 09-17-26 13:47 · Revision 1.1
 
 Implements the Flatpak that Technical Architecture PRD 7.3 names as the secondary Linux form, the next part of step 3 of the release-engineering list (`docs/Release-Engineering.md`, Sections 1 and 4), which Doug put ahead of the Python Package Index on 09-17-26. The kickoff prompt is `docs/Packaging-Flatpak-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The AppImage's notes, `docs/Packaging-AppImage-Implementation.md`, hold the recipe and the release job this work builds beside.
 
@@ -8,7 +8,7 @@ Implements the Flatpak that Technical Architecture PRD 7.3 names as the secondar
 
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
-| 1 | The five decisions, this document, the builder and runtimes installed, the suite under Python 3.13, and the manifest under `packaging/flatpak/` with its tests | In progress 09-17-26 | this commit |
+| 1 | The five decisions, this document, the builder and runtimes installed, the suite under Python 3.13, and the manifest under `packaging/flatpak/` with its tests | In progress 09-17-26: steps 1 and 3 done (Sections 2 and 6); step 2 with Doug; step 4 to come | 4d6e2ea, this commit |
 | 2 | The code the sandbox needs (decisions 4 and 5, and the three corrections of Section 5), and the Flatpak proven on this machine through a checklist page | Not started | |
 | 3 | The build in continuous integration: the Flatpak on every push as an artifact, and the release job attaching the bundle beside the AppImage | Not started | |
 | 4 | The release that first carries both files, `1.1.0` | Not started | |
@@ -93,8 +93,15 @@ Inferred from how send2trash works, **not yet proven**: it writes to the trash d
 
 `snapmock/capture/onboarding.py` (lines 35 to 37) and `snapmock/ui/preferences_dialog.py` (lines 68 to 70) show `snapmock --capture region` and its two siblings for the user to bind to a key. No installed form provides a `snapmock` command: the AppImage's is `snapmockit` and only when it is on the path, and the Flatpak's is `flatpak run io.github.dbower44022.snapmockit --capture region`. Screen Capture PRD 3.5 and 9.2 make this command the Wayland user's only route to a hotkey, so a wrong command is a defect for both forms. Fixed in Phase 2 step 1 with a test: the command shown is the one that starts the running form.
 
+## 6. Python 3.13 (Phase 1 step 3)
+
+**The suite passes under Python 3.13 unchanged: 1707 passed, 14 skipped, 1 deselected, in 5 minutes 48 seconds**, run on 09-17-26 at 13:39 from a scratch `git worktree` at 4d6e2ea with `uv sync --locked --python 3.13` and `QT_QPA_PLATFORM=offscreen uv run --python 3.13 pytest -q`, the one environmental deselection as always. The interpreter was uv's `cpython-3.13.12`; the KDE runtime carries 3.13.15, a patch release ahead. No defect was found, so no fix and no new test belong to this step. The lock file already resolves under 3.13, since `requires-python` is `>=3.12`, and nothing in it was changed.
+
+**Continuous integration now runs both interpreters.** `.github/workflows/ci.yml`'s checks job gains a matrix of `3.12` and `3.13` with `fail-fast: false`, and sets `UV_PYTHON` to the matrix value, so `uv python install`, `uv sync --locked`, and every `uv run` in the job use it. The other three jobs are unchanged and stay on 3.12: the AppImage bundles 3.12 and the wheel is version-independent. `tests/test_ci_workflow.py` gains `test_checks_job_runs_on_both_interpreters`, which holds the two versions, the fail-fast setting, and the environment variable. Technical Architecture PRD 1.61 records the change and Section 9's language row now reads 3.12+ with both tested versions named.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.1 | 09-17-26 13:47 | Claude (Claude Code) | Section 6: Phase 1 step 3 done. The whole suite passes under Python 3.13 unchanged (1707 passed, 5 minutes 48 seconds), so no defect was found; the continuous-integration checks job now runs 3.12 and 3.13 on every push, held by a test. Technical Architecture PRD 1.61. |
 | 1.0 | 09-17-26 13:38 | Claude (Claude Code) | Initial notes: the phase table; the five decisions as approved on 09-17-26 at 13:34, decision 1 on the 6.11 runtime branch; the six silences with silence 4 corrected (send2trash is used); the starting state re-verified, adding the 6.11 runtime and base application the kickoff does not name; and three corrections to the kickoff prompt, two of them defects for Phase 2. |
