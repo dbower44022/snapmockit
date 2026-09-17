@@ -1,6 +1,6 @@
 # The End-to-End Pass on Real Work, and the 1.0.0 Release — Notes
 
-Last Updated: 09-17-26 11:14 · Revision 1.34
+Last Updated: 09-17-26 11:24 · Revision 1.35
 
 Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`, Section 1): the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, used by Doug for his real screenshot work over several sittings, every finding recorded and classified, every defect fixed with a test, and then the first release the product stands behind, `1.0.0`. The kickoff prompt is `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The record takes the shape of the General UI acceptance pass (`docs/General-UI-Implementation.md`, Section 16) where it fits: one row per finding, Doug's words quoted, the evidence named.
 
@@ -9,8 +9,8 @@ Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
 | 1 | The four decisions, this document, and the Wayland check (checklist section 7) | Steps 1 and 3 done 09-15-26 (def7507); step 2, the Wayland check, owed to Doug's next log-out and carried, as the kickoff allows; it blocks Phase 3 under decision 3 | def7507 |
-| 2 | The sittings: Doug's real work, each finding recorded, triaged, and fixed | In progress: sitting 1 of 09-15-26 to 09-16-26 done (Section 6), findings 1 to 8 all classified, every defect fixed and seen on the display but finding 8's, felt in the next sitting; two more sittings on distinct work are the minimum under decision 1 | 2e43326 to 2470d86 |
-| 3 | The release: version 1.0.0, the tag, the release job, the smoke test, Check for Updates from 0.9.0, the README | Not started; blocked on decision 1's exit criterion and, under decision 3, on the Wayland check | |
+| 2 | The sittings: Doug's real work, each finding recorded, triaged, and fixed | Done 09-17-26, ended by Doug's call (decision 2.1, option C): two sittings, one on real work; sixteen findings, ten defects fixed, five departures built, one follow-up deferred; every one seen on the display and closed but the follow-up | 2e43326 to this commit |
+| 3 | The release: version 1.0.0, the tag, the release job, the smoke test, Check for Updates from 0.9.0, the README | Not started; decision 1's exit met by Doug's call; still blocked, under decision 3, on the Wayland check, which is put to Doug | |
 | Close-out | The PRD rows, the release-engineering notes, what remains of packaging and the platform backends, the next required step | Not started | |
 
 ## 2. Decisions
@@ -167,9 +167,9 @@ One entry per sitting: the date, the work done in Doug's words, the files it tou
 
 **Sitting 1, 09-15-26 12:30 to 09-16-26 01:51, on the released 0.9.0 AppImage from the menu and then on the local builds under the amended silence 6 (a9261c2, db54948, 59c27f3, 0fe0990, be076ee, 242235c, 2075e0f).** The work, in Doug's words: installing the AppImage so he "can open it from the main menu", then the drawing and moving of rectangles, text, and arrows that the retests asked for; no document of his own was named, so this sitting is the pass's shakedown and does not count as one of decision 1's three pieces of real work. Files touched: none of Doug's; the retest canvases were discarded. Findings 1 to 8: 1 (menu install, follow-up), 2 (README for a downloader, documentation defect, fixed), 3 (erratic dragging under Snap to Grid, defect, fixed, "The drag works very well"), 4 (Shift+Arrow to the grid, departure, built and corrected), 5 (arrows scrolled the canvas, defect, fixed), 6 (double-click on text did not edit, defect, fixed), 7 (Ctrl+Y, departure, built), 8 (repaint cost during a drag, defect from Doug's diagnostic run, fixed). Decision 2.5 (Snap to Grid puts the shape's own line on the grid) taken and corrected on his retest. Seen on the display by 01:27: 3, 4, 5, 6, 7, and 2.5; owed: 8, felt only as headroom.
 
-**Sitting 2, 09-16-26 09:02 to 09-17-26, on the local builds from 8bab3bf, 9d11144, and b0c0bbe (the tenth build, `691077382769b935`, from 00:02 on 09-17-26).** Until 00:30 on 09-17-26 the sitting was fixes and retests with no document of Doug's: findings 9 (Shift+wheel, defect, fixed), 10 (Cut on a locked layer, defect, fixed; the cursor did not recur), 11 (the Background image fixed in place, departure, built), and 12 (Flatten All asks, departure, built), all seen on the display 09-17-26 00:17; finding 8 measured and closed at 00:27. From 00:30 the real work, in Doug's words: "Take a screenshot of new CBM Event screen and hightlight new features". Files touched and findings from that work: recorded as they come.
+**Sitting 2, 09-16-26 09:02 to 09-17-26, on the local builds from 8bab3bf, 9d11144, and b0c0bbe (the tenth build, `691077382769b935`, from 00:02 on 09-17-26).** Until 00:30 on 09-17-26 the sitting was fixes and retests with no document of Doug's: findings 9 (Shift+wheel, defect, fixed), 10 (Cut on a locked layer, defect, fixed; the cursor did not recur), 11 (the Background image fixed in place, departure, built), and 12 (Flatten All asks, departure, built), all seen on the display 09-17-26 00:17; finding 8 measured and closed at 00:27. From 00:30 the real work, in Doug's words: "Take a screenshot of new CBM Event screen and hightlight new features". Findings from that work: 13 (the canvas's own handles, departure, built), 14 (a crop left the image over the pasteboard, defect, fixed), 15 (Escape did not end text editing, defect, fixed), and 16 (Cut on a capture did nothing, defect, fixed), all seen on the display by 09-17-26 11:10. The file Doug saved: `/home/doug/Pictures/SnapMockit Test Files/Sitting 2 Test.smk` (402,523 bytes, 09-17-26 11:23). This sitting is the first of decision 1's pieces of real work. **Ended by Doug, 11:24:** "Sitting 2 is done, lets move on to deployment", read as his call under decision 2.1 (option C) that the pass ends here, with one sitting on real work where the criterion asked for three; the close-out records it as his call.
 
-**Where the next session starts.** Phase 2, sitting 2: Doug's next piece of real work on the build from 2075e0f (or a newer one), described in his words, with every finding recorded here. Phase 1's Wayland check stays owed. The retest page (https://claude.ai/artifact/394jKsqdydbikiQ3QCV8oq) carries every display check made so far; the install steps are its section 1. The drag diagnostic at `build/drag_diag.py` is outside the repository and may be deleted when finding 8 has been felt.
+**Where the next session starts.** Phase 3, the release, once the Wayland check of decision 3 is settled (Section 7).
 
 ## 7. The Wayland check (checklist section 7)
 
@@ -179,6 +179,7 @@ Owed. To be run by Doug from the checklist page against the released 0.9.0 file 
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.35 | 09-17-26 11:24 | Claude (Claude Code) | Sitting 2 closed with its file named; Phase 2 closed by Doug's call (option C): the counts stated; Phase 3 waits on the Wayland check. |
 | 1.34 | 09-17-26 11:14 | Claude (Claude Code) | Finding 16 closed on Doug's word. |
 | 1.33 | 09-17-26 11:12 | Claude (Claude Code) | Doug's retest of 11:10: findings 13, 15, and 16 seen; one question on 9.3's first attempt. |
 | 1.32 | 09-17-26 01:58 | Claude (Claude Code) | Findings 15 and 16: the suite green at 179b144 and the twelfth local build; the 1.31 row's time corrected to 01:52. |
