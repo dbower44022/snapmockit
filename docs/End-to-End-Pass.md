@@ -1,6 +1,6 @@
 # The End-to-End Pass on Real Work, and the 1.0.0 Release — Notes
 
-Last Updated: 09-17-26 00:28 · Revision 1.24
+Last Updated: 09-17-26 00:31 · Revision 1.25
 
 Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`, Section 1): the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, used by Doug for his real screenshot work over several sittings, every finding recorded and classified, every defect fixed with a test, and then the first release the product stands behind, `1.0.0`. The kickoff prompt is `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The record takes the shape of the General UI acceptance pass (`docs/General-UI-Implementation.md`, Section 16) where it fits: one row per finding, Doug's words quoted, the evidence named.
 
@@ -141,6 +141,8 @@ One entry per sitting: the date, the work done in Doug's words, the files it tou
 
 **Sitting 1, 09-15-26 12:30 to 09-16-26 01:51, on the released 0.9.0 AppImage from the menu and then on the local builds under the amended silence 6 (a9261c2, db54948, 59c27f3, 0fe0990, be076ee, 242235c, 2075e0f).** The work, in Doug's words: installing the AppImage so he "can open it from the main menu", then the drawing and moving of rectangles, text, and arrows that the retests asked for; no document of his own was named, so this sitting is the pass's shakedown and does not count as one of decision 1's three pieces of real work. Files touched: none of Doug's; the retest canvases were discarded. Findings 1 to 8: 1 (menu install, follow-up), 2 (README for a downloader, documentation defect, fixed), 3 (erratic dragging under Snap to Grid, defect, fixed, "The drag works very well"), 4 (Shift+Arrow to the grid, departure, built and corrected), 5 (arrows scrolled the canvas, defect, fixed), 6 (double-click on text did not edit, defect, fixed), 7 (Ctrl+Y, departure, built), 8 (repaint cost during a drag, defect from Doug's diagnostic run, fixed). Decision 2.5 (Snap to Grid puts the shape's own line on the grid) taken and corrected on his retest. Seen on the display by 01:27: 3, 4, 5, 6, 7, and 2.5; owed: 8, felt only as headroom.
 
+**Sitting 2, 09-16-26 09:02 to 09-17-26, on the local builds from 8bab3bf, 9d11144, and b0c0bbe (the tenth build, `691077382769b935`, from 00:02 on 09-17-26).** Until 00:30 on 09-17-26 the sitting was fixes and retests with no document of Doug's: findings 9 (Shift+wheel, defect, fixed), 10 (Cut on a locked layer, defect, fixed; the cursor did not recur), 11 (the Background image fixed in place, departure, built), and 12 (Flatten All asks, departure, built), all seen on the display 09-17-26 00:17; finding 8 measured and closed at 00:27. From 00:30 the real work, in Doug's words: "Take a screenshot of new CBM Event screen and hightlight new features". Files touched and findings from that work: recorded as they come.
+
 **Where the next session starts.** Phase 2, sitting 2: Doug's next piece of real work on the build from 2075e0f (or a newer one), described in his words, with every finding recorded here. Phase 1's Wayland check stays owed. The retest page (https://claude.ai/artifact/394jKsqdydbikiQ3QCV8oq) carries every display check made so far; the install steps are its section 1. The drag diagnostic at `build/drag_diag.py` is outside the repository and may be deleted when finding 8 has been felt.
 
 ## 7. The Wayland check (checklist section 7)
@@ -151,6 +153,7 @@ Owed. To be run by Doug from the checklist page against the released 0.9.0 file 
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.25 | 09-17-26 00:31 | Claude (Claude Code) | Sitting 2's entry opened in Section 6, with its real work named in Doug's words. |
 | 1.24 | 09-17-26 00:28 | Claude (Claude Code) | Finding 8 measured on the display from Doug's two drag reports (repaint medians 0.6 and 1.2 ms) and closed. |
 | 1.23 | 09-17-26 00:24 | Claude (Claude Code) | The retest page's drag steps over a screenshot rewritten for finding 11 (Doug met the forbidden cursor on a capture); no finding. |
 | 1.22 | 09-17-26 00:17 | Claude (Claude Code) | Doug's retest of 00:18: findings 9 to 12 seen on the display and closed; issue #7 closed. |
