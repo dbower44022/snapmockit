@@ -1,6 +1,6 @@
 # Release Engineering Notes
 
-Last Updated: 09-17-26 13:34 · Revision 1.11
+Last Updated: 09-17-26 13:25 · Revision 1.11
 
 The work that turns the finished application into a product: its identity, continuous integration, packaging, and the first release. Every feature row of the nine product requirements documents was built or recorded as a departure by 09-14-26 (`docs/Freehand-Remainder-Implementation.md`, Section 8.1, names the last of them); this document holds what follows, in the order Doug set on 09-14-26: the identity, then continuous integration, then packaging, then an end-to-end pass on real work, then the two platform backends when their machines exist.
 
@@ -37,7 +37,7 @@ What is left of this list, in order:
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
-| 1.11 | 09-17-26 13:34 | Claude (Claude Code) | Step 4 done: v1.0.0 released and started from the menu; step 5 stated as it stands; Section 4 names what is left, PyPI next. |
+| 1.11 | 09-17-26 13:25 | Claude (Claude Code) | Step 4 done: v1.0.0 released and started from the menu; step 5 stated as it stands; Section 4 names what is left, PyPI next. |
 | 1.10 | 09-16-26 09:00 | Claude (Claude Code) | Step 4's first sitting recorded: eight findings, the Wayland check owed, two sittings to go at least. |
 | 1.9 | 09-15-26 09:48 | Claude (Claude Code) | Step 4 started: the four decisions taken as recommended and the notes document written. |
 | 1.8 | 09-15-26 01:34 | Claude (Claude Code) | Step 4's kickoff prompt written, `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). |

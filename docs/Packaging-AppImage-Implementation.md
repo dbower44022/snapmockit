@@ -1,6 +1,6 @@
 # Packaging: the Linux AppImage — Implementation Notes
 
-Last Updated: 09-17-26 13:34 · Revision 2.4
+Last Updated: 09-17-26 13:25 · Revision 2.4
 
 Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`, Section 1) for Linux: the AppImage that Technical Architecture PRD 7.3 names as the primary Linux distribution, built by a recipe in the repository, proven on this machine, built in continuous integration on every push, and published as a GitHub release on a tag, together with the migration of the two on-disk names the rename of 09-14-26 left as they were. The kickoff prompt is `docs/Packaging-AppImage-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -179,7 +179,7 @@ Version `0.9.0` and build date `2026-09-15` in commit 080e2f3, its suite green f
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
-| 2.4 | 09-17-26 13:34 | Claude (Claude Code) | Section 11: the next step it named, the end-to-end pass and 1.0.0, marked done. |
+| 2.4 | 09-17-26 13:25 | Claude (Claude Code) | Section 11: the next step it named, the end-to-end pass and 1.0.0, marked done. |
 | 2.3 | 09-17-26 11:56 | Claude (Claude Code) | Section 8.4: Capture Region confirmed by Doug; the Wayland capture passed and no display check is owed; Phase 2's row and Section 11 say so; the 2.2 row's time corrected to 11:54. |
 | 2.2 | 09-17-26 11:54 | Claude (Claude Code) | Section 8.4: the Wayland portal capture run by Doug, recorded from the files it left; Capture Region's evidence put to Doug. |
 | 2.1 | 09-15-26 09:50 | Claude (Claude Code) | Change log back-filled: the rows for revisions 1.3 to 2.0 were never written when those revisions were made (found at the start of the end-to-end pass, `docs/End-to-End-Pass.md`); each row below is taken from the commit that made the revision. No other content changed. |
