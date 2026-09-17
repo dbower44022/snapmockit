@@ -515,6 +515,14 @@ class TextTool(BaseTool):
         self._is_dragging = False
         return True
 
+    def handle_escape(self) -> bool:
+        """Escape reaches the window as Edit > Deselect's shortcut before the editor sees
+        it, so editing ends here (Text PRD 2.4; end-to-end pass finding 15)."""
+        if self._editor is None:
+            return super().handle_escape()
+        self._finish_editing()
+        return True
+
     def key_press(self, event: QKeyEvent) -> bool:
         if self._editor is not None:
             if event.key() == Qt.Key.Key_Escape:

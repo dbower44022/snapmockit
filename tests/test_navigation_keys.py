@@ -304,3 +304,39 @@ def test_plain_wheel_still_scrolls_the_canvas_vertically(window: MainWindow) -> 
     _wheel(view, (0, -120), Qt.KeyboardModifier.NoModifier)
     step = QApplication.wheelScrollLines() * v_bar.singleStep()
     assert (h_bar.value(), v_bar.value()) == (200, 200 + step)
+
+
+def test_escape_ends_text_editing_so_v_switches_tools(main_window: MainWindow) -> None:
+    """Text PRD 2.4: Escape finishes editing. Escape is also Edit > Deselect's shortcut,
+    which took the key before the editor, so editing went on and a following V was typed
+    into the box (end-to-end pass finding 15)."""
+    from PyQt6.QtTest import QTest
+    from PyQt6.QtWidgets import QApplication
+
+    from snapmock.items.text_item import TextItem
+
+    window = main_window
+    window.resize(1200, 800)
+    window.show()
+    window.tool_manager.activate("text")
+    view = window.view
+    viewport = view.viewport()
+    assert viewport is not None
+    view.setFocus()
+    window.activateWindow()
+    QTest.qWaitForWindowActive(window)
+    QTest.mouseClick(viewport, Qt.MouseButton.LeftButton, pos=view.mapFromScene(300, 300))
+    editor = QApplication.focusWidget()
+    assert editor is not None and editor is not view  # the in-place editor has the keys
+    QTest.keyClicks(editor, "Hello")
+    QTest.keyClick(editor, Qt.Key.Key_Escape)
+    QTest.keyClick(QApplication.focusWidget() or view, Qt.Key.Key_V)
+    texts = [
+        i.text_document.toPlainText()
+        for i in window.scene.annotation_items()
+        if isinstance(i, TextItem)
+    ]
+    assert texts == ["Hello"]
+    assert window.tool_manager.active_tool is not None
+    assert window.tool_manager.active_tool.tool_id == "select"
+    window.scene.command_stack.mark_clean()
