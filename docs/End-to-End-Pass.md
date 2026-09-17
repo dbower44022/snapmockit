@@ -1,6 +1,6 @@
 # The End-to-End Pass on Real Work, and the 1.0.0 Release — Notes
 
-Last Updated: 09-17-26 11:24 · Revision 1.35
+Last Updated: 09-17-26 11:40 · Revision 1.36
 
 Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`, Section 1): the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, used by Doug for his real screenshot work over several sittings, every finding recorded and classified, every defect fixed with a test, and then the first release the product stands behind, `1.0.0`. The kickoff prompt is `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The record takes the shape of the General UI acceptance pass (`docs/General-UI-Implementation.md`, Section 16) where it fits: one row per finding, Doug's words quoted, the evidence named.
 
@@ -175,10 +175,13 @@ One entry per sitting: the date, the work done in Doug's words, the files it tou
 
 Owed. To be run by Doug from the checklist page against the released 0.9.0 file when he can log out of the X11 session into Cinnamon on Wayland; its five marks are recorded here and in `docs/Packaging-AppImage-Implementation.md`, Section 8.4.
 
+**09-17-26 11:40.** Put to Doug with the release (keep decision 3 and run the check first, or release on the X11 evidence); he asked for the Wayland instructions, read as keeping decision 3. The checklist page's section 7 (https://claude.ai/artifact/HHCf3xs7L32kcHrtEnBpe2) is rewritten to one action per step, 21 steps from the released file's fingerprint (`ebe7c8e0f0b7427c`) through the Wayland session (`Cinnamon on Wayland (Experimental)`, with the xapp portal's Screenshot interface installed) to Capture Full Screen, Capture Region, Capture Active Window's region fallback, a saved project, and the return to X11; the new steps carry their own ids (w01 to w21) so that section 8's stored marks (r27 to r32) stay attached. Its marks are read back when Doug says the run is done.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.36 | 09-17-26 11:40 | Claude (Claude Code) | The Wayland check's instructions rewritten on the checklist page; decision 3 kept on Doug's request for them. |
 | 1.35 | 09-17-26 11:24 | Claude (Claude Code) | Sitting 2 closed with its file named; Phase 2 closed by Doug's call (option C): the counts stated; Phase 3 waits on the Wayland check. |
 | 1.34 | 09-17-26 11:14 | Claude (Claude Code) | Finding 16 closed on Doug's word. |
 | 1.33 | 09-17-26 11:12 | Claude (Claude Code) | Doug's retest of 11:10: findings 13, 15, and 16 seen; one question on 9.3's first attempt. |
