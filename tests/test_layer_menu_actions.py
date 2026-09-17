@@ -267,13 +267,25 @@ def test_merge_visible_and_flatten_rows_through_the_window(
     assert asked == ['Merge the 2 visible layers into "Layer 1"?']
     assert [layer.name for layer in lm.layers] == ["Layer 1", "Hidden"]
     assert lm.active_layer is lm.layers[0]
-    # Flatten All does not ask: its name says what it does
+    # Flatten All asks too, and names the hidden content it discards (pass finding 12)
+    no = _answer_merge(monkeypatch, False)
     window._layer_flatten()  # noqa: SLF001
-    assert asked == ['Merge the 2 visible layers into "Layer 1"?']
+    assert no == [
+        "Flatten all 2 layers into one image? 1 hidden layer's content will be discarded."
+    ]
+    assert lm.count == 2
+    asked = _answer_merge(monkeypatch, True)
+    window._layer_flatten()  # noqa: SLF001
+    assert len(asked) == 1
     assert lm.count == 1 and lm.layers[0].is_background and lm.layers[0].name == "Background"
     assert window.scene.command_stack.undo_text == "Flatten All"
     window.scene.command_stack.undo()
     assert [layer.name for layer in lm.layers] == ["Layer 1", "Hidden"]
+    # With nothing hidden the question names no loss
+    lm.set_visibility(lm.layers[1].layer_id, True)
+    asked = _answer_merge(monkeypatch, False)
+    window._layer_flatten()  # noqa: SLF001
+    assert asked == ["Flatten all 2 layers into one image?"]
     window.scene.command_stack.mark_clean()
 
 

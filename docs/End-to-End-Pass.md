@@ -1,6 +1,6 @@
 # The End-to-End Pass on Real Work, and the 1.0.0 Release — Notes
 
-Last Updated: 09-16-26 16:45 · Revision 1.19
+Last Updated: 09-16-26 23:58 · Revision 1.20
 
 Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`, Section 1): the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, used by Doug for his real screenshot work over several sittings, every finding recorded and classified, every defect fixed with a test, and then the first release the product stands behind, `1.0.0`. The kickoff prompt is `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The record takes the shape of the General UI acceptance pass (`docs/General-UI-Implementation.md`, Section 16) where it fits: one row per finding, Doug's words quoted, the evidence named.
 
@@ -85,7 +85,7 @@ One row per finding, numbered in the order found. The class is one of defect (ag
 | 9 | 2 (09-16-26 09:02) | "Shen the user presses the shft key and scrolls the wheel, the UI accelerates the canvas vertical pan to be faster.  Instead, I would like it to horizontally pan the canvas." | The canvas view's wheel handling with Shift held (`core/view.py`) | Navigation and Raster Operations PRD 3.4 (Shift + scroll wheel scrolls horizontally) | Defect | [#6](https://github.com/dbower44022/snapmockit/issues/6), fixed in 8bab3bf | Fixed; to be seen on the display |
 | 10 | 2 (09-16-26 09:10) | "The edit-cut with a single locked layer allowed the cut, but then the cursor was invisible." | Edit > Cut with a raster selection (`main_window._cut_raster_selection`); the cursor afterwards | Navigation and Raster Operations PRD 5.5.2 and 7 (a lock prevents interactive editing); General UI PRD 1.3 | Defect | [#7](https://github.com/dbower44022/snapmockit/issues/7): the cut refused in 9d11144; the cursor open | Cut: fixed, to be seen on the display; cursor: open, not reproduced |
 | 11 | 2 (09-16-26), found in another session of this sitting and relayed | After Flatten All the flattened image can be dragged around the canvas; Doug expects that image to be the canvas. The same holds for every Background layer's image. | The Select tool on a Background layer's image | General UI PRD 6.2 (the image fills the canvas); no row fixed it in place | Departure (Doug's decision A, 09-16-26): the image on any Background layer is fixed in place | [#8](https://github.com/dbower44022/snapmockit/issues/8), built in 9d11144 (General UI PRD 2.46) | Built; to be seen on the display |
-| 12 | 2 (09-16-26), raised in another session of this sitting; recorded on Doug's word at 16:42 ("Record it as finding 12") | Flatten All asks no question before it runs, while Merge Down and Merge Visible do; it discards the hidden layers' content and turns every annotation into pixels (Undo restores both) | Layer > Flatten All (`main_window._layer_flatten`) | General UI PRD 3.4 and its 09-10-26 row (follow-up decision 1): "Flatten All's name says what it does and does not ask" | Departure (the requirement as written is built; Doug wants it changed); the form put to Doug | none (a departure has no issue) | Open: decision owed |
+| 12 | 2 (09-16-26), raised in another session of this sitting; recorded on Doug's word at 16:42 ("Record it as finding 12") | Flatten All asks no question before it runs, while Merge Down and Merge Visible do; it discards the hidden layers' content and turns every annotation into pixels (Undo restores both) | Layer > Flatten All (`main_window._layer_flatten`) | General UI PRD 3.4 and its 09-10-26 row (follow-up decision 1): "Flatten All's name says what it does and does not ask" | Departure (the requirement as written is built; Doug wants it changed); option A chosen 09-16-26 23:55: the merges' question | built in the commit after 48ac64b (General UI PRD 2.47) | Built; to be seen on the display |
 
 ### 5.1 Notes on the findings
 
@@ -127,6 +127,8 @@ One row per finding, numbered in the order found. The class is one of defect (ag
 
 **Finding 12, 09-16-26 16:45, triage.** Built as the PRD says: `_layer_flatten` pushes the merge with no question, by the 09-10-26 decision that its name says what it does. What it costs a user who presses Ctrl+Shift+F by mistake: every layer becomes one Background image, a hidden layer's content is gone (hidden layers render to nothing), and no annotation stays editable; Undo is the only way back, and the Background image is now fixed in place (finding 11). Merge Down and Merge Visible ask once per session through `_ask_merge` (Yes / No, No the default, "Don't ask again this session", skipped when Preferences "Confirm before deleting layers" is off). The question of form is put to Doug.
 
+**Finding 12, decided and built, 09-16-26 23:55 to 23:58.** Doug: "a". Flatten All now asks through `_ask_merge`, the Merge Down and Merge Visible question with its once-per-session tick and the Preferences switch: "Flatten all N layers into one image?", with "M hidden layer's content will be discarded." added when a layer is hidden. The flatten test of `tests/test_layer_menu_actions.py` now holds a No that leaves both layers, a Yes that flattens, and the wording with and without a hidden layer; it failed before the change (no question was asked). The cost Doug accepted: a click per session, and one tick silences all three commands. General UI PRD 2.47.
+
 ## 6. Sittings
 
 One entry per sitting: the date, the work done in Doug's words, the files it touched, and the findings by number. A sitting with no finding is recorded too. (The heading of this section was lost to an editing slip on 09-16-26 and restored at the session's close.)
@@ -143,7 +145,8 @@ Owed. To be run by Doug from the checklist page against the released 0.9.0 file 
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
-| 1.19 | 09-16-26 16:45 | Claude (Claude Code) | Finding 12 (Flatten All asks nothing) recorded as a departure on Doug's word; its form put to him. |
+| 1.20 | 09-16-26 23:58 | Claude (Claude Code) | Finding 12 decided (option A) and built; General UI PRD 2.47; the 1.19 row's time corrected to 16:43. |
+| 1.19 | 09-16-26 16:43 | Claude (Claude Code) | Finding 12 (Flatten All asks nothing) recorded as a departure on Doug's word; its form put to him. |
 | 1.18 | 09-16-26 09:43 | Claude (Claude Code) | Findings 10 and 11: the suite green at 9d11144 and the ninth local build; the 1.17 row's time corrected to 09:37. |
 | 1.17 | 09-16-26 09:37 | Claude (Claude Code) | Finding 10's cut refused on a locked layer (the cursor not reproduced in a nested X server); finding 11 (the Background image fixed in place, Doug's decision A; issue #8) recorded and built; General UI PRD 2.46. |
 | 1.16 | 09-16-26 09:12 | Claude (Claude Code) | Finding 10 (Cut on a locked layer, then an invisible cursor; issue #7) recorded and triaged. |

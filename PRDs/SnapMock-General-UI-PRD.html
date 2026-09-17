@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.46</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.47</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.46</dd>
-    <dt>Last Updated</dt>    <dd>09-16-26 09:37</dd>
+    <dt>Document version</dt><dd>2.47</dd>
+    <dt>Last Updated</dt>    <dd>09-16-26 23:58</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.47</td>
+        <td class="nowrap">09-16-26 23:58</td>
+        <td>Doug Bower</td>
+        <td>End-to-end pass finding 12 (Doug's decision A of 09-16-26, a departure from the 09-10-26 row of follow-up decision 1, whose "Flatten All's name says what it does and does not ask" is withdrawn): Flatten All (3.4) asks before it runs with the question Merge Down and Merge Visible ask: Yes and No, No the default, the informative line that the items stop being editable, and "Don't ask again this session"; it is not asked while Preferences "Confirm before deleting layers" is off. The question reads "Flatten all N layers into one image?" and, when any layer is hidden, adds "M hidden layer's content will be discarded." (layers' for more than one). The cost Doug accepted: one click per session, and the one "Don't ask again" tick silences all three commands for the session.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.46</td>
         <td class="nowrap">09-16-26 09:37</td>

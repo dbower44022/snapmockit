@@ -3301,9 +3301,20 @@ class MainWindow(QMainWindow):
         self._merge([layer.layer_id for layer in visible], target.layer_id, "Merge Visible")
 
     def _layer_flatten(self) -> None:
-        """Every layer into one Background layer holding one raster region (silence 2)."""
-        count = self._scene.layer_manager.count
+        """Every layer into one Background layer holding one raster region (silence 2).
+
+        Asks first, as the merges do, and names the hidden content it discards
+        (end-to-end pass finding 12, General UI PRD 2.47)."""
+        lm = self._scene.layer_manager
+        count = lm.count
         if not self._require("Flatten All", (count >= 2, "at least two layers")):
+            return
+        text = f"Flatten all {count} layers into one image?"
+        hidden = sum(1 for layer in lm.layers if not layer.visible)
+        if hidden:
+            noun = "layer's" if hidden == 1 else "layers'"
+            text += f" {hidden} hidden {noun} content will be discarded."
+        if not self._ask_merge("Flatten All", text):
             return
         self._merge(
             [layer.layer_id for layer in self._scene.layer_manager.layers], None, "Flatten All"
