@@ -1,6 +1,6 @@
 # The End-to-End Pass on Real Work, and the 1.0.0 Release — Notes
 
-Last Updated: 09-17-26 00:17 · Revision 1.22
+Last Updated: 09-17-26 00:25 · Revision 1.23
 
 Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`, Section 1): the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, used by Doug for his real screenshot work over several sittings, every finding recorded and classified, every defect fixed with a test, and then the first release the product stands behind, `1.0.0`. The kickoff prompt is `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The record takes the shape of the General UI acceptance pass (`docs/General-UI-Implementation.md`, Section 16) where it fits: one row per finding, Doug's words quoted, the evidence named.
 
@@ -131,6 +131,8 @@ One row per finding, numbered in the order found. The class is one of defect (ag
 
 **Retest of 09-17-26 00:17 (the build from b0c0bbe, fingerprint confirmed `691077382769b935`; retest page section 7).** Doug: "step 1-6 does not display a label showing W: H: while dragging. All other worked perfectly." Section 1 step 6 (the raster selection's W / H label, finding 3) was then checked in the nested X server, where the label shows for both the Rectangle and the Raster Selection tools; Doug, before the result was reported: "It worked after I did a refresh to get current code." Read as: the page he had open was an older copy. Findings 9, 10, 11, and 12 are closed on the display, finding 10's cursor included (section 7 step 4: the pointer stayed visible after a cut on an unlocked layer), so issue #7 is closed with a comment; the invisible cursor of 09-16-26 did not recur and is not pursued unless it returns.
 
+**Section 2 step 4 of the retest page, 09-17-26 00:24.** Doug: "When I take a screenshot with the capture button and then press v, it shows a red circle next to the pointer and will not select anything on the image." That is finding 11 working as decided: a capture's image sits on a Background layer, so the Select tool shows the forbidden cursor over it and selects nothing. The step was written before finding 11 and asked for "something on it" to be dragged; it and section 6 step 2 now ask for a rectangle drawn over the screenshot and that rectangle dragged. No finding.
+
 ## 6. Sittings
 
 One entry per sitting: the date, the work done in Doug's words, the files it touched, and the findings by number. A sitting with no finding is recorded too. (The heading of this section was lost to an editing slip on 09-16-26 and restored at the session's close.)
@@ -147,6 +149,7 @@ Owed. To be run by Doug from the checklist page against the released 0.9.0 file 
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.23 | 09-17-26 00:25 | Claude (Claude Code) | The retest page's drag steps over a screenshot rewritten for finding 11 (Doug met the forbidden cursor on a capture); no finding. |
 | 1.22 | 09-17-26 00:17 | Claude (Claude Code) | Doug's retest of 00:18: findings 9 to 12 seen on the display and closed; issue #7 closed. |
 | 1.21 | 09-17-26 00:02 | Claude (Claude Code) | Finding 12: the suite green at b0c0bbe and the tenth local build. |
 | 1.20 | 09-16-26 23:58 | Claude (Claude Code) | Finding 12 decided (option A) and built; General UI PRD 2.47; the 1.19 row's time corrected to 16:43. |
