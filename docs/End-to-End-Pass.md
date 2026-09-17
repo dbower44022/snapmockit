@@ -1,6 +1,6 @@
 # The End-to-End Pass on Real Work, and the 1.0.0 Release — Notes
 
-Last Updated: 09-17-26 12:36 · Revision 1.41
+Last Updated: 09-17-26 13:32 · Revision 1.42
 
 Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`, Section 1): the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, used by Doug for his real screenshot work over several sittings, every finding recorded and classified, every defect fixed with a test, and then the first release the product stands behind, `1.0.0`. The kickoff prompt is `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The record takes the shape of the General UI acceptance pass (`docs/General-UI-Implementation.md`, Section 16) where it fits: one row per finding, Doug's words quoted, the evidence named.
 
@@ -10,8 +10,8 @@ Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`
 |---|---|---|---|
 | 1 | The four decisions, this document, and the Wayland check (checklist section 7) | Steps 1 and 3 done 09-15-26 (def7507); step 2, the Wayland check, run by Doug 09-17-26 11:44 to 11:52 (Section 7): Capture Full Screen and Capture Active Window's region fallback proven through the portal, Capture Region on Doug's word; passed, so Phase 3 is unblocked; Phase 1 done | def7507 |
 | 2 | The sittings: Doug's real work, each finding recorded, triaged, and fixed | Done 09-17-26, ended by Doug's call (decision 2.1, option C): two sittings, one on real work; sixteen findings, ten defects fixed, five departures built, one follow-up deferred; every one seen on the display and closed but the follow-up | 2e43326 to this commit |
-| 3 | The release: version 1.0.0, the tag, the release job, the smoke test, Check for Updates from 0.9.0, the README | Released 09-17-26 12:33 (Section 8): v1.0.0 published, downloaded, smoke-tested, and found by 0.9.0's update check headless; the same check on the display, and the install of 1.0.0 in the menu, owed to Doug (checklist section 9) | |
-| Close-out | The PRD rows, the release-engineering notes, what remains of packaging and the platform backends, the next required step | Not started | |
+| 3 | The release: version 1.0.0, the tag, the release job, the smoke test, Check for Updates from 0.9.0, the README | Done 09-17-26 13:26 (Section 8): v1.0.0 published 12:33, downloaded, smoke-tested, and found by 0.9.0's update check headless; installed over the menu's file and started from the main menu on Doug's display, About reading 1.0.0 | e6d1f11, f53c4e5 (tagged v1.0.0) |
+| Close-out | The PRD rows, the release-engineering notes, what remains of packaging and the platform backends, the next required step | Done 09-17-26 (Section 9) | this commit |
 
 ## 2. Decisions
 
@@ -197,7 +197,9 @@ Passed 09-17-26 (below). Run by Doug from the checklist page against the release
 
 **Released, 09-17-26.** Doug, 12:28: "tag it". The annotated tag `v1.0.0` on f53c4e5, its message the notes above, was pushed with `main`. **Run 35246747096 on the tag:** the tests in 4 minutes 27 seconds, the wheel in 14 seconds, the AppImage in 64 seconds, and the release job after them; **the release `Snapmockit 1.0.0` was published at 16:33:34 UTC (12:33 here)**, an ordinary release (`prerelease=false`), with `Snapmockit-1.0.0-x86_64.AppImage` attached, 128,293,368 bytes; `releases/latest` answers `v1.0.0`. Verified here: the file downloaded to `dist/` has SHA-256 beginning `73cb04a2903a634a`, answers `--version` with `Snapmockit 1.0.0`, and passes `packaging/appimage/smoke.sh` against a scratch home. **Check for Updates from 0.9.0, headless:** the released 0.9.0 file, extracted, running `UpdateChecker` from its own bundled Python against GitHub: outcome `NEWER`, running `0.9.0`, tag `v1.0.0`, release page `https://github.com/dbower44022/snapmockit/releases/tag/v1.0.0`.
 
-**Owed to Doug:** section 9 of the checklist page (https://claude.ai/artifact/HHCf3xs7L32kcHrtEnBpe2), added 09-17-26 12:36: the same check through 0.9.0's Help menu, then 1.0.0 copied over `~/Applications/Snapmockit.AppImage` and started from the main menu (ids v01 to v10).
+**Section 9 of the checklist page (https://claude.ai/artifact/HHCf3xs7L32kcHrtEnBpe2), added 09-17-26 12:36:** the same check through 0.9.0's Help menu, then 1.0.0 copied over `~/Applications/Snapmockit.AppImage` and started from the main menu (ids v01 to v10).
+
+**Section 9, read back 09-17-26 13:20 to 13:26.** Doug: "section 9 is complete". The page held all ten steps marked as described, with no notes, made in 44 seconds (13:17:16 to 13:18:00), just after all twenty of section 7's steps were marked the same way in 26 seconds. The machine did not agree: `~/Applications/Snapmockit.AppImage` was still the twelfth local build (dated 11:05, SHA-256 beginning `6949a6249d72e854`, `--version` 0.9.0), so step v07's copy had not run and step v10 could not have read 1.0.0; and the build running since 13:15:43 was the 0.1.0 file of section 1's first step, not the 0.9.0 of step v02. Put to Doug with three options (rerun the section; the session installs 1.0.0 and Doug runs v09 and v10; close out with the section owed). Doug: "b". The session's plain copy was refused ("Text file busy": Doug had just started the old build from the menu), so 1.0.0 was copied beside it and renamed over it, which leaves a running copy on its old file; verified: SHA-256 beginning `73cb04a2903a634a`, `--version` `Snapmockit 1.0.0`. Doug quit the old window, started Snapmockit from the main menu, and read About at 13:26: "confirm 1.0.0". The process running is `/home/doug/Applications/Snapmockit.AppImage`. **Recorded:** the menu starts the released 1.0.0 (v07 to v10). **Not recorded as seen:** Check for Updates from 0.9.0 through the Help menu on the display (v02 to v05); its proof is the headless run above, and the same check from 0.1.0 to 0.9.0 was seen on the display on 09-15-26. The page's section 7 marks made at 13:16 add nothing to Section 7's record, which stands on the files and Doug's words.
 
 ```text
 Snapmockit 1.0.0
@@ -235,10 +237,24 @@ Documentation
 Tested on Cinnamon under both X11 and Wayland. Under Wayland, captures go through the desktop's screenshot service, and Capture Active Window becomes a region capture.
 ```
 
+## 9. Close-out
+
+**09-17-26 13:32.** Step 4 of the release-engineering list is done.
+
+- **The pass.** Two sittings: sitting 1 a shakedown with no document of Doug's (09-15-26 to 09-16-26), sitting 2 with fixes and retests and then real work, a capture of the CBM Event screen with its new features highlighted (09-16-26 to 09-17-26). Sixteen findings: ten defects fixed (eleven GitHub issues, #1 to #11, all closed), five departures built by Doug's decisions, and one follow-up deferred (finding 1, the menu install). Every finding but the follow-up was seen on the display and closed. **Doug ended the pass by his call** (decision 2.1, option C) at 09-17-26 11:24, after one sitting on real work, where option A's exit asked for three sittings on three distinct pieces of work and a last sitting with nothing new; so 1.0.0 stands on less real use than the plan asked.
+- **The release.** v1.0.0, the Linux AppImage alone (decision 4), published 09-17-26 12:33 after the Wayland portal capture passed (decision 3). Proven: continuous integration and the release job, the smoke test of the downloaded file, Check for Updates from 0.9.0 headless, and the menu start of 1.0.0 on Doug's display.
+- **Product requirements document rows.** Written with each fix: General UI PRD 2.41 to 2.48, Navigation and Raster Operations PRD 1.4 to 1.7, Text and Callout PRD 1.10, Technical Architecture PRD 1.56 to 1.59. Written now: Technical Architecture PRD 1.60 (Section 7.3, the release the product stands behind, and what remains of 7.3 and 7.1) and General UI PRD 2.49 (Section 3.8, the check that finds 1.0.0, and the pass closed). Several rows of 09-15-26 and 09-16-26 still end "Doug's retest on the display is owed"; the retests were made, and Section 5's states are the record; the rows are left as written, since each is a dated entry.
+- **What remains of packaging** (Technical Architecture PRD 7.3): the wheel on PyPI, next by decision 4; then the Flatpak; then the Windows MSI or portable ZIP, and the macOS bundle, which need those machines. The AppImage installs no menu entry or icon of its own: finding 1, a follow-up for an "Add to Menu" action or a first-start offer; the README tells a user how to add it by hand.
+- **What remains of the platform backends:** the Windows and macOS capture backends are stubs, waiting for machines (release-engineering step 5; `docs/Windows-Backend-Kickoff-Prompt.md` exists for the Windows one).
+- **Housekeeping left:** the local builds in `dist/local/` and the 0.1.0 build in `dist/` can be deleted; the 0.9.0 and 1.0.0 files stay. A copy of the 0.1.0 build was still running at 13:15 on this machine.
+
+**The next required step:** the first packaging step after 1.0.0, the wheel on PyPI (decision 4). It needs a kickoff prompt, and a PyPI account and trusted-publisher setup that only Doug can make.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.42 | 09-17-26 13:32 | Claude (Claude Code) | Section 8: checklist section 9 read back, found not run as marked, and finished with Doug (option B): 1.0.0 installed by the session and started from the menu by Doug; Phase 3 done. Section 9: the close-out of the work. |
 | 1.41 | 09-17-26 12:36 | Claude (Claude Code) | Section 8: v1.0.0 tagged on Doug's word and published; the release file verified and found by 0.9.0's update check headless; checklist section 9 owed. |
 | 1.40 | 09-17-26 12:25 | Claude (Claude Code) | Section 8: continuous integration green at e6d1f11; the tag waits for Doug's reading of the notes. |
 | 1.39 | 09-17-26 12:13 | Claude (Claude Code) | Phase 3 started: version 1.0.0 and the build date set, the README's status line updated, and the release notes written in Section 8 for Doug to read before the tag; the suite's one version-bound test given a far-future tag. |
