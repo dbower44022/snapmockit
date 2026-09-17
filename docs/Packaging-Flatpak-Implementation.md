@@ -1,6 +1,6 @@
 # Packaging: the Linux Flatpak — Implementation Notes
 
-Last Updated: 09-17-26 18:24 · Revision 1.2
+Last Updated: 09-17-26 18:39 · Revision 1.3
 
 Implements the Flatpak that Technical Architecture PRD 7.3 names as the secondary Linux form, the next part of step 3 of the release-engineering list (`docs/Release-Engineering.md`, Sections 1 and 4), which Doug put ahead of the Python Package Index on 09-17-26. The kickoff prompt is `docs/Packaging-Flatpak-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The AppImage's notes, `docs/Packaging-AppImage-Implementation.md`, hold the recipe and the release job this work builds beside.
 
@@ -9,7 +9,7 @@ Implements the Flatpak that Technical Architecture PRD 7.3 names as the secondar
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
 | 1 | The five decisions, this document, the builder and runtimes installed, the suite under Python 3.13, and the manifest under `packaging/flatpak/` with its tests | Done 09-17-26: the bundle built here, 25.4 MB, and proven headless (Sections 2, 6, 7, 8) | 4d6e2ea, 7b594d1, this commit |
-| 2 | The code the sandbox needs (decisions 4 and 5, and the three corrections of Section 5), and the Flatpak proven on this machine through a checklist page | Not started | |
+| 2 | The code the sandbox needs (decisions 4 and 5, and the three corrections of Section 5), and the Flatpak proven on this machine through a checklist page | Step 1 done 09-17-26 (Sections 9 and 10); step 2 with Doug | ae29485, this commit |
 | 3 | The build in continuous integration: the Flatpak on every push as an artifact, and the release job attaching the bundle beside the AppImage | Not started | |
 | 4 | The release that first carries both files, `1.1.0` | Not started | |
 | Close-out | The PRD rows, the README, the release-engineering notes, the display checks owed, and what of 7.3 remains | Not started | |
@@ -126,10 +126,35 @@ produces `dist/Snapmockit-<version>-x86_64.flatpak`. The four files:
 
 **Tests:** `tests/test_packaging_flatpak.py`, twenty-two tests, none of which builds or reaches the network: the manifest's runtime, base application, and branch; its id against the desktop entry, the metainfo, and the MIME file; **its permissions as exactly decision 3's set**; the two modules, the application module's install commands and its two sources; the QtWebEngine removal; the launcher's shape; the generated module's addresses, digests, and the four distributions it carries with no PyQt6 among them; and the recipe's own functions (the bundle's name, the pins with PyQt6 dropped, the wheel choice over nine file names, the preference for the newest glibc floor, the refusal when no wheel fits, and the module's shape).
 
+## 9. The code the sandbox needs (Phase 2 step 1)
+
+`snapmock/config/packaging.py` (Technical Architecture PRD 1.63, Section 10) answers which of the three Linux forms the process runs as — from source, the AppImage (its runtime sets `APPIMAGE`), or the Flatpak (`/.flatpak-info` exists) — and the command line that starts it. Nothing in it reads a setting or asks the user. Four changes follow from it and from the probes below.
+
+**Decision 5, Check for Updates.** Inside a Flatpak a newer release is reported with how to get it for this form: "Download the new .flatpak bundle from the release page and install it with flatpak install", after the sentence that names the release, with Open Release Page unchanged. Outside a Flatpak the message reads exactly as before. The wording becomes `flatpak update` once decision 2's Flathub step exists. General UI PRD 2.50. **The display check for it must wait for 1.1.0:** with 1.0.0 installed and v1.0.0 the latest release, the honest answer is that it is up to date, and the branch is proven headless and by test until then.
+
+**Decision 4, the settings copied once.** `import_host_settings` in `config/migration.py` runs in `app.py` after `migrate_storage` and before the window is built. Inside a Flatpak, and only there, it copies `~/.config/Snapmockit` and `~/.config/snapmockit` into the sandbox's own configuration location when they exist there and not here, and reports what it copied in the one startup message the migration already uses (General UI PRD 1.3: never a dialog that blocks). Nothing is overwritten and nothing is moved: the AppImage's store is left exactly as it was, and changes after the copy are not shared. The library is not copied, since decision 3 gives both forms the same `~/Snapmockit/Library`.
+
+**Correction 5.2, the trash, now proven not inferred.** Probed inside the sandbox on 09-17-26: `send2trash` put a file in `~/.var/app/io.github.dbower44022.snapmockit/data/Trash`, which no file manager shows, and not in `~/.local/share/Trash`. The desktop's trash service takes it correctly, with one condition the probe found: **the descriptor must be opened `O_PATH`** — `O_RDONLY` is refused with result 0 — and a whole folder is accepted the same way. `send_to_system_trash` in `library/manager.py` therefore asks `org.freedesktop.portal.Trash` first inside a Flatpak and falls back to `send2trash` when it declines, since a file the user asked to delete must leave the library either way. Library PRD 1.3.
+
+**Correction 5.3, the shortcut command.** The first-run Wayland page and Preferences > Capture now show the command for the running form: `flatpak run io.github.dbower44022.snapmockit --capture region` in the Flatpak, the AppImage's own path in the AppImage, and the running interpreter's module line from a checkout. What they showed until now, `snapmock --capture region`, named a command no installed form provides, and Screen Capture PRD 3.5 and 9.2 make that command the Wayland user's only route to a hotkey. Screen Capture PRD 1.1.
+
+**The suite at ae29485:** 1752 passed, 14 skipped, 1 deselected, in 5 minutes 57 seconds from a scratch `git worktree`.
+
+**Tests:** `tests/test_packaging_form.py` (nine, the form and the command for each of the three, a quoted path, and the two places the command is shown); five in `tests/test_storage_migration.py` (nothing outside a Flatpak, the copy, the copy never repeated or overwriting, an empty home, a store that is the home directory's own, and the message); two in `tests/test_help_check_updates.py` (the Flatpak wording on a newer release only, and the message unchanged outside); five in `tests/test_library_manager.py` (the route outside a Flatpak, the portal preferred inside one, the fall-back when it declines, a path already gone, and no session bus). `tests/test_capture/test_wayland_portal.py` follows the onboarding page's commands to the function that writes them.
+
+## 10. The display checks owed (Phase 2 step 2)
+
+Written 09-17-26 18:39 as **sections 10 and 11** of the checklist page `Snapmockit AppImage Display Checks` (https://claude.ai/artifact/HHCf3xs7L32kcHrtEnBpe2, database collection `appimage1`), ids `f01` to `f20` and `g01` to `g11` so the stored marks stay attached.
+
+Section 10, in the usual desktop: the test copy removed with its data and the bundle installed with `flatpak install --user --bundle`; the first start from the main menu with the settings copied once (decision 4) and the same library; About; a full-screen and a region capture through X11; `--capture full` handed to the running instance; the shortcut command Preferences shows (correction 5.3); a project saved, closed, and reopened; a library file opened; PNG and PDF exports; a Snagit file read; Check for Updates; a library file deleted and found **in the user's own trash** (correction 5.2); and a second start with no message. Section 11, after a log-out: the Flatpak capturing through the Wayland portal, full screen, region, and from the command line.
+
+The bundle Doug installs is the one built at ae29485, `dist/Snapmockit-1.0.0-x86_64.flatpak`, 25.4 MB, SHA-256 beginning `c87f93f471bd9321`. **Every mark is checked against what the machine shows before it is recorded** (the installed reference and commit, the files written, the processes running), and a mark the machine contradicts is put to Doug: he has marked whole sections without running them (end-to-end pass notes, Section 8).
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.3 | 09-17-26 18:39 | Claude (Claude Code) | Phase 2 step 1 done (Section 9): config/packaging.py and the four changes that follow it — decision 5's message, decision 4's copy-once store, and corrections 5.2 and 5.3, both now proven on the machine rather than inferred (the trash descriptor must be opened O_PATH). Twenty-one new tests. PRD rows: Technical Architecture 1.63, General UI 2.50, Screen Capture 1.1, Library 1.3. Section 10 names the display checks owed, written as sections 10 and 11 of the checklist page. |
 | 1.2 | 09-17-26 18:24 | Claude (Claude Code) | Phase 1 done. Section 7: the three tools Doug installed, with their versions. Section 8: the recipe under `packaging/flatpak/`, the first bundle (25.4 MB after QtWebEngine and the locales were removed), the two defects fixed in it, what is proven headless inside the sandbox, and the twenty-two tests. Technical Architecture PRD 1.62 (Section 10 gains the directory; Section 9's packaging row names flatpak-builder). |
 | 1.1 | 09-17-26 13:47 | Claude (Claude Code) | Section 6: Phase 1 step 3 done. The whole suite passes under Python 3.13 unchanged (1707 passed, 5 minutes 48 seconds), so no defect was found; the continuous-integration checks job now runs 3.12 and 3.13 on every push, held by a test. Technical Architecture PRD 1.61. |
 | 1.0 | 09-17-26 13:38 | Claude (Claude Code) | Initial notes: the phase table; the five decisions as approved on 09-17-26 at 13:34, decision 1 on the 6.11 runtime branch; the six silences with silence 4 corrected (send2trash is used); the starting state re-verified, adding the 6.11 runtime and base application the kickoff does not name; and three corrections to the kickoff prompt, two of them defects for Phase 2. |
