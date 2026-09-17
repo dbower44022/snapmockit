@@ -1,6 +1,6 @@
 # The End-to-End Pass on Real Work, and the 1.0.0 Release — Notes
 
-Last Updated: 09-17-26 12:13 · Revision 1.39
+Last Updated: 09-17-26 12:26 · Revision 1.40
 
 Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`, Section 1): the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, used by Doug for his real screenshot work over several sittings, every finding recorded and classified, every defect fixed with a test, and then the first release the product stands behind, `1.0.0`. The kickoff prompt is `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The record takes the shape of the General UI acceptance pass (`docs/General-UI-Implementation.md`, Section 16) where it fits: one row per finding, Doug's words quoted, the evidence named.
 
@@ -193,6 +193,8 @@ Passed 09-17-26 (below). Run by Doug from the checklist page against the release
 
 **The suite at 9b94994, from a scratch worktree, 12:14 to 12:20:** ruff and mypy clean; 1706 passed, 14 skipped, 1 deselected, **1 failed**: `test_receive_emits_the_result_and_ends_the_check` in `tests/test_update_check.py` used `v1.0.0` as its example of a newer release, which stopped being newer when the version became 1.0.0. The test is about the signal and the end of the check, not about which version is newer, so its example tag is now `v99.0.0`; no product code changed. That file then passed whole (34 tests), and the continuous integration run on the push is the full suite for the amended commit.
 
+**Continuous integration at e6d1f11, run 35245982497, 16:20 to 16:25 UTC:** lint, types, and tests, the wheel and sdist, and the Linux AppImage all passed; the release job skipped, as it does without a tag. **Waiting on Doug:** his reading of the release notes above, then the annotated tag `v1.0.0` with those notes as its message.
+
 ```text
 Snapmockit 1.0.0
 
@@ -233,6 +235,7 @@ Tested on Cinnamon under both X11 and Wayland. Under Wayland, captures go throug
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.40 | 09-17-26 12:26 | Claude (Claude Code) | Section 8: continuous integration green at e6d1f11; the tag waits for Doug's reading of the notes. |
 | 1.39 | 09-17-26 12:13 | Claude (Claude Code) | Phase 3 started: version 1.0.0 and the build date set, the README's status line updated, and the release notes written in Section 8 for Doug to read before the tag; the suite's one version-bound test given a far-future tag. |
 | 1.38 | 09-17-26 11:56 | Claude (Claude Code) | Step 12 (Capture Region) confirmed by Doug; the Wayland check passed; Phase 1 done and Phase 3 unblocked; the 1.37 row's time corrected to 11:54. |
 | 1.37 | 09-17-26 11:54 | Claude (Claude Code) | The Wayland check's run recorded from the page's one mark and the files it left: full screen and the active-window fallback proven through the portal; step 15's problem an instruction error; Capture Region not evidenced, put to Doug. |
