@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.61</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.62</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.61</dd>
-    <dt>Last Updated</dt>    <dd>09-17-26 13:46</dd>
+    <dt>Document version</dt><dd>1.62</dd>
+    <dt>Last Updated</dt>    <dd>09-17-26 18:21</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.62</td>
+        <td class="nowrap">09-17-26 18:21</td>
+        <td>Doug Bower</td>
+        <td>7.3's secondary Linux form has a recipe: Section 10 gains packaging/flatpak/ (the manifest on the KDE runtime 6.11 with the PyQt base application, the generated dependency module, the launcher, and the build script), and Section 9's packaging row names flatpak-builder beside python-appimage. Built here on 09-17-26: a 25.4 MB bundle, 137 MB installed, whose sandbox runs Python 3.13.15 and Qt 6.11.1 (docs/Packaging-Flatpak-Implementation.md, Section 7).</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.61</td>
         <td class="nowrap">09-17-26 13:46</td>
@@ -2337,7 +2344,7 @@ deferred to a post-1.0 release.</p>
     <tr><th>Trash</th><td>send2trash</td><td>2.1+</td><td>Moves Library files to the platform trash instead of deleting them (Library PRD). Optional under Section 9.1.</td></tr>
     <tr><th>SVG Export</th><td>svgwrite</td><td>1.4+</td><td>Clean SVG file generation for vector export.</td></tr>
     <tr><th>PDF Export</th><td>ReportLab or QPrinter</td><td>Latest</td><td>PDF generation. QPrinter (built into Qt) is the primary option; ReportLab as fallback.</td></tr>
-    <tr><th>Packaging</th><td><code>python-appimage</code> (Linux AppImage); PyInstaller / <code>cx_Freeze</code> (Windows, macOS)</td><td>1.4.6+; Latest</td><td>Linux: a relocatable CPython with the wheel installed whole, sealed by <code>appimagetool</code> (packaging decision 1, 09-14-26); the tool lives in the <code>packaging</code> dependency group. Windows and macOS: binary packaging, not yet built.</td></tr>
+    <tr><th>Packaging</th><td><code>python-appimage</code> (Linux AppImage); <code>flatpak-builder</code> with the KDE runtime and the PyQt base application (Linux Flatpak); PyInstaller / <code>cx_Freeze</code> (Windows, macOS)</td><td>1.4.6+; 1.4+; Latest</td><td>Linux AppImage: a relocatable CPython with the wheel installed whole, sealed by <code>appimagetool</code> (packaging decision 1, 09-14-26); the tool lives in the <code>packaging</code> dependency group. Linux Flatpak: <code>org.kde.Platform</code> 6.11 with <code>com.riverbankcomputing.PyQt.BaseApp</code> 6.11, the four other dependencies installed as wheels the manifest lists (Flatpak decision 1, 09-17-26); <code>flatpak-builder</code> is installed on the machine that builds, not a Python dependency. Windows and macOS: binary packaging, not yet built.</td></tr>
     <tr><th>Testing</th><td>pytest + pytest-qt</td><td>Latest</td><td>Unit and integration testing with Qt widget testing support.</td></tr>
     <tr><th>Linting</th><td>ruff</td><td>Latest</td><td>Fast Python linter and formatter.</td></tr>
     <tr><th>Type Checking</th><td>mypy</td><td>Latest</td><td>Static type analysis for catching bugs early.</td></tr>
@@ -2552,6 +2559,12 @@ packaging/
         io.github.dbower44022.snapmockit.desktop      # the desktop entry: name, icon, Exec with %F, Graphics and Utility, the .smk MIME type
         io.github.dbower44022.snapmockit.appdata.xml # the AppStream metainfo; the release row filled from the wheel at build time
         io.github.dbower44022.snapmockit.xml          # shared-mime-info: application/x-snapmockit-project for .smk
+        smoke.sh              # the built AppImage answers --version and builds the main window offscreen
+    flatpak/                  # the Linux Flatpak recipe (Technical Architecture PRD 7.3; docs/Packaging-Flatpak-Implementation.md)
+        build.py              # one command: uv run python packaging/flatpak/build.py -> dist/Snapmockit-<version>-x86_64.flatpak; --update-deps regenerates the module below
+        io.github.dbower44022.snapmockit.yml   # the manifest: the KDE runtime 6.11, the PyQt base application, and the permissions of decision 3
+        python3-deps.json     # generated from uv.lock: the four dependency wheels the base application does not carry, by address and digest
+        snapmockit.sh         # the Flatpak's command: python3 -m snapmock with the arguments
 scripts/                      # one-off generators run by hand: build_emoji_data.py (the emoji data file)
 tests/
     __init__.py
