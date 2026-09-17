@@ -2,7 +2,7 @@
 
 Snapmockit is an open-source screenshot annotation and user interface mockup tool for Linux, Windows, and macOS, written in Python with PyQt6. Capture a screen, a window, or a region; annotate it with shapes, arrows, text, callouts, highlights, blur, numbered steps, stamps, and emoji on layers; then export it as PNG, JPEG, SVG, or PDF, or save it as a project to come back to. It reads and writes Snagit's `.snagx` files.
 
-Status: the application is complete against its nine product requirements documents (the `PRDs/` directory). Its first release, 0.9.0, is the Linux AppImage (below); it also runs from source; the Windows and macOS capture backends are written but wait for machines to test them on.
+Status: the application is complete against its nine product requirements documents (the `PRDs/` directory). Its current release, 1.0.0, is the Linux AppImage (below), the first the project stands behind after a pass on real screenshot work; it also runs from source; the Windows and macOS capture backends are written but wait for machines to test them on.
 
 ## Install on Linux
 

@@ -11,7 +11,7 @@ question). Everything a user reads takes it from here."""
 APP_VERSION = __version__
 """One source: ``snapmock/__init__.py``, which ``pyproject.toml`` reads at build time."""
 # Set by the release process; the About dialog shows it beside the version (PRD 11.6).
-APP_BUILD_DATE = "2026-09-15"
+APP_BUILD_DATE = "2026-09-17"
 APP_LICENSE = "MIT License"
 COPYRIGHT = "Copyright (c) 2026 Doug Bower"
 ORG_NAME = APP_NAME

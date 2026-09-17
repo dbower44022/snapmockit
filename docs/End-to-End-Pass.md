@@ -1,6 +1,6 @@
 # The End-to-End Pass on Real Work, and the 1.0.0 Release — Notes
 
-Last Updated: 09-17-26 11:56 · Revision 1.38
+Last Updated: 09-17-26 12:13 · Revision 1.39
 
 Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`, Section 1): the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, used by Doug for his real screenshot work over several sittings, every finding recorded and classified, every defect fixed with a test, and then the first release the product stands behind, `1.0.0`. The kickoff prompt is `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The record takes the shape of the General UI acceptance pass (`docs/General-UI-Implementation.md`, Section 16) where it fits: one row per finding, Doug's words quoted, the evidence named.
 
@@ -10,7 +10,7 @@ Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`
 |---|---|---|---|
 | 1 | The four decisions, this document, and the Wayland check (checklist section 7) | Steps 1 and 3 done 09-15-26 (def7507); step 2, the Wayland check, run by Doug 09-17-26 11:44 to 11:52 (Section 7): Capture Full Screen and Capture Active Window's region fallback proven through the portal, Capture Region on Doug's word; passed, so Phase 3 is unblocked; Phase 1 done | def7507 |
 | 2 | The sittings: Doug's real work, each finding recorded, triaged, and fixed | Done 09-17-26, ended by Doug's call (decision 2.1, option C): two sittings, one on real work; sixteen findings, ten defects fixed, five departures built, one follow-up deferred; every one seen on the display and closed but the follow-up | 2e43326 to this commit |
-| 3 | The release: version 1.0.0, the tag, the release job, the smoke test, Check for Updates from 0.9.0, the README | Not started; decision 1's exit met by Doug's call; the Wayland check of decision 3 passed 09-17-26, so nothing blocks it | |
+| 3 | The release: version 1.0.0, the tag, the release job, the smoke test, Check for Updates from 0.9.0, the README | In progress from 09-17-26 12:12 (Section 8): version 1.0.0 and build date 2026-09-17 set, the README's status line updated, the release notes written; the tag waits for Doug to read the notes | |
 | Close-out | The PRD rows, the release-engineering notes, what remains of packaging and the platform backends, the next required step | Not started | |
 
 ## 2. Decisions
@@ -187,10 +187,53 @@ Passed 09-17-26 (below). Run by Doug from the checklist page against the release
 
 **Step 12 answered, 09-17-26 11:56.** Doug: "step 12 = yes". Capture Region opened a new tab holding the part chosen; recorded on his word, since the region capture left no library file of its own that says so. **The Wayland check has passed.** Decision 3's gate is met, and Phase 3 may start.
 
+## 8. The release (Phase 3)
+
+**09-17-26 12:12, on Doug's "go".** `snapmock/__init__.py` reads 1.0.0 and `APP_BUILD_DATE` reads 2026-09-17; the README's status line names 1.0.0. The desktop metainfo takes its release version and date from the build, so it needs no edit. The release notes below are written from the findings table in Section 5, in the user's words and without finding numbers (silence 7). They become the message of the annotated tag `v1.0.0`, which the release job publishes as the release's text. **The tag is not pushed until Doug has read them** (the kickoff's standard).
+
+**The suite at 9b94994, from a scratch worktree, 12:14 to 12:20:** ruff and mypy clean; 1706 passed, 14 skipped, 1 deselected, **1 failed**: `test_receive_emits_the_result_and_ends_the_check` in `tests/test_update_check.py` used `v1.0.0` as its example of a newer release, which stopped being newer when the version became 1.0.0. The test is about the signal and the end of the check, not about which version is newer, so its example tag is now `v99.0.0`; no product code changed. That file then passed whole (34 tests), and the continuous integration run on the push is the full suite for the amended commit.
+
+```text
+Snapmockit 1.0.0
+
+The first release the project stands behind. Version 0.9.0 was used for real screenshot work, and everything that got in the way has been fixed. The download is the Linux AppImage, as before: one file that carries its own Python and Qt, for x86_64 Linux with glibc 2.34 or later (Ubuntu 22.04, Debian 12, Fedora 35, RHEL 9, and later). Windows and macOS packages do not exist yet.
+
+To run it: download Snapmockit-1.0.0-x86_64.AppImage, make it executable (chmod +x), and start it from a file manager or a shell. Help > Check for Updates in 0.9.0 finds this release.
+
+What changed since 0.9.0:
+
+Moving and placing objects
+- Dragging a selected object now follows the pointer smoothly. In 0.9.0 it jumped, most of all when moved up or down.
+- With Snap to Grid on, the object's own edges land on the grid lines, not an invisible frame around them.
+- The arrow keys move the selected object 1 pixel at a time. Shift+Arrow moves it to the next grid line. With nothing selected, the arrow keys still scroll the canvas.
+- Redrawing during a drag is about ten times faster.
+
+Cropping a capture
+- The canvas has its own resize handles. With the Select tool active and nothing selected, drag an edge or corner of the canvas to crop the capture.
+- Cropping now cuts the image. In 0.9.0 the part outside the canvas stayed visible.
+
+Screenshots and layers
+- The image on a Background layer stays in place. It can no longer be dragged off by accident, including after Flatten All. Duplicate Layer gives a copy that can be moved.
+- Edit > Cut with a region selected cuts from the image the user sees, even when another layer is active, which is the usual case right after a capture. On a locked layer, or where there is no image under the selection, it says so and changes nothing.
+- Flatten All now asks before it runs, as Merge Down and Merge Visible do, and names any hidden content that would be lost.
+
+Text and keys
+- Double-clicking a text box or callout starts editing its text.
+- Escape ends text editing. The next key press chooses a tool again instead of typing into the box.
+- Ctrl+Y redoes, as well as Ctrl+Shift+Z.
+- Shift with the mouse wheel scrolls the canvas sideways.
+
+Documentation
+- The README's install steps start from the download, and explain how to add Snapmockit to the desktop's main menu by hand. The AppImage does not install a menu entry itself yet.
+
+Tested on Cinnamon under both X11 and Wayland. Under Wayland, captures go through the desktop's screenshot service, and Capture Active Window becomes a region capture.
+```
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.39 | 09-17-26 12:13 | Claude (Claude Code) | Phase 3 started: version 1.0.0 and the build date set, the README's status line updated, and the release notes written in Section 8 for Doug to read before the tag; the suite's one version-bound test given a far-future tag. |
 | 1.38 | 09-17-26 11:56 | Claude (Claude Code) | Step 12 (Capture Region) confirmed by Doug; the Wayland check passed; Phase 1 done and Phase 3 unblocked; the 1.37 row's time corrected to 11:54. |
 | 1.37 | 09-17-26 11:54 | Claude (Claude Code) | The Wayland check's run recorded from the page's one mark and the files it left: full screen and the active-window fallback proven through the portal; step 15's problem an instruction error; Capture Region not evidenced, put to Doug. |
 | 1.36 | 09-17-26 11:40 | Claude (Claude Code) | The Wayland check's instructions rewritten on the checklist page; decision 3 kept on Doug's request for them. |

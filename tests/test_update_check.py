@@ -191,10 +191,10 @@ def test_receive_emits_the_result_and_ends_the_check(
     results: list[UpdateCheckResult] = []
     checker.finished.connect(results.append)
     checker.start()
-    checker.receive(200, release_body("v1.0.0", "https://example.test/r"))
+    checker.receive(200, release_body("v99.0.0", "https://example.test/r"))
     assert not checker.running
     assert results == [
-        UpdateCheckResult(Outcome.NEWER, __version__, "v1.0.0", "https://example.test/r")
+        UpdateCheckResult(Outcome.NEWER, __version__, "v99.0.0", "https://example.test/r")
     ]
     checker.start()
     checker.receive(None, b"")
