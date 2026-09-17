@@ -1,6 +1,6 @@
 # The End-to-End Pass on Real Work, and the 1.0.0 Release — Notes
 
-Last Updated: 09-17-26 01:05 · Revision 1.28
+Last Updated: 09-17-26 01:15 · Revision 1.29
 
 Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`, Section 1): the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, used by Doug for his real screenshot work over several sittings, every finding recorded and classified, every defect fixed with a test, and then the first release the product stands behind, `1.0.0`. The kickoff prompt is `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The record takes the shape of the General UI acceptance pass (`docs/General-UI-Implementation.md`, Section 16) where it fits: one row per finding, Doug's words quoted, the evidence named.
 
@@ -147,6 +147,8 @@ One row per finding, numbered in the order found. The class is one of defect (ag
 - Noted, not built: every handle, the selection's included, is 8 canvas pixels and so shrinks with the zoom; at a fit-to-window zoom on a large capture it is small on the screen. Raised with Doug as a possible finding.
 - The full suite from a scratch worktree at cf8413e: 1703 passed, 14 skipped, 1 deselected, in 5 minutes 52 seconds; ruff and mypy clean (a first run's summary was lost to a buffered filter and the suite was run again). The eleventh local build, from cf8413e at 00:55: 128,297,464 bytes, SHA-256 beginning `50d5fd07c09d9358`; Doug's retest (retest page section 8) is owed.
 
+**Sitting 2, 09-17-26 01:14.** Doug installed the eleventh build (fingerprint confirmed `50d5fd07c09d9358`) and ran the drag diagnostic from source at 5ee52db (the code of cf8413e): two drags of a rectangle, 759 and 636 moves, handling median 0.2 and 0.3 ms, repaints median 1.8 and 3.2 ms (max 7.8 and 10.7). Still inside the 16.7 ms a frame allows. Read from the profile: the grid's cached image is redrawn on nearly every repaint (756 of 759), because its key holds the repainted area, which a drag changes at every move; the batched drawing costs 0.2 to 0.3 ms, so this is noted as headroom and not raised as a finding. Doug: "Still working on list of tasks"; section 8's results are to come.
+
 ## 6. Sittings
 
 One entry per sitting: the date, the work done in Doug's words, the files it touched, and the findings by number. A sitting with no finding is recorded too. (The heading of this section was lost to an editing slip on 09-16-26 and restored at the session's close.)
@@ -165,6 +167,7 @@ Owed. To be run by Doug from the checklist page against the released 0.9.0 file 
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.29 | 09-17-26 01:15 | Claude (Claude Code) | The eleventh build confirmed on Doug's machine; a third pair of drag reports read (repaint medians 1.8 and 3.2 ms; the grid cache misses during a drag, noted as headroom). |
 | 1.28 | 09-17-26 01:05 | Claude (Claude Code) | Findings 13 and 14: the suite green at cf8413e and the eleventh local build; the 1.27 row's time corrected to 00:55. |
 | 1.27 | 09-17-26 00:55 | Claude (Claude Code) | Finding 13 decided (A) and built with finding 14 (a crop cuts the image; issue #9); General UI PRD 2.48, Navigation PRD 1.6; the 1.26 row's time corrected to 00:35. |
 | 1.26 | 09-17-26 00:35 | Claude (Claude Code) | Finding 13 (crop the canvas by its own handles) recorded as a departure; its form put to Doug; the 1.25 row's time corrected to 00:30. |
