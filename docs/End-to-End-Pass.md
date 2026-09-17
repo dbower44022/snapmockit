@@ -1,6 +1,6 @@
 # The End-to-End Pass on Real Work, and the 1.0.0 Release — Notes
 
-Last Updated: 09-17-26 00:31 · Revision 1.25
+Last Updated: 09-17-26 00:38 · Revision 1.26
 
 Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`, Section 1): the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, used by Doug for his real screenshot work over several sittings, every finding recorded and classified, every defect fixed with a test, and then the first release the product stands behind, `1.0.0`. The kickoff prompt is `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The record takes the shape of the General UI acceptance pass (`docs/General-UI-Implementation.md`, Section 16) where it fits: one row per finding, Doug's words quoted, the evidence named.
 
@@ -86,6 +86,7 @@ One row per finding, numbered in the order found. The class is one of defect (ag
 | 10 | 2 (09-16-26 09:10) | "The edit-cut with a single locked layer allowed the cut, but then the cursor was invisible." | Edit > Cut with a raster selection (`main_window._cut_raster_selection`); the cursor afterwards | Navigation and Raster Operations PRD 5.5.2 and 7 (a lock prevents interactive editing); General UI PRD 1.3 | Defect | [#7](https://github.com/dbower44022/snapmockit/issues/7): the cut refused in 9d11144; closed after the retest | Fixed; seen on the display 09-17-26 00:17, the cursor visible after a cut |
 | 11 | 2 (09-16-26), found in another session of this sitting and relayed | After Flatten All the flattened image can be dragged around the canvas; Doug expects that image to be the canvas. The same holds for every Background layer's image. | The Select tool on a Background layer's image | General UI PRD 6.2 (the image fills the canvas); no row fixed it in place | Departure (Doug's decision A, 09-16-26): the image on any Background layer is fixed in place | [#8](https://github.com/dbower44022/snapmockit/issues/8), built in 9d11144 (General UI PRD 2.46) | Built; seen on the display 09-17-26 00:17 |
 | 12 | 2 (09-16-26), raised in another session of this sitting; recorded on Doug's word at 16:42 ("Record it as finding 12") | Flatten All asks no question before it runs, while Merge Down and Merge Visible do; it discards the hidden layers' content and turns every annotation into pixels (Undo restores both) | Layer > Flatten All (`main_window._layer_flatten`) | General UI PRD 3.4 and its 09-10-26 row (follow-up decision 1): "Flatten All's name says what it does and does not ask" | Departure (the requirement as written is built; Doug wants it changed); option A chosen 09-16-26 23:55: the merges' question | built in b0c0bbe (General UI PRD 2.47) | Built; seen on the display 09-17-26 00:17 |
+| 13 | 2 (09-17-26 00:34), on the real work | "There was no way to resize/crop the screenshot to eliminate some of the background image around the application window.  The canvas itself should be resizeable using typical object resize handles to crop the image by resizing." | Cropping a capture: the canvas has no handles of its own | Navigation and Raster Operations PRD 7 (the Crop Canvas tool: X, Image &gt; Crop to Canvas, the Tools menu and palette; activation shows the whole canvas with eight handles, Enter commits) | Departure (the crop exists as a separate tool; Doug asks for it on the canvas itself); the form put to Doug | none | Open: decision owed |
 
 ### 5.1 Notes on the findings
 
@@ -135,6 +136,8 @@ One row per finding, numbered in the order found. The class is one of defect (ag
 
 **Finding 8, measured on the display, 09-17-26 00:27.** Doug ran the drag diagnostic of retest page sections 2 and 6 from source at 5cc9e0d (the code of the tenth build) and pasted two reports. A rectangle on an empty canvas: 27 moves, handling median 0.3 ms, repaints median 0.6 ms (p90 1.6, max 3.4). A rectangle drawn over a capture: 555 moves at 114 per second, handling median 0.2 ms, repaints median 1.2 ms (p90 1.9, max 4.6), with the grid's drawing 0.3 ms of it. Before the fix the same drags repainted at a median of 11.2 and 10.0 ms. The repaint now takes under a tenth of the 16.7 ms a 60 FPS frame allows, so finding 8 is closed. The largest remaining cost per repaint is the two rulers' painting (about 0.7 ms, 23,309 text draws over the long drag); that is recorded here as headroom, not a finding.
 
+**Finding 13, 09-17-26 00:34, triage.** The crop Doug describes exists as the Crop Canvas tool of Navigation PRD 7: X, Image > Crop to Canvas (Ctrl+Shift+C), the Tools menu, and the palette's region group; activating it shows the whole canvas with eight handles, a drag of a handle crops, and Enter commits one undoable CropCanvasCommand, the Background image included (he used it in retest section 7 step 7). What is missing is the gesture he expects: handles on the canvas itself, with no tool switch, as an item has. The crop tool's handles also carry no resize cursor. The form is put to Doug.
+
 ## 6. Sittings
 
 One entry per sitting: the date, the work done in Doug's words, the files it touched, and the findings by number. A sitting with no finding is recorded too. (The heading of this section was lost to an editing slip on 09-16-26 and restored at the session's close.)
@@ -153,7 +156,8 @@ Owed. To be run by Doug from the checklist page against the released 0.9.0 file 
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
-| 1.25 | 09-17-26 00:31 | Claude (Claude Code) | Sitting 2's entry opened in Section 6, with its real work named in Doug's words. |
+| 1.26 | 09-17-26 00:38 | Claude (Claude Code) | Finding 13 (crop the canvas by its own handles) recorded as a departure; its form put to Doug; the 1.25 row's time corrected to 00:30. |
+| 1.25 | 09-17-26 00:30 | Claude (Claude Code) | Sitting 2's entry opened in Section 6, with its real work named in Doug's words. |
 | 1.24 | 09-17-26 00:28 | Claude (Claude Code) | Finding 8 measured on the display from Doug's two drag reports (repaint medians 0.6 and 1.2 ms) and closed. |
 | 1.23 | 09-17-26 00:24 | Claude (Claude Code) | The retest page's drag steps over a screenshot rewritten for finding 11 (Doug met the forbidden cursor on a capture); no finding. |
 | 1.22 | 09-17-26 00:17 | Claude (Claude Code) | Doug's retest of 00:18: findings 9 to 12 seen on the display and closed; issue #7 closed. |
