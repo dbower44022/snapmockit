@@ -1,0 +1,29 @@
+{
+  "name": "python3-deps",
+  "buildsystem": "simple",
+  "build-commands": [
+    "pip3 install --no-index --no-deps --no-build-isolation --prefix=\"${FLATPAK_DEST}\" numpy-2.4.2-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl pillow-12.1.1-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl psutil-7.2.2-cp36-abi3-manylinux2010_x86_64.manylinux_2_12_x86_64.manylinux_2_28_x86_64.whl send2trash-2.1.0-py3-none-any.whl"
+  ],
+  "sources": [
+    {
+      "type": "file",
+      "url": "https://files.pythonhosted.org/packages/04/dc/46066ce18d01645541f0186877377b9371b8fa8017fa8262002b4ef22612/numpy-2.4.2-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "sha256": "d0d9b7c93578baafcbc5f0b83eaf17b79d345c6f36917ba0c67f45226911d499"
+    },
+    {
+      "type": "file",
+      "url": "https://files.pythonhosted.org/packages/71/24/538bff45bde96535d7d998c6fed1a751c75ac7c53c37c90dc2601b243893/pillow-12.1.1-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "sha256": "47b94983da0c642de92ced1702c5b6c292a84bd3a8e1d1702ff923f183594717"
+    },
+    {
+      "type": "file",
+      "url": "https://files.pythonhosted.org/packages/b5/70/5d8df3b09e25bce090399cf48e452d25c935ab72dad19406c77f4e828045/psutil-7.2.2-cp36-abi3-manylinux2010_x86_64.manylinux_2_12_x86_64.manylinux_2_28_x86_64.whl",
+      "sha256": "076a2d2f923fd4821644f5ba89f059523da90dc9014e85f8e45a5774ca5bc6f9"
+    },
+    {
+      "type": "file",
+      "url": "https://files.pythonhosted.org/packages/1c/78/504fdd027da3b84ff1aecd9f6957e65f35134534ccc6da8628eb71e76d3f/send2trash-2.1.0-py3-none-any.whl",
+      "sha256": "0da2f112e6d6bb22de6aa6daa7e144831a4febf2a87261451c4ad849fe9a873c"
+    }
+  ]
+}

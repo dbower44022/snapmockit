@@ -1,0 +1,78 @@
+# The Flatpak of Snapmockit (Technical Architecture PRD 7.3; docs/Packaging-Flatpak-Implementation.md).
+#
+# Decision 1: the KDE runtime 6.11 with the PyQt base application, so PyQt6 comes built
+# against the runtime's Qt and the runtime's Python 3.13 runs the application.
+# Decision 3: the whole home directory, the two display sockets, the GPU, and the network.
+#
+# Built by packaging/flatpak/build.py, which stages the wheel and the desktop files where
+# the app module's dir source reads them. python3-deps.json is generated from uv.lock by
+# that script's --update-deps, never written by hand.
+id: io.github.dbower44022.snapmockit
+runtime: org.kde.Platform
+runtime-version: '6.11'
+sdk: org.kde.Sdk
+base: com.riverbankcomputing.PyQt.BaseApp
+base-version: '6.11'
+command: snapmockit
+
+# The base application carries QtWebEngine and PyQt6's bindings for it; nothing under
+# snapmock/ imports QtWebEngine, so its cleanup script is told to remove it, which takes
+# about 400 MB out of the bundle. Locales stay in the runtime's own locale extension
+# (the default), not in the application.
+build-options:
+  env:
+    BASEAPP_REMOVE_WEBENGINE: '1'
+    BASEAPP_REMOVE_PYWEBENGINE: '1'
+
+finish-args:
+  # Decision 3, option A: the library at ~/Snapmockit/Library, and Open and Save
+  # anywhere in the home directory, so recent files and session restore hold paths
+  # that outlive a restart.
+  - --filesystem=home
+  # Wayland where the session is Wayland, X11 otherwise; the X11 capture backend and
+  # its global hotkeys need the X socket, and the Wayland capture goes through the
+  # portal, which needs no permission of its own.
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  - --device=dri
+  # Help > Check for Updates queries GitHub (General UI PRD 3.8).
+  - --share=network
+
+cleanup:
+  - /include
+  - /lib/pkgconfig
+  - /share/man
+  - '*.a'
+  - '*.la'
+
+cleanup-commands:
+  # The base application's own: it removes the build tools it carries for PyQt.
+  - /app/cleanup-BaseApp.sh
+
+modules:
+  # The four runtime dependencies the base application does not carry, as the wheels
+  # uv.lock pins, downloaded by flatpak-builder itself so the build sandbox stays offline.
+  - python3-deps.json
+
+  - name: snapmockit
+    buildsystem: simple
+    build-commands:
+      - pip3 install --no-index --no-deps --no-build-isolation --prefix="${FLATPAK_DEST}" snapmockit-*.whl
+      - install -Dm755 snapmockit.sh "${FLATPAK_DEST}/bin/snapmockit"
+      - install -Dm644 io.github.dbower44022.snapmockit.desktop "${FLATPAK_DEST}/share/applications/io.github.dbower44022.snapmockit.desktop"
+      - install -Dm644 io.github.dbower44022.snapmockit.metainfo.xml "${FLATPAK_DEST}/share/metainfo/io.github.dbower44022.snapmockit.metainfo.xml"
+      - install -Dm644 io.github.dbower44022.snapmockit.xml "${FLATPAK_DEST}/share/mime/packages/io.github.dbower44022.snapmockit.xml"
+      - install -Dm644 io.github.dbower44022.snapmockit.svg "${FLATPAK_DEST}/share/icons/hicolor/scalable/apps/io.github.dbower44022.snapmockit.svg"
+      - |
+        for size in 16 24 32 48 64 128 256 512; do
+          install -Dm644 "icons/${size}.png" \
+            "${FLATPAK_DEST}/share/icons/hicolor/${size}x${size}/apps/io.github.dbower44022.snapmockit.png"
+        done
+    sources:
+      # The wheel, the desktop entry, the metainfo with its release row filled, the MIME
+      # type, and the rendered icons, all staged by packaging/flatpak/build.py.
+      - type: dir
+        path: ../../build/flatpak/stage
+      - type: file
+        path: snapmockit.sh
