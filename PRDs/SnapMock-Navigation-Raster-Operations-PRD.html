@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Navigation &amp; Raster Operations</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.6</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.7</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Select / Move · Pan · Zoom · Raster selection · Crop · Resize canvas · Copy, cut, paste, duplicate</dd>
-    <dt>Document version</dt><dd>1.6</dd>
-    <dt>Last Updated</dt>    <dd>09-17-26 00:56</dd>
+    <dt>Document version</dt><dd>1.7</dd>
+    <dt>Last Updated</dt>    <dd>09-17-26 01:53</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.7</td>
+        <td class="nowrap">09-17-26 01:53</td>
+        <td>Doug Bower</td>
+        <td>End-to-end pass finding 16 (Doug's decision A of 09-17-26), a departure from 5.5.2: Cut with a raster selection erases the pixels the user sees, on the topmost visible layer that holds an image under the selection, not on the active layer. A capture places its image on the Background layer and leaves an empty annotation layer active, and the cut erased nothing there and said nothing. That layer's lock refuses the cut with the never-disabled message "Cut needs an unlocked layer under the selection" (finding 10 read the active layer's lock); a selection over no image is refused with "Cut needs an image under the selection", and no empty undo step is pushed. Copy is unchanged. The cost Doug accepted: where images are stacked, only the top one is cut. The Source dropdown of 5's Tool Options Bar (Active Layer, All Visible Layers, Specific Layer) remains unbuilt.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.6</td>
         <td class="nowrap">09-17-26 00:56</td>

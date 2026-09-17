@@ -2797,16 +2797,18 @@ class MainWindow(QMainWindow):
             and hasattr(active, "has_active_selection")
             and active.has_active_selection
         ):
-            # A lock prevents interactive editing (Navigation PRD 5.5.2, 7; pass finding 10)
-            layer = self._scene.layer_manager.active_layer
-            if layer is not None and not self._require(
+            # Cut erases the pixels the user sees: the topmost visible layer with an image
+            # under the selection, whose lock refuses it (pass findings 10 and 16)
+            source = self._raster_cut_source(active.selection_rect)
+            if not self._require(
                 "Cut",
-                (not layer.locked, "an unlocked active layer"),
-                (layer.visible, "a visible active layer"),
+                (source is not None, "an image under the selection"),
+                (source is None or not source.locked, "an unlocked layer under the selection"),
             ):
                 return
+            assert source is not None
             self._copy_raster_selection(active)
-            self._cut_raster_selection(active)
+            self._cut_raster_selection(active, source.layer_id)
             return
         if not self._require_selection("Cut"):
             return
@@ -2837,16 +2839,35 @@ class MainWindow(QMainWindow):
         image = engine.render_region(rect)
         self._clipboard.copy_raster_region(image, rect)
 
-    def _cut_raster_selection(self, tool: RasterSelectTool | LassoSelectTool) -> None:
-        """Cut pixels from a raster/lasso selection (erase after copy)."""
+    def _raster_cut_source(self, rect: QRectF) -> Layer | None:
+        """The topmost visible layer holding an image under *rect*, or None (Doug's
+        decision A of 09-17-26, end-to-end pass finding 16: a capture leaves an empty
+        annotation layer active, and the image the user selected is on the Background
+        layer below it)."""
+        from snapmock.items.raster_region_item import RasterRegionItem
+
+        if rect.isEmpty():
+            return None
+        lm = self._scene.layer_manager
+        for gitem in self._scene.items(rect):  # topmost first
+            if not isinstance(gitem, RasterRegionItem):
+                continue
+            layer = lm.layer_by_id(gitem.layer_id)
+            if layer is not None and layer.visible:
+                return layer
+        return None
+
+    def _cut_raster_selection(
+        self, tool: RasterSelectTool | LassoSelectTool, layer_id: str
+    ) -> None:
+        """Cut pixels from a raster/lasso selection (erase after copy) on *layer_id*."""
         from PyQt6.QtGui import QImage
 
         from snapmock.commands.raster_commands import RasterCutCommand
 
         rect = tool.selection_rect
-        layer = self._scene.layer_manager.active_layer
-        if layer is not None and not rect.isEmpty():
-            cmd = RasterCutCommand(self._scene, rect, QImage(), layer.layer_id)
+        if not rect.isEmpty():
+            cmd = RasterCutCommand(self._scene, rect, QImage(), layer_id)
             self._scene.command_stack.push(cmd)
         tool.cancel()
 

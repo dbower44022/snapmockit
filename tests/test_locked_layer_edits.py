@@ -45,7 +45,8 @@ def test_cut_of_a_raster_selection_on_a_locked_layer_is_refused(
     main_window.scene.layer_manager.set_locked(layer.layer_id, True)
     _raster_selection(main_window, QRectF(10, 10, 50, 50))
     main_window._edit_cut()  # noqa: SLF001
-    assert unmet_messages and "Cut needs an unlocked active layer" in unmet_messages[-1][1]
+    assert unmet_messages
+    assert "Cut needs an unlocked layer under the selection" in unmet_messages[-1][1]
     assert item._pixmap.toImage().pixelColor(30, 30).alpha() == 255  # noqa: SLF001
     assert main_window.scene.command_stack.undo_text != "Raster cut"
     main_window._edit_copy()  # noqa: SLF001
@@ -179,3 +180,64 @@ def test_a_duplicate_of_the_background_layer_holds_a_movable_image(
     assert len(copy) == 1
     window.selection_manager.select(copy[0])
     assert window.selection_manager.items == copy
+
+
+# ---- Cut takes the pixels the user sees (end-to-end pass finding 16) ----
+
+
+def _capture(window: MainWindow) -> RasterRegionItem:
+    from snapmock.commands.layer_commands import CreateBackgroundLayerCommand
+
+    pixmap = QPixmap(300, 200)
+    pixmap.fill(QColor("green"))
+    command = CreateBackgroundLayerCommand(window.scene, pixmap)
+    window.scene.command_stack.push(command)
+    return command.item
+
+
+def test_cut_on_a_capture_erases_the_background_image(
+    main_window: MainWindow, unmet_messages: list[tuple[str, str]]
+) -> None:
+    """Doug's decision A of 09-17-26: Cut erases from the topmost visible layer with an
+    image under the selection. A capture leaves an empty annotation layer active, and the
+    cut erased nothing there and said nothing."""
+    image = _capture(main_window)
+    lm = main_window.scene.layer_manager
+    assert lm.active_layer is not lm.background_layer
+    _raster_selection(main_window, QRectF(10, 10, 50, 50))
+    main_window._edit_cut()  # noqa: SLF001
+    assert not unmet_messages
+    assert image.pixmap.toImage().pixelColor(30, 30).alpha() == 0
+    main_window.scene.command_stack.mark_clean()
+
+
+def test_cut_on_a_capture_with_a_locked_background_is_refused(
+    main_window: MainWindow, unmet_messages: list[tuple[str, str]]
+) -> None:
+    image = _capture(main_window)
+    lm = main_window.scene.layer_manager
+    background = lm.background_layer
+    assert background is not None
+    lm.set_locked(background.layer_id, True)
+    _raster_selection(main_window, QRectF(10, 10, 50, 50))
+    undo_before = main_window.scene.command_stack.undo_text
+    main_window._edit_cut()  # noqa: SLF001
+    assert (
+        unmet_messages
+        and "Cut needs an unlocked layer under the selection" in (unmet_messages[-1][1])
+    )
+    assert image.pixmap.toImage().pixelColor(30, 30).alpha() == 255
+    assert main_window.scene.command_stack.undo_text == undo_before
+    main_window.scene.command_stack.mark_clean()
+
+
+def test_cut_with_no_image_under_the_selection_says_so(
+    main_window: MainWindow, unmet_messages: list[tuple[str, str]]
+) -> None:
+    _capture(main_window)
+    _raster_selection(main_window, QRectF(400, 300, 50, 50))
+    undo_before = main_window.scene.command_stack.undo_text
+    main_window._edit_cut()  # noqa: SLF001
+    assert unmet_messages and "Cut needs an image under the selection" in (unmet_messages[-1][1])
+    assert main_window.scene.command_stack.undo_text == undo_before
+    main_window.scene.command_stack.mark_clean()
