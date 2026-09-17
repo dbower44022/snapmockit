@@ -1,6 +1,6 @@
 # The End-to-End Pass on Real Work, and the 1.0.0 Release — Notes
 
-Last Updated: 09-17-26 12:26 · Revision 1.40
+Last Updated: 09-17-26 12:36 · Revision 1.41
 
 Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`, Section 1): the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, used by Doug for his real screenshot work over several sittings, every finding recorded and classified, every defect fixed with a test, and then the first release the product stands behind, `1.0.0`. The kickoff prompt is `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The record takes the shape of the General UI acceptance pass (`docs/General-UI-Implementation.md`, Section 16) where it fits: one row per finding, Doug's words quoted, the evidence named.
 
@@ -10,7 +10,7 @@ Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`
 |---|---|---|---|
 | 1 | The four decisions, this document, and the Wayland check (checklist section 7) | Steps 1 and 3 done 09-15-26 (def7507); step 2, the Wayland check, run by Doug 09-17-26 11:44 to 11:52 (Section 7): Capture Full Screen and Capture Active Window's region fallback proven through the portal, Capture Region on Doug's word; passed, so Phase 3 is unblocked; Phase 1 done | def7507 |
 | 2 | The sittings: Doug's real work, each finding recorded, triaged, and fixed | Done 09-17-26, ended by Doug's call (decision 2.1, option C): two sittings, one on real work; sixteen findings, ten defects fixed, five departures built, one follow-up deferred; every one seen on the display and closed but the follow-up | 2e43326 to this commit |
-| 3 | The release: version 1.0.0, the tag, the release job, the smoke test, Check for Updates from 0.9.0, the README | In progress from 09-17-26 12:12 (Section 8): version 1.0.0 and build date 2026-09-17 set, the README's status line updated, the release notes written; the tag waits for Doug to read the notes | |
+| 3 | The release: version 1.0.0, the tag, the release job, the smoke test, Check for Updates from 0.9.0, the README | Released 09-17-26 12:33 (Section 8): v1.0.0 published, downloaded, smoke-tested, and found by 0.9.0's update check headless; the same check on the display, and the install of 1.0.0 in the menu, owed to Doug (checklist section 9) | |
 | Close-out | The PRD rows, the release-engineering notes, what remains of packaging and the platform backends, the next required step | Not started | |
 
 ## 2. Decisions
@@ -195,6 +195,10 @@ Passed 09-17-26 (below). Run by Doug from the checklist page against the release
 
 **Continuous integration at e6d1f11, run 35245982497, 16:20 to 16:25 UTC:** lint, types, and tests, the wheel and sdist, and the Linux AppImage all passed; the release job skipped, as it does without a tag. **Waiting on Doug:** his reading of the release notes above, then the annotated tag `v1.0.0` with those notes as its message.
 
+**Released, 09-17-26.** Doug, 12:28: "tag it". The annotated tag `v1.0.0` on f53c4e5, its message the notes above, was pushed with `main`. **Run 35246747096 on the tag:** the tests in 4 minutes 27 seconds, the wheel in 14 seconds, the AppImage in 64 seconds, and the release job after them; **the release `Snapmockit 1.0.0` was published at 16:33:34 UTC (12:33 here)**, an ordinary release (`prerelease=false`), with `Snapmockit-1.0.0-x86_64.AppImage` attached, 128,293,368 bytes; `releases/latest` answers `v1.0.0`. Verified here: the file downloaded to `dist/` has SHA-256 beginning `73cb04a2903a634a`, answers `--version` with `Snapmockit 1.0.0`, and passes `packaging/appimage/smoke.sh` against a scratch home. **Check for Updates from 0.9.0, headless:** the released 0.9.0 file, extracted, running `UpdateChecker` from its own bundled Python against GitHub: outcome `NEWER`, running `0.9.0`, tag `v1.0.0`, release page `https://github.com/dbower44022/snapmockit/releases/tag/v1.0.0`.
+
+**Owed to Doug:** section 9 of the checklist page (https://claude.ai/artifact/HHCf3xs7L32kcHrtEnBpe2), added 09-17-26 12:36: the same check through 0.9.0's Help menu, then 1.0.0 copied over `~/Applications/Snapmockit.AppImage` and started from the main menu (ids v01 to v10).
+
 ```text
 Snapmockit 1.0.0
 
@@ -235,7 +239,8 @@ Tested on Cinnamon under both X11 and Wayland. Under Wayland, captures go throug
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
-| 1.40 | 09-17-26 12:26 | Claude (Claude Code) | Section 8: continuous integration green at e6d1f11; the tag waits for Doug's reading of the notes. |
+| 1.41 | 09-17-26 12:36 | Claude (Claude Code) | Section 8: v1.0.0 tagged on Doug's word and published; the release file verified and found by 0.9.0's update check headless; checklist section 9 owed. |
+| 1.40 | 09-17-26 12:25 | Claude (Claude Code) | Section 8: continuous integration green at e6d1f11; the tag waits for Doug's reading of the notes. |
 | 1.39 | 09-17-26 12:13 | Claude (Claude Code) | Phase 3 started: version 1.0.0 and the build date set, the README's status line updated, and the release notes written in Section 8 for Doug to read before the tag; the suite's one version-bound test given a far-future tag. |
 | 1.38 | 09-17-26 11:56 | Claude (Claude Code) | Step 12 (Capture Region) confirmed by Doug; the Wayland check passed; Phase 1 done and Phase 3 unblocked; the 1.37 row's time corrected to 11:54. |
 | 1.37 | 09-17-26 11:54 | Claude (Claude Code) | The Wayland check's run recorded from the page's one mark and the files it left: full screen and the active-window fallback proven through the portal; step 15's problem an instruction error; Capture Region not evidenced, put to Doug. |
