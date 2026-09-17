@@ -1,6 +1,6 @@
 # Packaging: the Linux AppImage — Implementation Notes
 
-Last Updated: 09-17-26 11:58 · Revision 2.2
+Last Updated: 09-17-26 11:56 · Revision 2.3
 
 Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`, Section 1) for Linux: the AppImage that Technical Architecture PRD 7.3 names as the primary Linux distribution, built by a recipe in the repository, proven on this machine, built in continuous integration on every push, and published as a GitHub release on a tag, together with the migration of the two on-disk names the rename of 09-14-26 left as they were. The kickoff prompt is `docs/Packaging-AppImage-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -9,7 +9,7 @@ Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
 | 1 | The five decisions, this document, and the recipe under `packaging/appimage/` with its tests | Done 09-14-26: the suite at 2d10faa, 1652 passed, 13 skipped, 1 deselected, in 7 minutes 58 seconds from a scratch worktree | 860f370, 2d10faa, then the close-out commit |
-| 2 | The AppImage built here and run as a user would; every proof of the task recorded; size and start time measured | Done 09-14-26 but for the Wayland portal capture, deferred (Section 8.2); the icon note closed 09-15-26 as an instruction error | eb4e4ac, d3b100f, then the close-out commit |
+| 2 | The AppImage built here and run as a user would; every proof of the task recorded; size and start time measured | Done 09-14-26; the Wayland portal capture, deferred then, passed 09-17-26 (Section 8.4); the icon note closed 09-15-26 as an instruction error | eb4e4ac, d3b100f, then the close-out commit |
 | 3 | The build in continuous integration: the AppImage as an artifact on every push, a smoke test on the runner, the release job on a `vX.Y.Z` tag | Done 09-15-26: run 34928224677 green, the AppImage job in 51 seconds | b683422, then the close-out commit |
 | 4 | The migration of the on-disk names, and the first release, `v0.9.0` | Done 09-15-26: v0.9.0 published by the release job at 00:43, found by Check for Updates from 0.1.0; the migration\'s first start and the menu check owed as display checks | b29ac86, 080e2f3 |
 | Close-out | The PRD rows, the release-engineering notes, the display checks owed, what of 7.3 remains | Done 09-15-26 (Section 11) | the close-out commit |
@@ -127,7 +127,7 @@ Run by Doug from section 8 of the same checklist page, marks read back. **Six st
 
 ### 8.4 The Wayland portal capture, 09-17-26 11:44 to 11:52
 
-Run by Doug from section 7 of the same page, rewritten 09-17-26 as 21 steps (w01 to w21), against the released 0.9.0 file in the `Cinnamon on Wayland (Experimental)` session. The full record is `docs/End-to-End-Pass.md`, Section 7. In short: one mark on the page (step 15, an instruction error: a capture is a library file and saves in place without a dialog; Save As worked); the library holds a full-screen capture and two active-window captures turned into regions, each naming the `wayland_portal` backend and version 0.9.0. No capture records a Capture Region request; that step is put to Doug.
+Run by Doug from section 7 of the same page, rewritten 09-17-26 as 21 steps (w01 to w21), against the released 0.9.0 file in the `Cinnamon on Wayland (Experimental)` session. The full record is `docs/End-to-End-Pass.md`, Section 7. In short: one mark on the page (step 15, an instruction error: a capture is a library file and saves in place without a dialog; Save As worked); the library holds a full-screen capture and two active-window captures turned into regions, each naming the `wayland_portal` backend and version 0.9.0. No capture records a Capture Region request; Doug confirmed at 11:56 that the step worked ("step 12 = yes"). **The Wayland portal capture has passed; this work owes no display check.**
 
 ## 9. The build in continuous integration (Phase 3)
 
@@ -169,7 +169,7 @@ Version `0.9.0` and build date `2026-09-15` in commit 080e2f3, its suite green f
 
 **What of 7.3 remains, and what this machine can build:** Flatpak (secondary Linux; this machine can build it, with `flatpak-builder` and the KDE or freedesktop runtime, a manifest, and the same desktop integration files; a Flathub submission is a separate step); PyPI (`uv publish` of the wheel and sdist the CI build already makes, from this machine or a workflow, once a PyPI account and token exist; the console entry point Section 3 of the kickoff noted is missing would be added then); the Windows MSI and portable ZIP (need a Windows machine, and the Windows capture backend's own display checks first; `docs/Windows-Backend-Kickoff-Prompt.md`); the macOS bundle (needs a Mac, and the macOS backend, deferred). This machine can build the Flatpak and publish to PyPI; it cannot build the Windows or macOS packages.
 
-**Display checks this work owes:** one, the Wayland portal capture of the checklist page's section 7, when the machine can be logged out. The others, Help > Check for Updates from the 0.1.0 AppImage finding v0.9.0, and the first start of 0.9.0 with the migration's message and the new names on disk, passed on 09-15-26 (Section 8.3).
+**Display checks this work owes:** none since 09-17-26, when the Wayland portal capture of the checklist page's section 7 passed (Section 8.4). The others, Help > Check for Updates from the 0.1.0 AppImage finding v0.9.0, and the first start of 0.9.0 with the migration's message and the new names on disk, passed on 09-15-26 (Section 8.3).
 
 **The next required step** is step 4 of the release-engineering list: an end-to-end pass on real work on the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, before `1.0.0` is claimed. Its kickoff prompt is not yet written.
 
@@ -177,7 +177,8 @@ Version `0.9.0` and build date `2026-09-15` in commit 080e2f3, its suite green f
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
-| 2.2 | 09-17-26 11:58 | Claude (Claude Code) | Section 8.4: the Wayland portal capture run by Doug, recorded from the files it left; Capture Region's evidence put to Doug. |
+| 2.3 | 09-17-26 11:56 | Claude (Claude Code) | Section 8.4: Capture Region confirmed by Doug; the Wayland capture passed and no display check is owed; Phase 2's row and Section 11 say so; the 2.2 row's time corrected to 11:54. |
+| 2.2 | 09-17-26 11:54 | Claude (Claude Code) | Section 8.4: the Wayland portal capture run by Doug, recorded from the files it left; Capture Region's evidence put to Doug. |
 | 2.1 | 09-15-26 09:50 | Claude (Claude Code) | Change log back-filled: the rows for revisions 1.3 to 2.0 were never written when those revisions were made (found at the start of the end-to-end pass, `docs/End-to-End-Pass.md`); each row below is taken from the commit that made the revision. No other content changed. |
 | 2.0 | 09-15-26 01:30 | Claude (Claude Code) | Section 8.3: Doug's section 8 run, Check for Updates from 0.1.0 finding v0.9.0 and the migration's first start of 0.9.0, six steps as described; the Wayland capture the one display check left owed. |
 | 1.9 | 09-15-26 00:45 | Claude (Claude Code) | Phase 4 and the close-out done: Section 10.1 (v0.9.0 released and found by Check for Updates headless) and Section 11 (the PRD rows, what of 7.3 remains, the display checks owed). |
