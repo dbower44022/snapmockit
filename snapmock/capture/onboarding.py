@@ -21,6 +21,7 @@ from PyQt6.QtWidgets import (
 )
 
 from snapmock.config.constants import APP_NAME
+from snapmock.config.packaging import capture_command
 
 CONSENT_TEXT = (
     f"Your desktop will ask whether {APP_NAME} may take a screenshot. This is the desktop's "
@@ -31,11 +32,18 @@ HOTKEY_TEXT = (
     "To capture with PrintScreen, bind a shortcut in your desktop's keyboard settings to "
     "this command:"
 )
-COMMANDS = (
-    ("Region", "snapmock --capture region"),
-    ("Active window", "snapmock --capture window"),
-    ("Full screen", "snapmock --capture full"),
-)
+CAPTURE_MODES = (("Region", "region"), ("Active window", "window"), ("Full screen", "full"))
+
+
+def commands() -> tuple[tuple[str, str], ...]:
+    """The three shortcut commands, written for the form this process runs as.
+
+    An installed form is not started by the name a checkout is; the Flatpak's
+    command is a ``flatpak run`` line (``config/packaging.py``).
+    """
+    return tuple((label, capture_command(mode)) for label, mode in CAPTURE_MODES)
+
+
 DESKTOP_NOTES = (
     "GNOME: Settings > Keyboard > View and Customize Shortcuts > Custom Shortcuts.",
     "KDE Plasma: System Settings > Shortcuts > Add Command.",
@@ -70,7 +78,7 @@ class DesktopShortcutPanel(QGroupBox):
         intro.setWordWrap(True)
         layout.addWidget(intro)
         self.fields: dict[str, QLineEdit] = {}
-        for label, command in COMMANDS:
+        for label, command in commands():
             row = QHBoxLayout()
             row.addWidget(QLabel(f"{label}:"))
             field = QLineEdit(command)

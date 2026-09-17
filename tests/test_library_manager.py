@@ -430,3 +430,83 @@ def test_move_library(library: LibraryManager, tmp_path: Path) -> None:
     assert (new_root / a.name).exists()
     assert (new_root / "Sub").is_dir()
     assert calls[-1] == (2, 2)
+
+
+# ---- the trash route inside a Flatpak (Flatpak notes, Section 5.2) -------------------------
+
+
+def test_outside_a_flatpak_the_trash_route_is_send2trash(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sent: list[Path] = []
+    asked: list[Path] = []
+    monkeypatch.setattr(manager_module, "send2trash", _fake_send2trash(sent))
+    monkeypatch.setattr(manager_module, "in_flatpak", lambda: False)
+    monkeypatch.setattr(manager_module, "trash_through_portal", lambda p: asked.append(p) or True)
+    target = tmp_path / "one.smk"
+    target.write_text("x", encoding="utf-8")
+
+    assert manager_module.send_to_system_trash(target) is True
+    assert sent == [target] and asked == []
+
+
+def test_inside_a_flatpak_the_desktop_s_own_trash_service_is_asked_first(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The sandbox's own trash directory is invisible to the user, so the portal wins."""
+    sent: list[Path] = []
+    asked: list[Path] = []
+
+    def _portal(path: Path) -> bool:
+        asked.append(path)
+        path.unlink()
+        return True
+
+    monkeypatch.setattr(manager_module, "send2trash", _fake_send2trash(sent))
+    monkeypatch.setattr(manager_module, "in_flatpak", lambda: True)
+    monkeypatch.setattr(manager_module, "trash_through_portal", _portal)
+    target = tmp_path / "one.smk"
+    target.write_text("x", encoding="utf-8")
+
+    assert manager_module.send_to_system_trash(target) is True
+    assert asked == [target] and sent == []
+
+
+def test_a_refused_trash_service_still_removes_the_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A file the user asked to delete leaves the library whichever route works."""
+    sent: list[Path] = []
+    monkeypatch.setattr(manager_module, "send2trash", _fake_send2trash(sent))
+    monkeypatch.setattr(manager_module, "in_flatpak", lambda: True)
+    monkeypatch.setattr(manager_module, "trash_through_portal", lambda _p: False)
+    target = tmp_path / "one.smk"
+    target.write_text("x", encoding="utf-8")
+
+    assert manager_module.send_to_system_trash(target) is True
+    assert sent == [target] and not target.exists()
+
+
+def test_a_path_that_is_already_gone_is_never_trashed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    asked: list[Path] = []
+    monkeypatch.setattr(manager_module, "in_flatpak", lambda: True)
+    monkeypatch.setattr(manager_module, "trash_through_portal", lambda p: asked.append(p) or True)
+    assert manager_module.send_to_system_trash(tmp_path / "gone.smk") is False
+    assert asked == []
+
+
+def test_the_trash_service_is_not_reached_without_a_session_bus(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """With no bus there is nothing to ask, and the call says so instead of raising."""
+    from PyQt6.QtDBus import QDBusConnection
+
+    monkeypatch.setattr(
+        QDBusConnection, "sessionBus", staticmethod(lambda: QDBusConnection("no bus"))
+    )
+    target = tmp_path / "one.smk"
+    target.write_text("x", encoding="utf-8")
+    assert manager_module.trash_through_portal(target) is False
+    assert target.exists()

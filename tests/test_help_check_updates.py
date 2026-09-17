@@ -224,3 +224,40 @@ def test_the_checker_belongs_to_the_window_and_the_request_is_the_endpoint(
     request = no_network[0]
     assert getattr(request, "url")().toString() == latest_release_url()
     assert QUrl(latest_release_url()).host() == "api.github.com"
+
+
+def test_inside_a_flatpak_a_newer_release_names_the_bundle(
+    main_window: MainWindow, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Flatpak decision 5: the release page carries one file per form."""
+    from snapmock import main_window as module
+
+    monkeypatch.setattr(module, "in_flatpak", lambda: True)
+    newer = UpdateCheckResult(Outcome.NEWER, "1.0.0", "v1.1.0", "https://example.test/r")
+    text = main_window.update_message_text(newer)
+    assert text.startswith("Snapmockit v1.1.0 is available. You are running Snapmockit 1.0.0.")
+    assert text.endswith(
+        "Download the new .flatpak bundle from the release page and install it with "
+        "flatpak install."
+    )
+    # Only the newer outcome gains the instruction; the others read as they did.
+    up_to_date = UpdateCheckResult(Outcome.UP_TO_DATE, "1.0.0", "v1.0.0", "https://example.test/r")
+    assert main_window.update_message_text(up_to_date) == (
+        "Snapmockit 1.0.0 is up to date. The latest release is v1.0.0."
+    )
+    assert main_window.update_message_link(newer) == (
+        "Open Release Page",
+        "https://example.test/r",
+    )
+
+
+def test_outside_a_flatpak_the_message_is_unchanged(
+    main_window: MainWindow, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from snapmock import main_window as module
+
+    monkeypatch.setattr(module, "in_flatpak", lambda: False)
+    newer = UpdateCheckResult(Outcome.NEWER, "1.0.0", "v1.1.0", "https://example.test/r")
+    assert main_window.update_message_text(newer) == (
+        "Snapmockit v1.1.0 is available. You are running Snapmockit 1.0.0."
+    )

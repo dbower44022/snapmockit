@@ -32,6 +32,7 @@ from snapmock.config.constants import (
     ORG_NAME,
     STORAGE_APP_NAME,
 )
+from snapmock.config.packaging import in_flatpak
 
 log = logging.getLogger("snapmock")
 
@@ -196,6 +197,63 @@ def _remove_if_empty(directory: Path) -> None:
             directory.rmdir()
     except OSError:
         pass
+
+
+@dataclass
+class ImportReport:
+    """What one run of :func:`import_host_settings` copied."""
+
+    copied: list[str] = field(default_factory=list)
+
+    def message(self) -> str:
+        """The one line the user sees after the copy; empty when nothing was copied."""
+        if not self.copied:
+            return ""
+        what = self.copied[0] if len(self.copied) == 1 else " and ".join(self.copied)
+        return f"Copied your {what} from the installation outside Flatpak."
+
+
+def _copy_tree(old: Path, new: Path) -> bool:
+    """Copy *old* to *new* when the old exists and the new does not; never overwrite."""
+    if not old.is_dir() or new.exists():
+        return False
+    try:
+        new.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(old, new)
+    except OSError as exc:
+        log.warning("could not copy %s to %s: %s", old, new, exc)
+        return False
+    log.info("copied %s to %s", old, new)
+    return True
+
+
+def import_host_settings(
+    home: Path | None = None, root: Path | None = None, flatpak: bool | None = None
+) -> ImportReport:
+    """Fill the Flatpak's own store once from the home directory's (Flatpak decision 4).
+
+    Inside a Flatpak the configuration location is the sandbox's own
+    (``~/.var/app/<id>/config``), so a user who has set the AppImage up would meet
+    the first-run defaults. On the first start, and only then, the settings store
+    and the presets, themes, tool state, and custom stamps are copied from
+    ``~/.config``, which decision 3 makes reachable. Nothing is copied outside a
+    Flatpak, nothing is overwritten, and the library is not copied: both forms
+    open the same one.
+    """
+    if flatpak is None:
+        flatpak = in_flatpak()
+    if not flatpak:
+        return ImportReport()
+    root = config_root() if root is None else root
+    host = (Path.home() if home is None else home) / ".config"
+    if host == root:  # not a sandbox after all; there is nothing to copy from
+        return ImportReport()
+    report = ImportReport()
+    if _copy_tree(host / ORG_NAME, root / ORG_NAME):
+        report.copied.append("settings")
+    if _copy_tree(host / DATA_DIRECTORY_NAME, root / DATA_DIRECTORY_NAME):
+        report.copied.append("presets and themes")
+    return report
 
 
 def migrate_storage(home: Path | None = None, root: Path | None = None) -> MigrationReport:

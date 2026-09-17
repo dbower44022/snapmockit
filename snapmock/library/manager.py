@@ -19,6 +19,7 @@ from snapmock.config.constants import (
     LIBRARY_WRITE_BACK_DELAY_MS,
     PROJECT_EXTENSION,
 )
+from snapmock.config.packaging import in_flatpak
 from snapmock.core.command_stack import CommandStack
 from snapmock.core.layer import LAYER_TYPE_BACKGROUND
 from snapmock.core.scene import SnapScene
@@ -534,10 +535,57 @@ class LibraryManager(QObject):
             return 0
 
 
+TRASH_PORTAL_SERVICE = "org.freedesktop.portal.Desktop"
+TRASH_PORTAL_PATH = "/org/freedesktop/portal/desktop"
+TRASH_PORTAL_INTERFACE = "org.freedesktop.portal.Trash"
+TRASH_PORTAL_SUCCESS = 1
+"""The portal answers 1 when the file reached the trash and 0 when it did not."""
+
+
+def trash_through_portal(path: Path) -> bool:
+    """Ask the desktop's own trash service to trash *path*; False when it declines.
+
+    Inside a Flatpak, ``send2trash`` and Qt alike write to the trash directory under
+    ``$XDG_DATA_HOME``, which the sandbox points at
+    ``~/.var/app/<id>/data/Trash``: the file leaves the library and never appears in
+    the user's trash. The desktop portal's Trash interface is the route that reaches
+    the real one. Verified on this machine on 09-17-26: the descriptor must be opened
+    ``O_PATH`` (``O_RDONLY`` is refused), and a whole folder is accepted that way too.
+    """
+    from PyQt6.QtDBus import QDBusConnection, QDBusInterface, QDBusUnixFileDescriptor
+
+    bus = QDBusConnection.sessionBus()
+    if not bus.isConnected():
+        return False
+    try:
+        handle = os.open(str(path), os.O_PATH)
+    except OSError:
+        return False
+    try:
+        interface = QDBusInterface(
+            TRASH_PORTAL_SERVICE, TRASH_PORTAL_PATH, TRASH_PORTAL_INTERFACE, bus
+        )
+        if not interface.isValid():
+            return False
+        reply = interface.call("TrashFile", QDBusUnixFileDescriptor(handle))
+        arguments = reply.arguments()
+    finally:
+        os.close(handle)
+    return bool(arguments) and arguments[0] == TRASH_PORTAL_SUCCESS
+
+
 def send_to_system_trash(path: Path) -> bool:
-    """Send one file or folder to the system trash. False if it is gone or refused."""
+    """Send one file or folder to the system trash. False if it is gone or refused.
+
+    Inside a Flatpak the desktop's trash service is asked first, so the file lands in
+    the user's own trash and not in the sandbox's (Flatpak notes, Section 5.2); if the
+    service declines, ``send2trash`` still takes it, since a file the user asked to
+    delete must leave the library either way.
+    """
     if not path.exists():
         return False
+    if in_flatpak() and trash_through_portal(path):
+        return True
     try:
         send2trash(str(path))
     except OSError:

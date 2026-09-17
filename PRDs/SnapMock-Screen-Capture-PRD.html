@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Screen Capture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.0</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.1</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Full Screen · Active Window · Region · Global Hotkeys · System Tray · Platform Backends</dd>
-    <dt>Document version</dt><dd>1.0</dd>
-    <dt>Last Updated</dt>    <dd>09-07-26 12:12</dd>
+    <dt>Document version</dt><dd>1.1</dd>
+    <dt>Last Updated</dt>    <dd>09-17-26 18:34</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.1</td>
+        <td class="nowrap">09-17-26 18:34</td>
+        <td>Doug Bower</td>
+        <td>3.5 and 9.2: the command the first-run page and Preferences &gt; Capture show for a desktop shortcut is now written for the form the process runs as — flatpak run io.github.dbower44022.snapmockit for the Flatpak, the AppImage's own path for the AppImage, and the running interpreter's module line from a checkout. The text shown until now, snapmock --capture &lt;mode&gt;, named a command no installed form provides, which left the Wayland user's only hotkey route broken in both forms (docs/Packaging-Flatpak-Implementation.md, Section 5.3).</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr><td>1.0</td><td class="nowrap">09-07-26 12:12</td><td>Doug Bower</td><td>Converted from Word to HTML against the shared stylesheet. Content unchanged except as noted in the change log.</td><td><span class="status open">Pending</span></td></tr>
       <tr><td>1.0</td><td class="nowrap">09-07-26 12:05</td><td>Doug Bower</td><td>Initial document, authored in Word from the Screen Capture PRD kickoff prompt.</td><td><span class="status closed">Superseded by format conversion</span></td></tr>
     </tbody>

@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.62</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.63</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.62</dd>
-    <dt>Last Updated</dt>    <dd>09-17-26 18:21</dd>
+    <dt>Document version</dt><dd>1.63</dd>
+    <dt>Last Updated</dt>    <dd>09-17-26 18:34</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.63</td>
+        <td class="nowrap">09-17-26 18:34</td>
+        <td>Doug Bower</td>
+        <td>Section 10 gains snapmock/config/packaging.py: which installed form is running (source, AppImage, Flatpak) and the command line that starts it, read from the environment. Three things follow it: the shortcut command the first-run page and Preferences show (Screen Capture PRD 1.1), the Check for Updates message (General UI PRD 2.50), and the trash route inside a sandbox (Library PRD 1.3). The Flatpak fills its own settings store once from the home directory's on its first start (Flatpak decision 4).</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.62</td>
         <td class="nowrap">09-17-26 18:21</td>
@@ -2415,6 +2422,7 @@ docstring.</p>
     config/                       # Application configuration: constants, settings, keyboard…
         constants.py              # Application-wide constants
         migration.py              # the one-time move of the on-disk names from SnapMock to Snapmockit (packaging decision 4)
+        packaging.py              # which form is running (source, AppImage, Flatpak) and the command line that starts it (Flatpak decisions 4 and 5)
         settings.py               # Persistent application settings backed by QSettings
         shortcuts.py              # Keyboard shortcut definitions
     core/                         # Core subsystems: scene graph, layers, commands,…

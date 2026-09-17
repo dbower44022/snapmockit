@@ -53,6 +53,7 @@ from snapmock.config.constants import (
     PANEL_THRESHOLD_MAX,
     PANEL_THRESHOLD_MIN,
 )
+from snapmock.config.packaging import capture_command
 from snapmock.config.settings import AppSettings
 from snapmock.core.theme_manager import current_theme
 from snapmock.library.model import SORT_OPTIONS
@@ -64,11 +65,22 @@ if TYPE_CHECKING:
 
 HOTKEY_IN_USE = "In use by another application"
 CURSOR_UNAVAILABLE = "Not available on this desktop"
-COMMAND_LINE_FOR_ACTION = {
-    HOTKEY_ACTION_REGION: "snapmock --capture region",
-    HOTKEY_ACTION_WINDOW: "snapmock --capture window",
-    HOTKEY_ACTION_FULL_SCREEN: "snapmock --capture full",
+CAPTURE_MODE_FOR_ACTION = {
+    HOTKEY_ACTION_REGION: "region",
+    HOTKEY_ACTION_WINDOW: "window",
+    HOTKEY_ACTION_FULL_SCREEN: "full",
 }
+
+
+def command_line_for_action(action: str) -> str:
+    """The command that takes *action*'s capture in the form this process runs as.
+
+    Read at call time, never stored: the AppImage's path and the Flatpak's
+    ``flatpak run`` line differ from the checkout's (``config/packaging.py``).
+    """
+    return capture_command(CAPTURE_MODE_FOR_ACTION[action])
+
+
 HOTKEY_LABELS = {
     HOTKEY_ACTION_REGION: "Region hotkey:",
     HOTKEY_ACTION_WINDOW: "Active window hotkey:",
@@ -663,7 +675,7 @@ class PreferencesDialog(QDialog):
         row = QWidget()
         layout = QHBoxLayout(row)
         layout.setContentsMargins(0, 0, 0, 0)
-        command = COMMAND_LINE_FOR_ACTION[action]
+        command = command_line_for_action(action)
         field = QLineEdit(command)
         field.setReadOnly(True)
         field.setToolTip("Bind a desktop shortcut to this command")

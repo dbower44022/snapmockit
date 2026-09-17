@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import QApplication
 from snapmock.capture.cli import CaptureCommand, parse_command_line
 from snapmock.capture.single_instance import try_forward
 from snapmock.config.constants import APP_NAME, APP_VERSION, DESKTOP_ENTRY_ID
-from snapmock.config.migration import migrate_storage
+from snapmock.config.migration import import_host_settings, migrate_storage
 from snapmock.main_window import MainWindow
 from snapmock.ui.icons import application_icon
 
@@ -77,6 +77,9 @@ def main(argv: list[str] | None = None) -> None:
 
     # Before anything reads the settings or the library (packaging decision 4).
     migration = migrate_storage()
+    # Inside a Flatpak, the store is the sandbox's own; fill it once from the home
+    # directory's on the first start (Flatpak decision 4).
+    imported = import_host_settings()
     window = MainWindow(restore_session=True)
     manager = window.capture_manager
     manager.listen_for_commands()
@@ -86,8 +89,9 @@ def main(argv: list[str] | None = None) -> None:
     if not hide_until_done:
         window.show()
         window.report_hotkey_failures()
-    if migration.moved:
-        window.show_startup_message(migration.message())
+    startup_messages = [text for text in (migration.message(), imported.message()) if text]
+    if startup_messages:
+        window.show_startup_message(" ".join(startup_messages))
     if files:
         window.open_paths([Path(name) for name in files])
     if command is not None:

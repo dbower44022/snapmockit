@@ -15,10 +15,12 @@ from PyQt6.QtCore import QSettings
 from snapmock.config import migration
 from snapmock.config.constants import APP_NAME
 from snapmock.config.migration import (
+    ImportReport,
     MigrationReport,
     Move,
     data_directory,
     default_library_directory,
+    import_host_settings,
     library_preference,
     migrate_storage,
     rewrite_paths,
@@ -236,3 +238,75 @@ def test_report_message_reads_as_one_sentence() -> None:
         ]
     )
     assert report.message() == "Moved settings to /h/.config/Snapmockit."
+
+
+# ---- the Flatpak's first start (Flatpak decision 4) ----------------------------------------
+
+
+def test_nothing_is_copied_outside_a_flatpak(tmp_path: Path) -> None:
+    host = tmp_path / "home" / ".config"
+    (host / APP_NAME).mkdir(parents=True)
+    sandbox = tmp_path / "var" / "config"
+    report = import_host_settings(home=tmp_path / "home", root=sandbox, flatpak=False)
+    assert report.copied == []
+    assert report.message() == ""
+    assert not sandbox.exists()
+
+
+def test_the_first_start_copies_the_settings_and_the_presets(tmp_path: Path) -> None:
+    home = tmp_path / "home"
+    host = home / ".config"
+    (host / APP_NAME).mkdir(parents=True)
+    (host / APP_NAME / f"{APP_NAME}.conf").write_text("[General]\ntheme=dark\n", encoding="utf-8")
+    (host / APP_NAME.lower()).mkdir(parents=True)
+    (host / APP_NAME.lower() / "tool_state.json").write_text("{}", encoding="utf-8")
+    sandbox = tmp_path / "var" / "config"
+
+    report = import_host_settings(home=home, root=sandbox, flatpak=True)
+
+    assert report.copied == ["settings", "presets and themes"]
+    assert report.message() == (
+        "Copied your settings and presets and themes from the installation outside Flatpak."
+    )
+    assert (sandbox / APP_NAME / f"{APP_NAME}.conf").read_text(encoding="utf-8").endswith("dark\n")
+    assert (sandbox / APP_NAME.lower() / "tool_state.json").is_file()
+    # The host's own store is left exactly as it was: this is a copy, not a move.
+    assert (host / APP_NAME / f"{APP_NAME}.conf").is_file()
+
+
+def test_the_copy_happens_once_and_never_overwrites(tmp_path: Path) -> None:
+    home = tmp_path / "home"
+    (home / ".config" / APP_NAME).mkdir(parents=True)
+    (home / ".config" / APP_NAME / f"{APP_NAME}.conf").write_text("host", encoding="utf-8")
+    sandbox = tmp_path / "var" / "config"
+    (sandbox / APP_NAME).mkdir(parents=True)
+    (sandbox / APP_NAME / f"{APP_NAME}.conf").write_text("the Flatpak's own", encoding="utf-8")
+
+    report = import_host_settings(home=home, root=sandbox, flatpak=True)
+
+    assert report.copied == []
+    assert (sandbox / APP_NAME / f"{APP_NAME}.conf").read_text(encoding="utf-8") == (
+        "the Flatpak's own"
+    )
+
+
+def test_an_empty_home_leaves_nothing_behind(tmp_path: Path) -> None:
+    report = import_host_settings(home=tmp_path / "home", root=tmp_path / "var", flatpak=True)
+    assert report.copied == []
+    assert report.message() == ""
+
+
+def test_a_store_that_is_the_home_directory_s_own_is_not_copied_onto_itself(
+    tmp_path: Path,
+) -> None:
+    """A sandbox that shares the home directory's configuration location copies nothing."""
+    home = tmp_path / "home"
+    root = home / ".config"
+    (root / APP_NAME).mkdir(parents=True)
+    assert import_host_settings(home=home, root=root, flatpak=True).copied == []
+
+
+def test_one_copied_store_reads_as_one_sentence() -> None:
+    assert ImportReport(["settings"]).message() == (
+        "Copied your settings from the installation outside Flatpak."
+    )

@@ -35,7 +35,7 @@ from snapmock.capture.backend import (  # noqa: E402
 )
 from snapmock.capture.manager import CaptureManager, CaptureState  # noqa: E402
 from snapmock.capture.models import CaptureMode, CaptureRequest, MonitorInfo  # noqa: E402
-from snapmock.capture.onboarding import COMMANDS, WaylandOnboardingDialog  # noqa: E402
+from snapmock.capture.onboarding import WaylandOnboardingDialog, commands  # noqa: E402
 from snapmock.config.settings import AppSettings  # noqa: E402
 
 
@@ -225,7 +225,7 @@ def test_onboarding_dialog_panels_and_copy(qtbot: QtBot, qapp: QApplication) -> 
     dlg = WaylandOnboardingDialog()
     qtbot.addWidget(dlg)
     assert dlg.windowTitle() == "Capturing on Wayland"
-    assert set(dlg.shortcut_panel.fields) == {c for _l, c in COMMANDS}
+    assert set(dlg.shortcut_panel.fields) == {c for _l, c in commands()}
     assert dlg.dont_show.isVisible() is False  # dialog not shown yet; widget exists
     buttons = dlg.findChild(QDialogButtonBox)
     assert buttons is not None

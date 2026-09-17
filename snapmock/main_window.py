@@ -73,6 +73,7 @@ from snapmock.config.constants import (
     ZOOM_MAX,
     ZOOM_MIN,
 )
+from snapmock.config.packaging import in_flatpak
 from snapmock.config.settings import AppSettings
 from snapmock.config.shortcuts import SHORTCUTS, key_sequences
 from snapmock.core.clipboard_manager import ClipboardManager
@@ -3932,11 +3933,22 @@ class MainWindow(QMainWindow):
             box.deleteLater()
         self._on_tool_changed_for_hint("")
 
+    FLATPAK_UPDATE_INSTRUCTION = (
+        "Download the new .flatpak bundle from the release page and install it with "
+        "flatpak install."
+    )
+    """What a newer release means inside a Flatpak (Flatpak decision 5): the release page
+    carries one file per form, and a Flatpak user told to download the AppImage is sent to
+    the wrong one. It becomes ``flatpak update`` once the Flathub step of decision 2 exists."""
+
     def update_message_text(self, result: UpdateCheckResult) -> str:
         """The message body for every outcome but network unavailable."""
         running = f"{APP_NAME} {result.running_version}"
         if result.outcome is Outcome.NEWER:
-            return f"{APP_NAME} {result.tag} is available. You are running {running}."
+            found = f"{APP_NAME} {result.tag} is available. You are running {running}."
+            if in_flatpak():
+                return f"{found} {self.FLATPAK_UPDATE_INSTRUCTION}"
+            return found
         if result.outcome is Outcome.UP_TO_DATE:
             return f"{running} is up to date. The latest release is {result.tag}."
         if result.outcome is Outcome.NO_RELEASE:
