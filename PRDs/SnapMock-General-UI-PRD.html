@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.47</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.48</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.47</dd>
-    <dt>Last Updated</dt>    <dd>09-16-26 23:58</dd>
+    <dt>Document version</dt><dd>2.48</dd>
+    <dt>Last Updated</dt>    <dd>09-17-26 00:56</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.48</td>
+        <td class="nowrap">09-17-26 00:56</td>
+        <td>Doug Bower</td>
+        <td>End-to-end pass finding 13 (Doug's decision A of 09-17-26): the canvas has its own resize handles (6.2). While the Select tool is active and nothing is selected, eight handles sit on the canvas border, drawn and cursored as the selection handles are. A drag of a handle moves the edges it carries: inward crops the canvas, with the part to be removed dimmed and the new size beside the pointer, and the image cut at the new edge (Navigation PRD 1.6, 7.6); outward extends the canvas and leaves the image as it is, never scaled. Shift keeps the proportions of the canvas as it was when the drag began: a corner follows the larger change and keeps the opposite corner, an edge handle carries the other dimension about the centre. The canvas never becomes smaller than 10 by 10 pixels. The release commits one undoable Crop Canvas step; Escape during the drag cancels it. While items are selected, their handles take the canvas's place. The cost Doug accepted: a drag that starts on a canvas handle resizes the canvas rather than starting a rubber band or moving an item there. The Crop tool (Navigation PRD 7) stays for exact sizes and aspect ratios.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.47</td>
         <td class="nowrap">09-16-26 23:58</td>
@@ -2291,6 +2298,10 @@ provide contrast against the canvas color.</p>
   canvas operations (Crop, Resize Canvas, Resize Image) still act on it. To reposition a
   capture, crop or resize the canvas, or duplicate the layer (the copy is an annotation
   layer, 3.4) and move the copy.</li>
+  <li>The canvas has its own eight resize handles, shown on its border by the Select tool
+  while nothing is selected. Dragging a handle inward crops the canvas and cuts the image at
+  the new edge; dragging it outward extends the canvas without scaling the image. Shift
+  keeps the canvas's proportions. The release is one undoable step; Escape cancels.</li>
   <li>Transparent areas are rendered as a checkerboard pattern (alternating light gray and
   white 8x8 pixel squares) to visually distinguish transparency from white.</li>
   <li>The canvas boundary is indicated by a subtle 1px dark gray border and a drop shadow

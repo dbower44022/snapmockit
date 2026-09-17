@@ -81,6 +81,9 @@ class CropTool(BaseTool):
 
     def deactivate(self) -> None:
         self.cancel()
+        view = self._view
+        if view is not None:
+            view.set_hover_cursor(None)
         super().deactivate()
 
     def cancel(self) -> None:
@@ -171,6 +174,11 @@ class CropTool(BaseTool):
         if self._state == _CropState.RESIZING:
             return self._handle_resize(pos)
 
+        # At rest: a handle shows its resize cursor (end-to-end pass finding 13)
+        view = self._view
+        if view is not None:
+            handle = self._overlay.handle_at(pos)
+            view.set_hover_cursor(None if handle is None else self._overlay.handle_cursor(handle))
         return False
 
     def mouse_release(self, event: QMouseEvent) -> bool:

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import QPointF, QRectF, Qt
-from PyQt6.QtGui import QBrush, QColor, QPainterPath, QPen
+from PyQt6.QtGui import QBrush, QColor, QCursor, QPainterPath, QPen
 from PyQt6.QtWidgets import (
     QGraphicsItem,
     QGraphicsItemGroup,
@@ -15,22 +15,37 @@ from PyQt6.QtWidgets import (
 )
 
 from snapmock.core.theme_manager import current_theme
+from snapmock.ui.transform_handles import HANDLE_HALF, HANDLE_SIZE
 
 if TYPE_CHECKING:
     from snapmock.core.scene import SnapScene
 
-HANDLE_SIZE = 8.0
-HANDLE_HALF = HANDLE_SIZE / 2.0
+# The resize cursor each handle shows, as the selection handles do (General UI PRD 6.6)
+_CURSORS: dict[str, Qt.CursorShape] = {
+    "top_left": Qt.CursorShape.SizeFDiagCursor,
+    "top_center": Qt.CursorShape.SizeVerCursor,
+    "top_right": Qt.CursorShape.SizeBDiagCursor,
+    "middle_left": Qt.CursorShape.SizeHorCursor,
+    "middle_right": Qt.CursorShape.SizeHorCursor,
+    "bottom_left": Qt.CursorShape.SizeBDiagCursor,
+    "bottom_center": Qt.CursorShape.SizeVerCursor,
+    "bottom_right": Qt.CursorShape.SizeFDiagCursor,
+}
 
 
 class CropHandleItem(QGraphicsRectItem):
-    """Small square resize handle for the crop region."""
+    """Square resize handle for the crop region and the raster selection.
+
+    Drawn as the selection handles are, a white square in the theme's handle colour at
+    the same size, with the same resize cursor (end-to-end pass finding 13).
+    """
 
     def __init__(self, position: str) -> None:
         super().__init__(-HANDLE_HALF, -HANDLE_HALF, HANDLE_SIZE, HANDLE_SIZE)
         self.position = position
-        self.setPen(QPen(QColor(255, 255, 255), 1))
-        self.setBrush(QBrush(current_theme().accent))
+        self.setPen(QPen(current_theme().selection_handle, 1))
+        self.setBrush(QBrush(QColor(255, 255, 255)))
+        self.setCursor(_CURSORS.get(position, Qt.CursorShape.ArrowCursor))
         self.setZValue(999999)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
 
@@ -164,6 +179,10 @@ class CropOverlay(QGraphicsItemGroup):
             if hr.contains(scene_pos):
                 return name
         return None
+
+    def handle_cursor(self, name: str) -> QCursor:
+        """The resize cursor of the handle called *name*."""
+        return self._handles[name].cursor()
 
     def is_inside_crop(self, scene_pos: QPointF) -> bool:
         """Return True if *scene_pos* is inside the crop rectangle."""

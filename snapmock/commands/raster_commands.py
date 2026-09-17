@@ -30,6 +30,8 @@ class CropCanvasCommand(BaseCommand):
         ]
         # Track items removed because they were entirely outside the crop
         self._removed_items: list[tuple[SnapGraphicsItem, str]] = []
+        # Images cut at the new edge, with the pixels they had (Navigation PRD 7.6)
+        self._clipped: list[tuple[RasterRegionItem, QPixmap]] = []
 
     def redo(self) -> None:
         # Translate all items by -offset
@@ -45,10 +47,44 @@ class CropCanvasCommand(BaseCommand):
                 self._removed_items.append((gitem, gitem.layer_id))
                 self._scene.removeItem(gitem)
 
+        self._clip_images(new_rect)
         self._scene.set_canvas_size(self._crop_rect.size())
+
+    def _clip_images(self, canvas: QRectF) -> None:
+        """Cut every image that crosses the new edge to the canvas (Navigation PRD 7.6;
+        end-to-end pass finding 14). An image that is rotated, scaled, or flipped keeps
+        its pixels, since its pixels do not map to the canvas one to one."""
+        from snapmock.items.raster_region_item import RasterRegionItem
+
+        self._clipped.clear()
+        for gitem, _orig_pos in self._item_positions:
+            if not isinstance(gitem, RasterRegionItem) or gitem.scene() is None:
+                continue
+            if (
+                not gitem.transform().isIdentity()
+                or gitem.rotation() != 0
+                or gitem.scale() != 1
+                or gitem.flip_horizontal
+                or gitem.flip_vertical
+            ):
+                continue
+            bounds = gitem.sceneBoundingRect()
+            kept = bounds.intersected(canvas)
+            if kept == bounds or kept.isEmpty():
+                continue
+            original = gitem.pixmap
+            local = kept.translated(-gitem.pos()).toAlignedRect()
+            self._clipped.append((gitem, original))
+            gitem.pixmap = original.copy(local)
+            gitem.setPos(gitem.pos() + QPointF(local.topLeft()))
 
     def undo(self) -> None:
         self._scene.set_canvas_size(self._old_size)
+
+        # Give the cut images their pixels back; the positions follow below
+        for image, pixmap in self._clipped:
+            image.pixmap = pixmap
+        self._clipped.clear()
 
         # Re-add removed items
         for gitem, layer_id in self._removed_items:

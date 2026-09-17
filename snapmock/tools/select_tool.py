@@ -28,12 +28,15 @@ from snapmock.items.text_item import TextItem
 from snapmock.tools.base_tool import BaseTool
 from snapmock.tools.blur_edit import BlurBrushSession, brush_editable
 from snapmock.tools.point_edit import PointEditSession, PointHandlesItem, session_for
+from snapmock.ui.crop_overlay import CropOverlay
 from snapmock.ui.dimension_overlay import dimension_overlay, existing_dimension_overlay
 from snapmock.ui.transform_handles import (
     CORNER_HANDLES,
     EDGE_HANDLES,
+    CanvasHandles,
     HandlePosition,
     TransformHandles,
+    resized_canvas_rect,
 )
 
 if TYPE_CHECKING:
@@ -61,6 +64,7 @@ class _State(Enum):
     HANDLE_DRAG = auto()
     POINT_DRAG = auto()
     BRUSH_STROKE = auto()
+    CANVAS_RESIZE = auto()
 
 
 class SelectTool(BaseTool):
@@ -80,6 +84,13 @@ class SelectTool(BaseTool):
 
         # Transform handles
         self._handles: TransformHandles | None = None
+
+        # The canvas's own handles while nothing is selected (end-to-end pass finding 13)
+        self._canvas_handles: CanvasHandles | None = None
+        self._canvas_handle: HandlePosition | None = None
+        self._canvas_origin: QRectF = QRectF()
+        self._canvas_target: QRectF = QRectF()
+        self._canvas_preview: CropOverlay | None = None
 
         # Handle-drag state
         self._handle_pos: HandlePosition | None = None
@@ -127,11 +138,19 @@ class SelectTool(BaseTool):
             _State.HANDLE_DRAG,
             _State.POINT_DRAG,
             _State.BRUSH_STROKE,
+            _State.CANVAS_RESIZE,
         )
+
+    @property
+    def canvas_handles(self) -> CanvasHandles | None:
+        """The canvas's resize handles while the tool is active."""
+        return self._canvas_handles
 
     def activate(self, scene: SnapScene, selection_manager: SelectionManager) -> None:
         super().activate(scene, selection_manager)
         self._handles = TransformHandles(scene)
+        self._canvas_handles = CanvasHandles(scene)
+        scene.canvas_size_changed.connect(self._on_canvas_size_changed)
         self._update_handles()
         if selection_manager is not None:
             selection_manager.selection_changed.connect(self._on_selection_changed)
@@ -170,11 +189,20 @@ class SelectTool(BaseTool):
         if self._handles is not None:
             self._handles.remove_from_scene()
             self._handles = None
+        if self._canvas_handles is not None:
+            self._canvas_handles.remove_from_scene()
+            self._canvas_handles = None
+        if self._scene is not None:
+            try:
+                self._scene.canvas_size_changed.disconnect(self._on_canvas_size_changed)
+            except (TypeError, RuntimeError):
+                pass
         super().deactivate()
 
     def cancel(self) -> None:
         self.leave_brush_edit()
         self.leave_point_edit()
+        self._end_canvas_preview()
         if self._rubber_band is not None and self._scene is not None:
             self._scene.removeItem(self._rubber_band)
             self._rubber_band = None
@@ -232,7 +260,10 @@ class SelectTool(BaseTool):
 
     def handle_escape(self) -> bool:
         """Escape leaves brush editing or point-editing mode and keeps the selection
-        (Blur PRD 2.8; Basic Shape PRD 3.5)."""
+        (Blur PRD 2.8; Basic Shape PRD 3.5), and cancels a canvas drag (pass finding 13)."""
+        if self._state == _State.CANVAS_RESIZE:
+            self._end_canvas_preview()
+            return True
         return self.leave_brush_edit() or self.leave_point_edit()
 
     # --- brush-editing mode of a freeform blur region (Blur PRD 2.8) ---
@@ -344,7 +375,29 @@ class SelectTool(BaseTool):
             self._refresh_point_handles()
         return True
 
+    def _on_canvas_size_changed(self, _size: object) -> None:
+        self._update_handles()
+
+    def _update_canvas_handles(self) -> None:
+        """Show the canvas's handles on its border while nothing is selected and no
+        editing mode or canvas drag is under way (end-to-end pass finding 13)."""
+        handles = self._canvas_handles
+        if handles is None or self._scene is None or self._selection_manager is None:
+            return
+        shown = (
+            self._selection_manager.is_empty
+            and self._point_session is None
+            and self._brush_session is None
+            and self._state != _State.CANVAS_RESIZE
+        )
+        if shown:
+            handles.add_to_scene()
+            handles.update_rect(self._scene.canvas_rect)
+        else:
+            handles.remove_from_scene()
+
     def _update_handles(self) -> None:
+        self._update_canvas_handles()
         if self._handles is None or self._selection_manager is None:
             return
         if self._point_session is not None or self._brush_session is not None:
@@ -448,6 +501,12 @@ class SelectTool(BaseTool):
             if handle is not None:
                 view.set_hover_cursor(self._handles.cursor_for(handle))
                 return
+        canvas_handles = self._canvas_handles
+        if canvas_handles is not None and canvas_handles.scene() is not None:
+            canvas_handle = canvas_handles.handle_at(scene_pos)
+            if canvas_handle is not None:
+                view.set_hover_cursor(canvas_handles.cursor_for(canvas_handle))
+                return
         if self._item_at(scene_pos) is not None:
             view.set_hover_cursor(Qt.CursorShape.OpenHandCursor)
         elif (
@@ -500,6 +559,14 @@ class SelectTool(BaseTool):
             if self._item_at(scene_pos) is session.item:
                 return True
             self.leave_point_edit()
+
+        # A press on one of the canvas's own handles resizes the canvas (finding 13)
+        canvas_handles = self._canvas_handles
+        if canvas_handles is not None and canvas_handles.scene() is not None:
+            canvas_handle = canvas_handles.handle_at(scene_pos)
+            if canvas_handle is not None:
+                self._begin_canvas_resize(canvas_handle)
+                return True
 
         # Check if clicking on a transform handle (only while the handles are shown)
         if self._handles is not None and self._handles.scene() is not None:
@@ -601,6 +668,10 @@ class SelectTool(BaseTool):
             if self._brush_session is not None:
                 self._brush_session.stroke_to(scene_pos)
             return True
+        elif self._state == _State.CANVAS_RESIZE:
+            shift = bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
+            self._canvas_resize_move(scene_pos, shift)
+            return True
         if self._brush_session is not None:
             self._refresh_cursor()
             return False
@@ -627,6 +698,8 @@ class SelectTool(BaseTool):
             return self._point_drag_release()
         elif self._state == _State.BRUSH_STROKE:
             return self._brush_stroke_release()
+        elif self._state == _State.CANVAS_RESIZE:
+            return self._canvas_resize_release()
 
         self._state = _State.IDLE
         return True
@@ -775,6 +848,56 @@ class SelectTool(BaseTool):
                     event.pos(), f"\u0394X: {dx:+.0f}  \u0394Y: {dy:+.0f}", False, None
                 )
         return True
+
+    # --- the canvas's own handles (end-to-end pass finding 13) ---
+
+    def _begin_canvas_resize(self, handle: HandlePosition) -> None:
+        """Start a canvas drag: the handles give way to the crop preview."""
+        if self._scene is None:
+            return
+        self._state = _State.CANVAS_RESIZE
+        self._canvas_handle = handle
+        self._canvas_origin = self._scene.canvas_rect
+        self._canvas_target = QRectF(self._canvas_origin)
+        self._update_canvas_handles()
+        preview = CropOverlay(self._scene)
+        preview.set_show_grid(False)
+        preview.update_crop_rect(self._canvas_target)
+        preview.add_to_scene()
+        self._canvas_preview = preview
+
+    def _canvas_resize_move(self, scene_pos: QPointF, keep_ratio: bool) -> None:
+        """The new edge follows the pointer; the part to be cut away is dimmed."""
+        if self._canvas_handle is None or self._canvas_preview is None:
+            return
+        self._canvas_target = resized_canvas_rect(
+            self._canvas_origin, self._canvas_handle, scene_pos, keep_ratio
+        )
+        self._canvas_preview.update_crop_rect(self._canvas_target)
+        target = self._canvas_target
+        self._show_readout(scene_pos, f"{target.width():.0f} × {target.height():.0f}")
+
+    def _canvas_resize_release(self) -> bool:
+        """Crop or extend the canvas to the dragged rectangle as one undo step."""
+        from snapmock.commands.raster_commands import CropCanvasCommand
+
+        target = QRectF(self._canvas_target)
+        changed = self._state == _State.CANVAS_RESIZE and target != self._canvas_origin
+        self._end_canvas_preview()
+        if changed and self._scene is not None:
+            self._scene.command_stack.push(CropCanvasCommand(self._scene, target))
+        return True
+
+    def _end_canvas_preview(self) -> None:
+        """Take the preview down and bring the canvas's handles back."""
+        if self._canvas_preview is not None:
+            self._canvas_preview.remove_from_scene()
+            self._canvas_preview = None
+        if self._state == _State.CANVAS_RESIZE:
+            self._state = _State.IDLE
+            self._hide_readout()
+        self._canvas_handle = None
+        self._update_canvas_handles()
 
     def _show_readout(self, cursor: QPointF, text: str) -> None:
         """Put *text* beside the cursor at scene position *cursor*, on the widget over the

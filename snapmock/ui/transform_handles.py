@@ -229,3 +229,86 @@ class TransformHandles(QGraphicsItemGroup):
     def remove_from_scene(self) -> None:
         if self.scene() is not None:
             self._scene.removeItem(self)
+
+
+# The smallest canvas a handle drag leaves, in canvas pixels
+CANVAS_MIN_SIZE = 10.0
+
+_LEFT = {HandlePosition.TOP_LEFT, HandlePosition.MIDDLE_LEFT, HandlePosition.BOTTOM_LEFT}
+_RIGHT = {HandlePosition.TOP_RIGHT, HandlePosition.MIDDLE_RIGHT, HandlePosition.BOTTOM_RIGHT}
+_TOP = {HandlePosition.TOP_LEFT, HandlePosition.TOP_CENTER, HandlePosition.TOP_RIGHT}
+_BOTTOM = {HandlePosition.BOTTOM_LEFT, HandlePosition.BOTTOM_CENTER, HandlePosition.BOTTOM_RIGHT}
+
+
+class CanvasHandles(TransformHandles):
+    """The canvas's own eight resize handles (end-to-end pass finding 13).
+
+    The Select tool shows them on the canvas border while nothing is selected; a drag
+    inward crops the canvas and a drag outward extends it. They are the selection
+    handles in look, size, and cursor, without the rotate handle or the dashed frame.
+    """
+
+    def __init__(self, scene: SnapScene) -> None:
+        super().__init__(scene)
+        self.setZValue(999995)
+        self._rotate_handle.setVisible(False)
+        self._rotate_line.setVisible(False)
+        self._border.setVisible(False)
+
+    def handle_at(self, scene_pos: QPointF) -> HandlePosition | None:
+        for pos, handle in self._handles.items():
+            if pos == HandlePosition.ROTATE:
+                continue
+            hr = handle.sceneBoundingRect()
+            hr.adjust(-2, -2, 2, 2)
+            if hr.contains(scene_pos):
+                return pos
+        return None
+
+
+def resized_canvas_rect(
+    origin: QRectF, handle: HandlePosition, pointer: QPointF, keep_ratio: bool
+) -> QRectF:
+    """The canvas rectangle a drag of *handle* to *pointer* asks for, in canvas pixels.
+
+    The edges the handle carries follow the pointer and the others stay; the result is
+    never smaller than :data:`CANVAS_MIN_SIZE`. With *keep_ratio* (Shift) the rectangle
+    keeps *origin*'s proportions: a corner follows the larger relative change and keeps
+    the opposite corner, an edge handle carries the other dimension about the centre.
+    """
+    left, top, right, bottom = origin.left(), origin.top(), origin.right(), origin.bottom()
+    if handle in _LEFT:
+        left = min(pointer.x(), right - CANVAS_MIN_SIZE)
+    if handle in _RIGHT:
+        right = max(pointer.x(), left + CANVAS_MIN_SIZE)
+    if handle in _TOP:
+        top = min(pointer.y(), bottom - CANVAS_MIN_SIZE)
+    if handle in _BOTTOM:
+        bottom = max(pointer.y(), top + CANVAS_MIN_SIZE)
+    width, height = right - left, bottom - top
+    if keep_ratio and origin.width() > 0 and origin.height() > 0:
+        ratio = origin.width() / origin.height()
+        if handle in CORNER_HANDLES:
+            if width / origin.width() >= height / origin.height():
+                height = width / ratio
+            else:
+                width = height * ratio
+            if handle in _LEFT:
+                left = right - width
+            else:
+                right = left + width
+            if handle in _TOP:
+                top = bottom - height
+            else:
+                bottom = top + height
+        elif handle in _LEFT or handle in _RIGHT:
+            height = width / ratio
+            top = origin.center().y() - height / 2
+            bottom = top + height
+        else:
+            width = height * ratio
+            left = origin.center().x() - width / 2
+            right = left + width
+    return QRectF(
+        QPointF(round(left), round(top)), QPointF(round(right), round(bottom))
+    ).normalized()

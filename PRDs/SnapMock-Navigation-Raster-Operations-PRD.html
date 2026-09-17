@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Navigation &amp; Raster Operations</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.5</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.6</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Select / Move · Pan · Zoom · Raster selection · Crop · Resize canvas · Copy, cut, paste, duplicate</dd>
-    <dt>Document version</dt><dd>1.5</dd>
-    <dt>Last Updated</dt>    <dd>09-16-26 00:30</dd>
+    <dt>Document version</dt><dd>1.6</dd>
+    <dt>Last Updated</dt>    <dd>09-17-26 00:56</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.6</td>
+        <td class="nowrap">09-17-26 00:56</td>
+        <td>Doug Bower</td>
+        <td>End-to-end pass findings 13 and 14 (docs/End-to-End-Pass.md). <strong>7.3, departure by Doug's decision A of 09-17-26:</strong> the crop region's eight handles are drawn as the selection handles are, white squares outlined in the theme's handle colour at the same size, where 7.3 gave accent-filled squares, and each shows the resize cursor of its direction; the raster selection's handles (5) share them. <strong>7.6, defect fixed:</strong> a committed crop now cuts every image that crosses the new edge to the canvas, as 7.6 says, and Undo gives the pixels back; an image that is rotated, scaled, or flipped keeps its pixels. Before, the cut-away part stayed on the pasteboard. The crop command also takes a rectangle that reaches past the canvas, which extends it; the canvas handles of General UI PRD 2.48 use that.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.5</td>
         <td class="nowrap">09-16-26 00:30</td>
