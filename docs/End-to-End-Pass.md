@@ -1,6 +1,6 @@
 # The End-to-End Pass on Real Work, and the 1.0.0 Release — Notes
 
-Last Updated: 09-17-26 11:40 · Revision 1.36
+Last Updated: 09-17-26 11:58 · Revision 1.37
 
 Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`, Section 1): the released AppImage, `Snapmockit-0.9.0-x86_64.AppImage`, used by Doug for his real screenshot work over several sittings, every finding recorded and classified, every defect fixed with a test, and then the first release the product stands behind, `1.0.0`. The kickoff prompt is `docs/End-to-End-Pass-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The record takes the shape of the General UI acceptance pass (`docs/General-UI-Implementation.md`, Section 16) where it fits: one row per finding, Doug's words quoted, the evidence named.
 
@@ -8,7 +8,7 @@ Implements step 4 of the release-engineering list (`docs/Release-Engineering.md`
 
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
-| 1 | The four decisions, this document, and the Wayland check (checklist section 7) | Steps 1 and 3 done 09-15-26 (def7507); step 2, the Wayland check, owed to Doug's next log-out and carried, as the kickoff allows; it blocks Phase 3 under decision 3 | def7507 |
+| 1 | The four decisions, this document, and the Wayland check (checklist section 7) | Steps 1 and 3 done 09-15-26 (def7507); step 2, the Wayland check, run by Doug 09-17-26 11:44 to 11:52 (Section 7): Capture Full Screen and Capture Active Window's region fallback proven through the portal; Capture Region not yet evidenced, put to Doug | def7507 |
 | 2 | The sittings: Doug's real work, each finding recorded, triaged, and fixed | Done 09-17-26, ended by Doug's call (decision 2.1, option C): two sittings, one on real work; sixteen findings, ten defects fixed, five departures built, one follow-up deferred; every one seen on the display and closed but the follow-up | 2e43326 to this commit |
 | 3 | The release: version 1.0.0, the tag, the release job, the smoke test, Check for Updates from 0.9.0, the README | Not started; decision 1's exit met by Doug's call; still blocked, under decision 3, on the Wayland check, which is put to Doug | |
 | Close-out | The PRD rows, the release-engineering notes, what remains of packaging and the platform backends, the next required step | Not started | |
@@ -177,10 +177,19 @@ Owed. To be run by Doug from the checklist page against the released 0.9.0 file 
 
 **09-17-26 11:40.** Put to Doug with the release (keep decision 3 and run the check first, or release on the X11 evidence); he asked for the Wayland instructions, read as keeping decision 3. The checklist page's section 7 (https://claude.ai/artifact/HHCf3xs7L32kcHrtEnBpe2) is rewritten to one action per step, 21 steps from the released file's fingerprint (`ebe7c8e0f0b7427c`) through the Wayland session (`Cinnamon on Wayland (Experimental)`, with the xapp portal's Screenshot interface installed) to Capture Full Screen, Capture Region, Capture Active Window's region fallback, a saved project, and the return to X11; the new steps carry their own ids (w01 to w21) so that section 8's stored marks (r27 to r32) stay attached. Its marks are read back when Doug says the run is done.
 
+**The run, 09-17-26 11:44 to 11:52, read back at 11:53.** Doug: "The wayland test is complete". The page holds one mark for section 7: step 15 (w15), marked a problem, with the note "It automatically saved without a dialog as the save actions should.  I did a save as and it worked." The other twenty steps carry no mark, so the run is recorded from what it left on this machine, verified here:
+
+- The login: `loginctl` shows session c4 of type `wayland`, begun 11:44:43; the session now in use is X11 again (steps 4 to 8 and 17 to 20).
+- Capture Full Screen through the portal (step 11): `Capture_2026-09-17_11-47-18.smk` in the library, written by 0.9.0, 3840 by 2160, its capture record naming `backend: wayland_portal`, `mode: full_screen`. The portal's own log line at 11:47:13 ("Failed to associate portal window with parent window") is the portal's, not the application's, and the capture landed.
+- Capture Active Window's region fallback (steps 13 and 14): two captures, `Capture_2026-09-17_11-47-41.smk` (1302 by 1997) and `Capture_2026-09-17_11-48-40.smk` (674 by 556), each recorded as `requested_mode: active_window`, `mode: region`, `backend: wayland_portal`.
+- Capture Region (step 12): **no capture in the library records `requested_mode: region`.** Put to Doug.
+- The save (step 15): the full-screen capture's library file was rewritten at 11:50, and Save As wrote `/home/doug/Pictures/Wayland Screenshot - Delete.smk` (7,210,217 bytes, 0.9.0, 3840 by 2160). **Step 15's problem is an instruction error, not a defect:** a capture is a library file, written back on every change and never asking where to save (Library PRD; the Architecture section of `CLAUDE.md`), so Ctrl+S on it shows no dialog, as Doug's note says it should. The step should have asked for File > Save As.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.37 | 09-17-26 11:58 | Claude (Claude Code) | The Wayland check's run recorded from the page's one mark and the files it left: full screen and the active-window fallback proven through the portal; step 15's problem an instruction error; Capture Region not evidenced, put to Doug. |
 | 1.36 | 09-17-26 11:40 | Claude (Claude Code) | The Wayland check's instructions rewritten on the checklist page; decision 3 kept on Doug's request for them. |
 | 1.35 | 09-17-26 11:24 | Claude (Claude Code) | Sitting 2 closed with its file named; Phase 2 closed by Doug's call (option C): the counts stated; Phase 3 waits on the Wayland check. |
 | 1.34 | 09-17-26 11:14 | Claude (Claude Code) | Finding 16 closed on Doug's word. |

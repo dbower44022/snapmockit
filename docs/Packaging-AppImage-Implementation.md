@@ -1,6 +1,6 @@
 # Packaging: the Linux AppImage — Implementation Notes
 
-Last Updated: 09-15-26 09:50 · Revision 2.1
+Last Updated: 09-17-26 11:58 · Revision 2.2
 
 Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`, Section 1) for Linux: the AppImage that Technical Architecture PRD 7.3 names as the primary Linux distribution, built by a recipe in the repository, proven on this machine, built in continuous integration on every push, and published as a GitHub release on a tag, together with the migration of the two on-disk names the rename of 09-14-26 left as they were. The kickoff prompt is `docs/Packaging-AppImage-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -125,6 +125,10 @@ Passing, as described and with no note: the window found the existing settings (
 
 Run by Doug from section 8 of the same checklist page, marks read back. **Six steps, six as described, no note.** The 0.1.0 build's Help > About read 0.1.0; its Help > Check for Updates said "Snapmockit v0.9.0 is available. You are running Snapmockit 0.1.0." with Open Release Page, which opened the v0.9.0 release page listing the AppImage. The released 0.9.0 build's first start opened the window as it was, with the message along its bottom edge naming the three moves, and the Library panel listing the same captures; the file manager showed `Snapmockit` in the home folder and `Snapmockit` and `snapmockit` under `.config`, none of the SnapMock names; a second start showed no message and About read 0.9.0. Verified here on the disk afterwards: `~/.config/Snapmockit/Snapmockit.conf`, `~/.config/snapmockit/tool_state.json`, and `~/Snapmockit/Library` with its 22 files exist; `~/.config/SnapMock`, `~/.config/snapmock`, and `~/SnapMock` do not; the settings name the library only under the new path. The two display checks of Section 11 that this section covers are closed; the Wayland portal capture of section 7 is the one that remains.
 
+### 8.4 The Wayland portal capture, 09-17-26 11:44 to 11:52
+
+Run by Doug from section 7 of the same page, rewritten 09-17-26 as 21 steps (w01 to w21), against the released 0.9.0 file in the `Cinnamon on Wayland (Experimental)` session. The full record is `docs/End-to-End-Pass.md`, Section 7. In short: one mark on the page (step 15, an instruction error: a capture is a library file and saves in place without a dialog; Save As worked); the library holds a full-screen capture and two active-window captures turned into regions, each naming the `wayland_portal` backend and version 0.9.0. No capture records a Capture Region request; that step is put to Doug.
+
 ## 9. The build in continuous integration (Phase 3)
 
 `.github/workflows/ci.yml` gains two jobs beside the checks and the wheel build, and runs on tags of the form `vX.Y.Z` as well as on pushes to `main` and pull requests.
@@ -173,6 +177,7 @@ Version `0.9.0` and build date `2026-09-15` in commit 080e2f3, its suite green f
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 2.2 | 09-17-26 11:58 | Claude (Claude Code) | Section 8.4: the Wayland portal capture run by Doug, recorded from the files it left; Capture Region's evidence put to Doug. |
 | 2.1 | 09-15-26 09:50 | Claude (Claude Code) | Change log back-filled: the rows for revisions 1.3 to 2.0 were never written when those revisions were made (found at the start of the end-to-end pass, `docs/End-to-End-Pass.md`); each row below is taken from the commit that made the revision. No other content changed. |
 | 2.0 | 09-15-26 01:30 | Claude (Claude Code) | Section 8.3: Doug's section 8 run, Check for Updates from 0.1.0 finding v0.9.0 and the migration's first start of 0.9.0, six steps as described; the Wayland capture the one display check left owed. |
 | 1.9 | 09-15-26 00:45 | Claude (Claude Code) | Phase 4 and the close-out done: Section 10.1 (v0.9.0 released and found by Check for Updates headless) and Section 11 (the PRD rows, what of 7.3 remains, the display checks owed). |
