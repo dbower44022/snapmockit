@@ -80,7 +80,7 @@ def test_flatpak_job_installs_the_runtime_builds_smokes_and_keeps_the_bundle(
     assert "org.kde.Platform//6.11" in runs
     assert "org.kde.Sdk//6.11" in runs
     assert "com.riverbankcomputing.PyQt.BaseApp//6.11" in runs
-    assert "org.flatpak.Builder" in runs  # the builder the development machine uses
+    assert "flatpak-builder" in runs
     assert "python packaging/flatpak/build.py" in runs
     assert "bash packaging/flatpak/smoke.sh" in runs
     uploads = [
