@@ -219,6 +219,8 @@ Why the context menu sometimes worked: it selects the file under the cursor with
 
 **The release notes are written for Doug to read before the tag**, and the tag is never pushed without his word. They are the annotated tag's message, which the release job turns into the release's notes: the Flatpak and how to install it, its size against the AppImage's and why, its own settings copied once, the bundle that does not update itself; the two Library panel defects the display run found, which every form had; the shortcut command each form now shows; what Check for Updates says inside a Flatpak; and the two interpreters continuous integration runs.
 
+**The suite at 5b17c5d:** 1763 passed, 14 skipped, 1 deselected, in 6 minutes 21 seconds.
+
 **What the tag does:** the release job refuses a tag that is not `v` followed by the version in `snapmock/__init__.py`, then downloads the AppImage and the Flatpak built in the same run and publishes one ordinary release carrying both.
 
 ## Change Log
