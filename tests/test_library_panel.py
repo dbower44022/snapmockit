@@ -450,3 +450,58 @@ def test_apply_library_directory_preference(main_window: MainWindow, tmp_path: P
     assert main_window.library.root == new_dir
     assert new_dir.is_dir()
     assert AppSettings().library_directory() == new_dir
+
+
+# ---- the selection survives a library refresh (display run, finding 6) ---------------------
+
+
+def _select(panel: LibraryPanel, row: int) -> None:
+    from PyQt6.QtCore import QItemSelectionModel
+
+    sel = panel._grid.selectionModel()  # noqa: SLF001
+    assert sel is not None
+    sel.select(
+        panel._model.index(row, 0),  # noqa: SLF001
+        QItemSelectionModel.SelectionFlag.ClearAndSelect | QItemSelectionModel.SelectionFlag.Rows,
+    )
+
+
+def test_a_library_refresh_keeps_the_selection(
+    panel: LibraryPanel, library: LibraryManager
+) -> None:
+    """A capture or a write-back between a right-click and the menu used to clear it."""
+    first = library.create_from_image(_image())
+    library.create_from_image(_image())
+    panel.select_path(first)
+    assert panel.selected_paths() == [first]
+
+    library.files_changed.emit()  # what a capture, a write-back, or another window causes
+
+    assert panel.selected_paths() == [first]
+
+
+def test_delete_still_finds_the_selection_after_a_refresh(
+    panel: LibraryPanel, library: LibraryManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = library.create_from_image(_image())
+    panel.select_path(path)
+    library.files_changed.emit()
+
+    monkeypatch.setattr(
+        QMessageBox, "question", staticmethod(lambda *a, **k: QMessageBox.StandardButton.Yes)
+    )
+    panel.delete_selected()
+
+    assert not path.exists()
+
+
+def test_a_file_that_went_away_is_not_selected_again(
+    panel: LibraryPanel, library: LibraryManager
+) -> None:
+    path = library.create_from_image(_image())
+    panel.select_path(path)
+    path.unlink()
+
+    library.files_changed.emit()
+
+    assert panel.selected_paths() == []

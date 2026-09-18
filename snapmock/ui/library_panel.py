@@ -491,6 +491,8 @@ class LibraryPanel(QDockWidget):
 
         # --- wiring ---
         self._model.current_path_changed.connect(lambda _p: self._on_path_changed())
+        self._selected_before_reset: list[Path] = []
+        self._model.modelAboutToBeReset.connect(self._remember_selection)
         self._model.modelReset.connect(self._on_model_reset)
         self._model.rename_requested.connect(self._on_rename_requested)
         self._model.move_requested.connect(self._on_move_requested)
@@ -554,6 +556,37 @@ class LibraryPanel(QDockWidget):
             if isinstance(p, Path):
                 paths.append(p)
         return paths
+
+    def _remember_selection(self) -> None:
+        """Hold the selected paths while the model resets (display run, finding 6).
+
+        Every reload of the library resets the model, and a reset clears the view's
+        selection: a capture, a write-back, or another window's change between a
+        right-click and the menu item clicked left the action with nothing selected.
+        """
+        self._selected_before_reset = self.selected_paths()
+
+    def _restore_selection(self) -> None:
+        """Select again what :meth:`_remember_selection` held, where it still exists."""
+        paths = self._selected_before_reset
+        self._selected_before_reset = []
+        sel = self._grid.selectionModel()
+        if not paths or sel is None:
+            return
+        first: QModelIndex | None = None
+        for path in paths:
+            row = self._model.row_for_path(path)
+            if row < 0:
+                continue
+            idx = self._model.index(row, COL_NAME)
+            sel.select(
+                idx,
+                QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows,
+            )
+            if first is None:
+                first = idx
+        if first is not None:
+            sel.setCurrentIndex(first, QItemSelectionModel.SelectionFlag.NoUpdate)
 
     def select_path(self, path: Path) -> None:
         """Navigate to the file's folder, select it, and scroll into view."""
@@ -977,6 +1010,7 @@ class LibraryPanel(QDockWidget):
         self._update_stack()
 
     def _on_model_reset(self) -> None:
+        self._restore_selection()
         self._update_footer()
         self._update_stack()
         if self._pending_edit is not None:
