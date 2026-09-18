@@ -260,6 +260,10 @@ def build_repository(work_dir: Path) -> Path:
     build_dir = work_dir / "build-dir"
     if build_dir.exists():
         shutil.rmtree(build_dir)
+    if repo.exists():
+        # A repository kept between builds holds every branch ever built into it, and
+        # a bundle of a stale one is worse than a slower build.
+        shutil.rmtree(repo)
     run(
         [
             *builder_command(),
@@ -277,8 +281,13 @@ def build_repository(work_dir: Path) -> Path:
     return repo
 
 
-def bundle(repo: Path, destination: Path) -> Path:
-    """``flatpak build-bundle`` the repository into one installable file."""
+def bundle(repo: Path, destination: Path, branch: str | None = None) -> Path:
+    """``flatpak build-bundle`` the repository into one installable file.
+
+    The branch is named, never left to the command's default of ``master``: the
+    manifest builds ``stable``, and a bundle of the wrong branch is either the
+    build before this one or no build at all.
+    """
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.exists():
         destination.unlink()
@@ -290,6 +299,7 @@ def bundle(repo: Path, destination: Path) -> Path:
             str(repo),
             str(destination),
             DESKTOP_ENTRY_ID,
+            branch or str(load_manifest()["branch"]),
         ]
     )
     if not destination.exists():

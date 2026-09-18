@@ -129,6 +129,19 @@ def test_manifest_removes_the_web_engine_the_application_never_imports(
     assert env["BASEAPP_REMOVE_PYWEBENGINE"] == "1"
 
 
+def test_the_bundle_names_the_manifest_s_branch(
+    recipe: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Left to itself, flatpak build-bundle takes the branch master (finding 2)."""
+    called: list[list[str]] = []
+    monkeypatch.setattr(recipe, "run", lambda command, **kwargs: called.append(command) or "")
+    destination = tmp_path / "Snapmockit-1.0.0-x86_64.flatpak"
+    with pytest.raises(RuntimeError):  # the faked command writes no file
+        recipe.bundle(tmp_path / "repo", destination)
+    assert called[0][-2:] == [DESKTOP_ENTRY_ID, "stable"]
+    assert str(destination) in called[0]
+
+
 def test_the_launcher_runs_the_module_with_the_arguments() -> None:
     text = LAUNCHER.read_text(encoding="utf-8")
     assert text.startswith("#! /bin/sh")

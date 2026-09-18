@@ -1,6 +1,6 @@
 # Packaging: the Linux Flatpak — Implementation Notes
 
-Last Updated: 09-17-26 23:03 · Revision 1.4
+Last Updated: 09-17-26 23:10 · Revision 1.5
 
 Implements the Flatpak that Technical Architecture PRD 7.3 names as the secondary Linux form, the next part of step 3 of the release-engineering list (`docs/Release-Engineering.md`, Sections 1 and 4), which Doug put ahead of the Python Package Index on 09-17-26. The kickoff prompt is `docs/Packaging-Flatpak-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The AppImage's notes, `docs/Packaging-AppImage-Implementation.md`, hold the recipe and the release job this work builds beside.
 
@@ -156,12 +156,17 @@ The bundle Doug installs is `dist/Snapmockit-1.0.0-x86_64.flatpak`, 25.4 MB, reb
 
 This follows from silence 1 — one application id for both forms — and it is right that it does: a user installs one form, and a second menu entry named Snapmockit starting a different copy would be worse than one. **It is a condition of this machine, not a defect of the Flatpak:** the AppImage installs no menu entry of its own (end-to-end pass finding 1), and the one here was written by hand. Section 10 of the checklist page gains a step that moves that entry aside before the run and a last step that puts it back. The consequence for the close-out: with both forms installed, the menu belongs to whichever entry sits in `~/.local/share/applications`, never to the one installed last.
 
+**Finding 2, 09-17-26 23:10: a bundle takes the branch `master` unless the branch is named.** Doug's install printed `master` on the branch column even after the manifest gained `branch: stable`. Read on the machine: `flatpak-builder` did commit `app/io.github.dbower44022.snapmockit/x86_64/stable` to the repository, but `flatpak build-bundle` takes `master` when no branch follows the application id, and the repository still held a `master` ref from the builds before the manifest changed, so it bundled that one. `build.py` now passes the manifest's branch to `build-bundle` and removes the repository before each build, since a repository kept between builds holds every branch ever built into it. Held by a test.
+
+**Finding 3, 09-17-26 23:10: the menu needs Cinnamon restarted, not the entry fixed.** With the AppImage's entry moved aside, the desktop libraries answer with the Flatpak's: `Gio.AppInfo.get_all()` lists `io.github.dbower44022.snapmockit.desktop` with the command `/usr/bin/flatpak run …`, `desktop-file-validate` passes it, and the session's `XDG_DATA_DIRS` carries `~/.local/share/flatpak/exports/share`. Cinnamon's menu was still showing its own cached list. The page's step says to restart Cinnamon with Ctrl+Alt+Esc, which keeps every window open, before looking again.
+
 **Also fixed while Doug was blocked:** the manifest now carries `branch: stable`, so the bundle installs on the branch Flathub uses; without it a bundle installs as `master`, which is what his `flatpak list` showed. The bundle was rebuilt, its digest changed, and the install step is run once more.
 
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.5 | 09-17-26 23:10 | Claude (Claude Code) | Section 11 gains findings 2 and 3: a bundle takes the branch master unless build-bundle is given one (fixed in build.py, which now also removes the repository before each build, with a test), and the menu entry was right all along — Cinnamon's cached list needed the restart, which the checklist page now says. |
 | 1.4 | 09-17-26 23:03 | Claude (Claude Code) | Section 11 opened with the display run's first finding: the AppImage's hand-written menu entry shadows the Flatpak's, since both carry one application id and `$XDG_DATA_HOME` is looked up first; the checklist page moves it aside for the run and puts it back. The manifest gains branch: stable, held by a test, and the bundle was rebuilt (SHA-256 begins 7120ebceb879b153). |
 | 1.3 | 09-17-26 18:39 | Claude (Claude Code) | Phase 2 step 1 done (Section 9): config/packaging.py and the four changes that follow it — decision 5's message, decision 4's copy-once store, and corrections 5.2 and 5.3, both now proven on the machine rather than inferred (the trash descriptor must be opened O_PATH). Twenty-one new tests. PRD rows: Technical Architecture 1.63, General UI 2.50, Screen Capture 1.1, Library 1.3. Section 10 names the display checks owed, written as sections 10 and 11 of the checklist page. |
 | 1.2 | 09-17-26 18:24 | Claude (Claude Code) | Phase 1 done. Section 7: the three tools Doug installed, with their versions. Section 8: the recipe under `packaging/flatpak/`, the first bundle (25.4 MB after QtWebEngine and the locales were removed), the two defects fixed in it, what is proven headless inside the sandbox, and the twenty-two tests. Technical Architecture PRD 1.62 (Section 10 gains the directory; Section 9's packaging row names flatpak-builder). |
