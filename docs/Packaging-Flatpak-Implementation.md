@@ -237,7 +237,7 @@ Doug gave the word at 01:35 and the annotated tag `v1.1.0` went up on f137f76, w
 
 **What of 7.3 remains:** the Python Package Index (the wheel and sdist the build job already makes, once an account and a trusted publisher exist); the Flathub submission, which decision 2 left for after the bundle had been used, and for which the justification of the home-directory permission is written in Section 2.3; the Windows installer and portable archive, and the macOS bundle, each waiting for its machine. **Out of scope and still open:** the menu entry the AppImage does not install (end-to-end pass finding 1), and the Windows and macOS capture backends.
 
-**Display checks this work owes:** section 11 of the checklist page, the Flatpak capturing through the Wayland portal, which waits for a log-out; and decision 5's Check for Updates wording, which can be seen now that 1.1.0 is released by installing the 1.0.0 bundle this machine still has under `dist/` and asking it to check.
+**Display checks this work owes:** section 11 of the checklist page, the Flatpak capturing through the Wayland portal, which waits for a log-out; and decision 5's Check for Updates wording, written as **section 13** of the checklist page (ids k01 to k05): the 1.0.0 bundle this machine still has under `dist/` installed, the message read, the release page opened, and 1.1.0 put back.
 
 **The next required step** is the one Doug picks between the Python Package Index and the Flathub submission; the release-engineering notes hold both.
 
