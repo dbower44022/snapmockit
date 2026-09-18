@@ -146,6 +146,9 @@ def test_the_launcher_runs_the_module_with_the_arguments() -> None:
     text = LAUNCHER.read_text(encoding="utf-8")
     assert text.startswith("#! /bin/sh")
     assert 'exec python3 -m snapmock "$@"' in text
+    # The host's variables that name things the sandbox does not have (finding 5).
+    assert "unset GTK_MODULES" in text
+    assert "unset SESSION_MANAGER" in text
 
 
 # ---- the generated dependency module ------------------------------------------------------
