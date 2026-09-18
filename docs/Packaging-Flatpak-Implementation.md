@@ -1,6 +1,6 @@
 # Packaging: the Linux Flatpak — Implementation Notes
 
-Last Updated: 09-17-26 18:39 · Revision 1.3
+Last Updated: 09-17-26 23:03 · Revision 1.4
 
 Implements the Flatpak that Technical Architecture PRD 7.3 names as the secondary Linux form, the next part of step 3 of the release-engineering list (`docs/Release-Engineering.md`, Sections 1 and 4), which Doug put ahead of the Python Package Index on 09-17-26. The kickoff prompt is `docs/Packaging-Flatpak-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The AppImage's notes, `docs/Packaging-AppImage-Implementation.md`, hold the recipe and the release job this work builds beside.
 
@@ -148,12 +148,21 @@ Written 09-17-26 18:39 as **sections 10 and 11** of the checklist page `Snapmock
 
 Section 10, in the usual desktop: the test copy removed with its data and the bundle installed with `flatpak install --user --bundle`; the first start from the main menu with the settings copied once (decision 4) and the same library; About; a full-screen and a region capture through X11; `--capture full` handed to the running instance; the shortcut command Preferences shows (correction 5.3); a project saved, closed, and reopened; a library file opened; PNG and PDF exports; a Snagit file read; Check for Updates; a library file deleted and found **in the user's own trash** (correction 5.2); and a second start with no message. Section 11, after a log-out: the Flatpak capturing through the Wayland portal, full screen, region, and from the command line.
 
-The bundle Doug installs is the one built at ae29485, `dist/Snapmockit-1.0.0-x86_64.flatpak`, 25.4 MB, SHA-256 beginning `c87f93f471bd9321`. **Every mark is checked against what the machine shows before it is recorded** (the installed reference and commit, the files written, the processes running), and a mark the machine contradicts is put to Doug: he has marked whole sections without running them (end-to-end pass notes, Section 8).
+The bundle Doug installs is `dist/Snapmockit-1.0.0-x86_64.flatpak`, 25.4 MB, rebuilt with `branch: stable`, SHA-256 beginning `7120ebceb879b153`. **Every mark is checked against what the machine shows before it is recorded** (the installed reference and commit, the files written, the processes running), and a mark the machine contradicts is put to Doug: he has marked whole sections without running them (end-to-end pass notes, Section 8).
+
+## 11. The display run's findings (Phase 2 step 2)
+
+**Finding 1, 09-17-26 23:03: the two Linux forms share one menu entry, and the AppImage's wins.** Doug installed the bundle and reported that no Snapmockit Flatpak appeared in the main menu. Read on the machine, not inferred: the Flatpak is installed for the user and exports its entry to `~/.local/share/flatpak/exports/share/applications/io.github.dbower44022.snapmockit.desktop`, which is on `XDG_DATA_DIRS`; but `~/.local/share/applications/io.github.dbower44022.snapmockit.desktop` also exists, left by the end-to-end pass's menu install of the AppImage, and a desktop entry is looked up by its id with `$XDG_DATA_HOME` ahead of every directory in `XDG_DATA_DIRS`. The AppImage's entry therefore shadows the Flatpak's, and the one Snapmockit in the menu starts the AppImage.
+
+This follows from silence 1 — one application id for both forms — and it is right that it does: a user installs one form, and a second menu entry named Snapmockit starting a different copy would be worse than one. **It is a condition of this machine, not a defect of the Flatpak:** the AppImage installs no menu entry of its own (end-to-end pass finding 1), and the one here was written by hand. Section 10 of the checklist page gains a step that moves that entry aside before the run and a last step that puts it back. The consequence for the close-out: with both forms installed, the menu belongs to whichever entry sits in `~/.local/share/applications`, never to the one installed last.
+
+**Also fixed while Doug was blocked:** the manifest now carries `branch: stable`, so the bundle installs on the branch Flathub uses; without it a bundle installs as `master`, which is what his `flatpak list` showed. The bundle was rebuilt, its digest changed, and the install step is run once more.
 
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.4 | 09-17-26 23:03 | Claude (Claude Code) | Section 11 opened with the display run's first finding: the AppImage's hand-written menu entry shadows the Flatpak's, since both carry one application id and `$XDG_DATA_HOME` is looked up first; the checklist page moves it aside for the run and puts it back. The manifest gains branch: stable, held by a test, and the bundle was rebuilt (SHA-256 begins 7120ebceb879b153). |
 | 1.3 | 09-17-26 18:39 | Claude (Claude Code) | Phase 2 step 1 done (Section 9): config/packaging.py and the four changes that follow it — decision 5's message, decision 4's copy-once store, and corrections 5.2 and 5.3, both now proven on the machine rather than inferred (the trash descriptor must be opened O_PATH). Twenty-one new tests. PRD rows: Technical Architecture 1.63, General UI 2.50, Screen Capture 1.1, Library 1.3. Section 10 names the display checks owed, written as sections 10 and 11 of the checklist page. |
 | 1.2 | 09-17-26 18:24 | Claude (Claude Code) | Phase 1 done. Section 7: the three tools Doug installed, with their versions. Section 8: the recipe under `packaging/flatpak/`, the first bundle (25.4 MB after QtWebEngine and the locales were removed), the two defects fixed in it, what is proven headless inside the sandbox, and the twenty-two tests. Technical Architecture PRD 1.62 (Section 10 gains the directory; Section 9's packaging row names flatpak-builder). |
 | 1.1 | 09-17-26 13:47 | Claude (Claude Code) | Section 6: Phase 1 step 3 done. The whole suite passes under Python 3.13 unchanged (1707 passed, 5 minutes 48 seconds), so no defect was found; the continuous-integration checks job now runs 3.12 and 3.13 on every push, held by a test. Technical Architecture PRD 1.61. |

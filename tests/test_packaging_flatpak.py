@@ -70,6 +70,7 @@ def test_manifest_is_built_on_the_kde_runtime_and_the_pyqt_base_application(
     assert manifest["sdk"] == "org.kde.Sdk"
     assert manifest["base"] == "com.riverbankcomputing.PyQt.BaseApp"
     assert manifest["base-version"] == "6.11"
+    assert manifest["branch"] == "stable"  # what a user sees in flatpak list
     assert "/app/cleanup-BaseApp.sh" in manifest["cleanup-commands"]
 
 

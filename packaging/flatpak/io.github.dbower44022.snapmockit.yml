@@ -8,6 +8,9 @@
 # the app module's dir source reads them. python3-deps.json is generated from uv.lock by
 # that script's --update-deps, never written by hand.
 id: io.github.dbower44022.snapmockit
+# Flathub's convention, and what a user sees in flatpak list; a bundle built without
+# it installs as the branch "master".
+branch: stable
 runtime: org.kde.Platform
 runtime-version: '6.11'
 sdk: org.kde.Sdk
