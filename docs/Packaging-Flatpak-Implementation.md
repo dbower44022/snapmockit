@@ -10,7 +10,7 @@ Implements the Flatpak that Technical Architecture PRD 7.3 names as the secondar
 |---|---|---|---|
 | 1 | The five decisions, this document, the builder and runtimes installed, the suite under Python 3.13, and the manifest under `packaging/flatpak/` with its tests | Done 09-17-26: the bundle built here, 25.4 MB, and proven headless (Sections 2, 6, 7, 8) | 4d6e2ea, 7b594d1, this commit |
 | 2 | The code the sandbox needs (decisions 4 and 5, and the three corrections of Section 5), and the Flatpak proven on this machine through a checklist page | Done 09-18-26 but the Wayland section, which waits for a log-out (Sections 9 to 11.2): seven findings, four of them defects fixed with tests | ae29485 to this commit |
-| 3 | The build in continuous integration: the Flatpak on every push as an artifact, and the release job attaching the bundle beside the AppImage | Written 09-18-26 (Section 12); green on GitHub to be recorded | this commit |
+| 3 | The build in continuous integration: the Flatpak on every push as an artifact, and the release job attaching the bundle beside the AppImage | Done 09-18-26: run 35309600429 green, the Flatpak job in 3 minutes 2 seconds (Section 12) | bda1e43 to this commit |
 | 4 | The release that first carries both files, `1.1.0` | Not started | |
 | Close-out | The PRD rows, the README, the release-engineering notes, the display checks owed, and what of 7.3 remains | Not started | |
 
@@ -202,6 +202,14 @@ Why the context menu sometimes worked: it selects the file under the cursor with
 **`packaging/flatpak/smoke.sh`, the smoke test:** the bundle is installed for the user (an installed copy of the same version is uninstalled first, since a bundle of a version already installed is refused, which is this machine's ordinary state and never the runner's); `flatpak run <id> --version` must answer `Snapmockit <version>` with the version read from the bundle's own file name; and the sandbox's own Python builds the main window on the offscreen platform, printing the window title, the package version, and Qt's. Where the application was not installed before, it is uninstalled again, so the runner is left as it was found. It runs here in about 20 seconds and prints `window built: 'Untitled - Snapmockit', snapmock 1.0.0, Qt 6.11.1`.
 
 **`release`, on a tag:** it now waits for `flatpak` as well, downloads both artifacts into `dist/`, and `gh release create` attaches `Snapmockit-<version>-x86_64.AppImage` and `Snapmockit-<version>-x86_64.flatpak` to the one release.
+
+**The first green run, 09-18-26 01:13 (run 35309600429):** the Flatpak job took **3 minutes 2 seconds** from start to finish, the Flathub downloads and the smoke test included, against the AppImage job's 1 minute 13 seconds and the checks job's 4 minutes 50 seconds; the artifact `snapmockit-flatpak` holds 26,633,324 bytes as GitHub stores it. Five runs failed before it, and each failure was a difference between this machine and a bare runner rather than a fault in the manifest:
+
+1. **PyQt6 would not import**: the recipe renders the icon through Qt before it builds, so the job installs the same Qt host libraries the checks job does.
+2. **`eu-strip` was missing**: `flatpak-builder` from Ubuntu needs `elfutils`, which the Flatpak application that carries the builder bundles.
+3. **`appstreamcli compose` failed** with `file-read-error`, and the build says only that a report exists; a step that ran the same compose again printed it.
+4. **The builder as a Flatpak could not find the SDK.** `flatpak run org.flatpak.Builder` answered "Unable to find sdk org.kde.Sdk version 6.11" on the runner whether the runtimes were installed system-wide or with `--user`, though it is how this machine builds. Not chased further: the distribution's `flatpak-builder` finds them.
+5. **The export step read the scalable icon as "Format not recognized"** — and that was the answer to 3 as well. A bare runner has no librsvg, so nothing on it can read an SVG: neither the export's icon check nor AppStream's compose. With `librsvg2-common` installed both pass, and the manifest composes AppStream as it does here. The lesson for this recipe: the machine that builds a Flatpak needs the SVG loader, because the icon the manifest installs is one.
 
 **Tests:** `tests/test_ci_workflow.py` gains three — the Flatpak job's three Flathub references, its builder, its recipe, its smoke test and its artifact; the release job's two downloads and both file patterns; and the smoke script's shape — and the job-set and release-needs tests name five jobs. The Flatpak smoke script is never run by the suite: it installs software.
 
