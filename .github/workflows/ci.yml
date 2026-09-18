@@ -176,24 +176,6 @@ jobs:
       - name: Build the Flatpak
         run: uv run python packaging/flatpak/build.py
 
-      # What appstreamcli compose complains about, when it does; the build itself says
-      # only that a report exists, so the same compose is run again here to print it.
-      - name: The AppStream report, if the build failed
-        if: failure()
-        run: |
-          appstreamcli --version || true
-          ls -R build/flatpak/build-dir/files/share/app-info 2>/dev/null || true
-          appstreamcli compose \
-            --components=io.github.dbower44022.snapmockit \
-            --prefix=/ --origin=io.github.dbower44022.snapmockit \
-            --result-root=/tmp/ascompose --data-dir=/tmp/ascompose/xmls \
-            --icons-dir=/tmp/ascompose/icons \
-            build/flatpak/build-dir/files || true
-          find /tmp/ascompose build/flatpak -name '*hint*' | head
-          for f in $(find /tmp/ascompose -name '*.yml.gz' 2>/dev/null); do
-            echo "== $f"; zcat "$f"
-          done
-
       - name: Smoke test
         run: bash packaging/flatpak/smoke.sh dist/Snapmockit-*-x86_64.flatpak
 
