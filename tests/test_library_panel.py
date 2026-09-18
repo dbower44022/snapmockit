@@ -505,3 +505,57 @@ def test_a_file_that_went_away_is_not_selected_again(
     library.files_changed.emit()
 
     assert panel.selected_paths() == []
+
+
+# ---- a click in either view selects, for every action (display run, finding 7) -------------
+
+
+def _click_first(panel: LibraryPanel, mode: str) -> None:
+    """Click the first item as a user does, in the grid or in the list."""
+    from PyQt6.QtCore import Qt
+    from PyQt6.QtTest import QTest
+
+    panel.resize(700, 520)
+    panel.show()
+    panel.set_view_mode(mode, persist=False)
+    view = panel._grid if mode == "grid" else panel._list  # noqa: SLF001
+    sel = view.selectionModel()
+    assert sel is not None
+    sel.clearSelection()
+    idx = panel._model.index(0, 0)  # noqa: SLF001
+    viewport = view.viewport()
+    assert viewport is not None
+    QTest.mouseClick(
+        viewport,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+        view.visualRect(idx).center(),
+    )
+
+
+@pytest.mark.parametrize("mode", ["grid", "list"])
+def test_a_click_selects_the_file_in_either_view(
+    panel: LibraryPanel, library: LibraryManager, mode: str
+) -> None:
+    """The grid selects the row's first column alone; selectedRows counted no row."""
+    path = library.create_from_image(_image())
+
+    _click_first(panel, mode)
+
+    assert panel.selected_paths() == [path]
+    assert panel.selected_paths(files_only=True) == [path]
+
+
+@pytest.mark.parametrize("mode", ["grid", "list"])
+def test_delete_after_a_click_deletes_that_file(
+    panel: LibraryPanel, library: LibraryManager, monkeypatch: pytest.MonkeyPatch, mode: str
+) -> None:
+    path = library.create_from_image(_image())
+    _click_first(panel, mode)
+    monkeypatch.setattr(
+        QMessageBox, "question", staticmethod(lambda *a, **k: QMessageBox.StandardButton.Yes)
+    )
+
+    panel.delete_selected()
+
+    assert not path.exists()

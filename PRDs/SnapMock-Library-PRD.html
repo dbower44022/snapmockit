@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Library</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.4</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.5</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Capture Library · Auto-Save · File Management · Tabbed Editing</dd>
-    <dt>Document version</dt><dd>1.4</dd>
-    <dt>Last Updated</dt>    <dd>09-17-26 23:40</dd>
+    <dt>Document version</dt><dd>1.5</dd>
+    <dt>Last Updated</dt>    <dd>09-18-26 00:03</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.5</td>
+        <td class="nowrap">09-18-26 00:03</td>
+        <td>Doug Bower</td>
+        <td>6.4 again, and the cause of the 1.4 row's symptom: a click in the thumbnail grid selects the row's first column alone, and the panel read the selection through selectedRows, which counts a row only when every column of it is selected, so in the default view Delete, Rename, Copy, Export, Move to Folder, and Properties all answered "select a file" (found on the display, 09-18-26; docs/Packaging-Flatpak-Implementation.md, finding 7). The panel now reads selectedIndexes and answers for the grid and the list alike.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.4</td>
         <td class="nowrap">09-17-26 23:40</td>

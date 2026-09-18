@@ -545,11 +545,23 @@ class LibraryPanel(QDockWidget):
         self._model.set_is_open_provider(fn)
 
     def selected_paths(self, *, files_only: bool = False) -> list[Path]:
+        """The paths selected in either view, in row order.
+
+        Read from ``selectedIndexes`` and not from ``selectedRows``: the two views
+        share one selection model, and a click in the thumbnail grid selects the
+        row's first column alone, which ``selectedRows`` does not count as a
+        selected row (display run, finding 7). The preview list selects every
+        column of the row, so one index per row is kept.
+        """
         paths: list[Path] = []
         sel = self._grid.selectionModel()
         if sel is None:
             return paths
-        for idx in sel.selectedRows(COL_NAME):
+        seen: set[int] = set()
+        for idx in sorted(sel.selectedIndexes(), key=lambda i: i.row()):
+            if idx.column() != COL_NAME or idx.row() in seen:
+                continue
+            seen.add(idx.row())
             if files_only and bool(idx.data(IS_FOLDER_ROLE)):
                 continue
             p = idx.data(PATH_ROLE)
