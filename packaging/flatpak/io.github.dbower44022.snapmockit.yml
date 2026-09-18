@@ -18,15 +18,6 @@ base: com.riverbankcomputing.PyQt.BaseApp
 base-version: '6.11'
 command: snapmockit
 
-# The AppStream catalogue data flatpak-builder composes with the machine's own
-# appstreamcli is not built. AppStream 1.0.2, which Ubuntu 24.04 and so the
-# continuous-integration runner carry, fails on this application with
-# "file-read-error" where 1.0.6, which the development machine's builder carries,
-# composes it without a complaint; the metainfo file itself is installed either way,
-# validates, and is what a software centre reads from an installed application.
-# Turned back on when the runner carries a version that composes it, or when the
-# Flathub submission of decision 2 takes the build over.
-appstream-compose: false
 
 # The base application carries QtWebEngine and PyQt6's bindings for it; nothing under
 # snapmock/ imports QtWebEngine, so its cleanup script is told to remove it, which takes

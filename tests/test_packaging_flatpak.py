@@ -86,13 +86,6 @@ def test_manifest_id_matches_the_desktop_entry_the_metainfo_and_the_mime_file(
     assert f"<id>{DESKTOP_ENTRY_ID}</id>" in metainfo
 
 
-def test_the_manifest_does_not_compose_appstream_catalogue_data(
-    manifest: dict[str, Any],
-) -> None:
-    """AppStream 1.0.2 on the runner fails where 1.0.6 here does not (Section 12)."""
-    assert manifest["appstream-compose"] is False
-
-
 def test_manifest_permissions_are_the_ones_decision_3_names(manifest: dict[str, Any]) -> None:
     """Option A: the home directory, both display sockets, the GPU, IPC, and the network."""
     assert set(manifest["finish-args"]) == {
