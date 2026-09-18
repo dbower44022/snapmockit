@@ -11,7 +11,7 @@ Implements the Flatpak that Technical Architecture PRD 7.3 names as the secondar
 | 1 | The five decisions, this document, the builder and runtimes installed, the suite under Python 3.13, and the manifest under `packaging/flatpak/` with its tests | Done 09-17-26: the bundle built here, 25.4 MB, and proven headless (Sections 2, 6, 7, 8) | 4d6e2ea, 7b594d1, this commit |
 | 2 | The code the sandbox needs (decisions 4 and 5, and the three corrections of Section 5), and the Flatpak proven on this machine through a checklist page | Done 09-18-26 but the Wayland section, which waits for a log-out (Sections 9 to 11.2): seven findings, four of them defects fixed with tests | ae29485 to this commit |
 | 3 | The build in continuous integration: the Flatpak on every push as an artifact, and the release job attaching the bundle beside the AppImage | Done 09-18-26: run 35309600429 green, the Flatpak job in 3 minutes 2 seconds (Section 12) | bda1e43 to this commit |
-| 4 | The release that first carries both files, `1.1.0` | Not started | |
+| 4 | The release that first carries both files, `1.1.0` | Version set and the notes written 09-18-26 (Section 13); the tag waits for Doug | this commit |
 | Close-out | The PRD rows, the README, the release-engineering notes, the display checks owed, and what of 7.3 remains | Not started | |
 
 ## 2. Decisions
@@ -212,6 +212,14 @@ Why the context menu sometimes worked: it selects the file under the cursor with
 5. **The export step read the scalable icon as "Format not recognized"** — and that was the answer to 3 as well. A bare runner has no librsvg, so nothing on it can read an SVG: neither the export's icon check nor AppStream's compose. With `librsvg2-common` installed both pass, and the manifest composes AppStream as it does here. The lesson for this recipe: the machine that builds a Flatpak needs the SVG loader, because the icon the manifest installs is one.
 
 **Tests:** `tests/test_ci_workflow.py` gains three — the Flatpak job's three Flathub references, its builder, its recipe, its smoke test and its artifact; the release job's two downloads and both file patterns; and the smoke script's shape — and the job-set and release-needs tests name five jobs. The Flatpak smoke script is never run by the suite: it installs software.
+
+## 13. The release (Phase 4)
+
+**Version `1.1.0` and build date `2026-09-18`** in `snapmock/__init__.py` and `config/constants.py` (silence 3: the release that first carries the Flatpak is 1.1.0, since the form is new and decision 5 changes what the application says).
+
+**The release notes are written for Doug to read before the tag**, and the tag is never pushed without his word. They are the annotated tag's message, which the release job turns into the release's notes: the Flatpak and how to install it, its size against the AppImage's and why, its own settings copied once, the bundle that does not update itself; the two Library panel defects the display run found, which every form had; the shortcut command each form now shows; what Check for Updates says inside a Flatpak; and the two interpreters continuous integration runs.
+
+**What the tag does:** the release job refuses a tag that is not `v` followed by the version in `snapmock/__init__.py`, then downloads the AppImage and the Flatpak built in the same run and publishes one ordinary release carrying both.
 
 ## Change Log
 
