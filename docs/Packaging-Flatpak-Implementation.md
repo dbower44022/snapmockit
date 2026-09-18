@@ -11,8 +11,8 @@ Implements the Flatpak that Technical Architecture PRD 7.3 names as the secondar
 | 1 | The five decisions, this document, the builder and runtimes installed, the suite under Python 3.13, and the manifest under `packaging/flatpak/` with its tests | Done 09-17-26: the bundle built here, 25.4 MB, and proven headless (Sections 2, 6, 7, 8) | 4d6e2ea, 7b594d1, this commit |
 | 2 | The code the sandbox needs (decisions 4 and 5, and the three corrections of Section 5), and the Flatpak proven on this machine through a checklist page | Done 09-18-26 but the Wayland section, which waits for a log-out (Sections 9 to 11.2): seven findings, four of them defects fixed with tests | ae29485 to this commit |
 | 3 | The build in continuous integration: the Flatpak on every push as an artifact, and the release job attaching the bundle beside the AppImage | Done 09-18-26: run 35309600429 green, the Flatpak job in 3 minutes 2 seconds (Section 12) | bda1e43 to this commit |
-| 4 | The release that first carries both files, `1.1.0` | Version set and the notes written 09-18-26 (Section 13); the tag waits for Doug | this commit |
-| Close-out | The PRD rows, the README, the release-engineering notes, the display checks owed, and what of 7.3 remains | Not started | |
+| 4 | The release that first carries both files, `1.1.0` | Done 09-18-26: v1.1.0 published with both files, the bundle downloaded and proven here (Sections 13, 13.1) | 5b17c5d, f137f76, tag v1.1.0 |
+| Close-out | The PRD rows, the README, the release-engineering notes, the display checks owed, and what of 7.3 remains | Done 09-18-26 (Section 14) | this commit |
 
 ## 2. Decisions
 
@@ -222,6 +222,24 @@ Why the context menu sometimes worked: it selects the file under the cursor with
 **The suite at 5b17c5d:** 1763 passed, 14 skipped, 1 deselected, in 6 minutes 21 seconds.
 
 **What the tag does:** the release job refuses a tag that is not `v` followed by the version in `snapmock/__init__.py`, then downloads the AppImage and the Flatpak built in the same run and publishes one ordinary release carrying both.
+
+### 13.1 v1.1.0, published 09-18-26 01:41
+
+Doug gave the word at 01:35 and the annotated tag `v1.1.0` went up on f137f76, whose continuous-integration run was already green. **Run 35311370398: every job green and the release job published `Snapmockit 1.1.0` at 05:39:53 UTC**, an ordinary release (not a pre-release) carrying `Snapmockit-1.1.0-x86_64.AppImage` (128,301,560 bytes) and `Snapmockit-1.1.0-x86_64.flatpak` (26,627,976 bytes). `releases/latest`, which Check for Updates reads, answers `v1.1.0`.
+
+**The published bundle proven here:** downloaded from the release (SHA-256 begins `450ff6af88415a56`), installed with `flatpak install --user`, and put through `packaging/flatpak/smoke.sh`, which read `Snapmockit 1.1.0` from it and built the main window inside the sandbox on Qt 6.11.1. It is the installed Flatpak on this machine now.
+
+## 14. Close-out
+
+**Done.** Technical Architecture PRD 7.3's secondary Linux form exists: a recipe under `packaging/flatpak/` (Section 8), proven on this machine and on Doug's display (Sections 8 to 11.2), built and smoke-tested in continuous integration on every push (Section 12), and published in the release `v1.1.0` beside the AppImage (Section 13.1). The five decisions were taken as recommended (Section 2), and the display run turned up seven findings, four of them defects fixed with tests — two in the Library panel that every form had, one in the shortcut command every form showed, and one in the trash a sandbox would otherwise hide.
+
+**PRD rows:** Technical Architecture 1.61 to 1.65; General UI 2.50; Screen Capture 1.1; Library 1.4 and 1.5. **The README** carries both Linux forms and how to build each. **`docs/Release-Engineering.md`** has step 3's Flatpak done and Section 4 rewritten.
+
+**What of 7.3 remains:** the Python Package Index (the wheel and sdist the build job already makes, once an account and a trusted publisher exist); the Flathub submission, which decision 2 left for after the bundle had been used, and for which the justification of the home-directory permission is written in Section 2.3; the Windows installer and portable archive, and the macOS bundle, each waiting for its machine. **Out of scope and still open:** the menu entry the AppImage does not install (end-to-end pass finding 1), and the Windows and macOS capture backends.
+
+**Display checks this work owes:** section 11 of the checklist page, the Flatpak capturing through the Wayland portal, which waits for a log-out; and decision 5's Check for Updates wording, which can be seen now that 1.1.0 is released by installing the 1.0.0 bundle this machine still has under `dist/` and asking it to check.
+
+**The next required step** is the one Doug picks between the Python Package Index and the Flathub submission; the release-engineering notes hold both.
 
 ## Change Log
 

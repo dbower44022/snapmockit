@@ -6,7 +6,9 @@ Status: the application is complete against its nine product requirements docume
 
 ## Install on Linux
 
-Snapmockit ships as an AppImage, one file that carries its own Python and Qt, for x86_64 Linux with glibc 2.34 or later (Ubuntu 22.04, Debian 12, Fedora 35, RHEL 9, and later). No package manager and no password are involved.
+Snapmockit ships in two forms on Linux, both for x86_64: an **AppImage**, one file that carries its own Python and Qt, and a **Flatpak**, a 26 MB bundle that runs on the KDE runtime and in a sandbox. Neither needs a package manager or a password. The AppImage runs anywhere with glibc 2.34 or later (Ubuntu 22.04, Debian 12, Fedora 35, RHEL 9, and later); the Flatpak runs anywhere Flatpak does.
+
+### The AppImage
 
 1. Download `Snapmockit-<version>-x86_64.AppImage` from the latest release at https://github.com/dbower44022/snapmockit/releases.
 2. Make it executable and run it. From a file manager, right-click the file, allow it to run as a program under Properties, and double-click it. From a terminal, with the file in your Downloads folder:
@@ -51,9 +53,21 @@ update-desktop-database ~/.local/share/applications
 
 The entry appears at once; if its icon does not, the running desktop has not rescanned its icon folders yet, and a restart of the desktop shell (Ctrl+Alt+Esc on Cinnamon under X11) or a fresh login shows it. A later release replaces the copy at `~/Applications/Snapmockit.AppImage` and the entry stays. To remove it, delete the entry file, the two icon files, and the copy.
 
+### The Flatpak
+
+```bash
+cd ~/Downloads
+flatpak install --user Snapmockit-<version>-x86_64.flatpak
+flatpak run io.github.dbower44022.snapmockit
+```
+
+Download the bundle from the same release page. The first install offers to fetch the KDE runtime 6.11 from Flathub, which is most of what the application needs; the bundle itself is 26 MB because Qt is shared with every other KDE application on the machine. The desktop entry and the icon are installed with it, so Snapmockit is in the main menu at once, and `flatpak run io.github.dbower44022.snapmockit --capture full` is the command to bind to a key.
+
+The sandbox reaches your whole home directory, the display, the graphics device, and the network, and nothing else. Its settings live under `~/.var/app/io.github.dbower44022.snapmockit/`, copied once from `~/.config/Snapmockit` on the first start if you have been running another form; the library is the same `~/Snapmockit/Library` both forms use. A bundle installed by hand does not update itself: a new version is a new download. Both forms can be installed at once, but they carry one application id, so the desktop shows one menu entry for Snapmockit.
+
 ### Other forms
 
-Windows and macOS packages do not exist yet; the capture backends for both are written but untested. A wheel on PyPI and a Flatpak are the next packaging steps after 1.0.0. Until then, every platform can run from source.
+Windows and macOS packages do not exist yet; the capture backends for both are written but untested. A wheel on PyPI and a Flathub submission are the next packaging steps. Until then, every platform can run from source.
 
 ## Running from source
 
@@ -72,14 +86,26 @@ To take a capture straight from the command line and open it in the application:
 uv run python -m snapmock --capture full
 ```
 
-## Building the AppImage
+## Building the packages
 
-The release job builds the AppImage from a clean runner on every tag; the same recipe runs from a checkout with one command, and the build lands under `dist/`:
+The release job builds both Linux forms from a clean runner on every tag, and both recipes run from a checkout with one command each, landing under `dist/`.
+
+The AppImage:
 
 ```bash
 uv sync --group packaging
 uv run --group packaging python packaging/appimage/build.py
 ```
+
+The Flatpak, which needs `flatpak-builder` (or Flathub's `org.flatpak.Builder`), the KDE runtime 6.11 with its SDK, the PyQt base application 6.11, and an SVG loader on the machine that builds:
+
+```bash
+flatpak install flathub org.kde.Platform//6.11 org.kde.Sdk//6.11 \
+  com.riverbankcomputing.PyQt.BaseApp//6.11
+uv run python packaging/flatpak/build.py
+```
+
+`packaging/flatpak/build.py --update-deps` regenerates the dependency module from `uv.lock` when a dependency changes.
 
 ## Developing
 
