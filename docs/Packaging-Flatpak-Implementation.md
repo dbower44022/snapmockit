@@ -10,7 +10,7 @@ Implements the Flatpak that Technical Architecture PRD 7.3 names as the secondar
 |---|---|---|---|
 | 1 | The five decisions, this document, the builder and runtimes installed, the suite under Python 3.13, and the manifest under `packaging/flatpak/` with its tests | Done 09-17-26: the bundle built here, 25.4 MB, and proven headless (Sections 2, 6, 7, 8) | 4d6e2ea, 7b594d1, this commit |
 | 2 | The code the sandbox needs (decisions 4 and 5, and the three corrections of Section 5), and the Flatpak proven on this machine through a checklist page | Done 09-18-26 but the Wayland section, which waits for a log-out (Sections 9 to 11.2): seven findings, four of them defects fixed with tests | ae29485 to this commit |
-| 3 | The build in continuous integration: the Flatpak on every push as an artifact, and the release job attaching the bundle beside the AppImage | Not started | |
+| 3 | The build in continuous integration: the Flatpak on every push as an artifact, and the release job attaching the bundle beside the AppImage | Written 09-18-26 (Section 12); green on GitHub to be recorded | this commit |
 | 4 | The release that first carries both files, `1.1.0` | Not started | |
 | Close-out | The PRD rows, the README, the release-engineering notes, the display checks owed, and what of 7.3 remains | Not started | |
 
@@ -192,6 +192,18 @@ Why the context menu sometimes worked: it selects the file under the cursor with
 **What Phase 2 still owes:** section 11 of the checklist page, the Flatpak capturing through the Wayland portal, which needs a log-out to the Wayland session. Everything else the task named is proven: installed from the bundle, started from the main menu with its icon and name, captures through X11, `--capture full` handed to the running instance, a project saved and reopened from a folder and from the library, PNG and PDF exports, a Snagit file read, the library found, the settings copied once, and Check for Updates answering (the wording for a newer release waits for 1.1.0, decision 5).
 
 **Also fixed while Doug was blocked:** the manifest now carries `branch: stable`, so the bundle installs on the branch Flathub uses; without it a bundle installs as `master`, which is what his `flatpak list` showed. The bundle was rebuilt, its digest changed, and the install step is run once more.
+
+## 12. The build in continuous integration (Phase 3)
+
+`.github/workflows/ci.yml` gains a fifth job, `flatpak`, and the release job attaches both Linux forms.
+
+**`flatpak`, on every run:** `ubuntu-latest`, `flatpak` and `flatpak-builder` from apt, the `flathub` remote added at system level, then `org.kde.Platform//6.11`, `org.kde.Sdk//6.11`, and `com.riverbankcomputing.PyQt.BaseApp//6.11` installed from Flathub — about 1.6 GB, which is the price of the form Flathub accepts. Then uv with its cache, `uv sync --locked`, the recipe (`uv run python packaging/flatpak/build.py`), the smoke test, and `dist/*.flatpak` kept as the `snapmockit-flatpak` artifact, a missing file an error. The recipe needs no packaging dependency group: `flatpak-builder` is a program on the machine, not a Python package, and `build.py` falls back to `flatpak run org.flatpak.Builder` where no binary is on the path, which is how this machine has it.
+
+**`packaging/flatpak/smoke.sh`, the smoke test:** the bundle is installed for the user (an installed copy of the same version is uninstalled first, since a bundle of a version already installed is refused, which is this machine's ordinary state and never the runner's); `flatpak run <id> --version` must answer `Snapmockit <version>` with the version read from the bundle's own file name; and the sandbox's own Python builds the main window on the offscreen platform, printing the window title, the package version, and Qt's. Where the application was not installed before, it is uninstalled again, so the runner is left as it was found. It runs here in about 20 seconds and prints `window built: 'Untitled - Snapmockit', snapmock 1.0.0, Qt 6.11.1`.
+
+**`release`, on a tag:** it now waits for `flatpak` as well, downloads both artifacts into `dist/`, and `gh release create` attaches `Snapmockit-<version>-x86_64.AppImage` and `Snapmockit-<version>-x86_64.flatpak` to the one release.
+
+**Tests:** `tests/test_ci_workflow.py` gains three — the Flatpak job's three Flathub references, its builder, its recipe, its smoke test and its artifact; the release job's two downloads and both file patterns; and the smoke script's shape — and the job-set and release-needs tests name five jobs. The Flatpak smoke script is never run by the suite: it installs software.
 
 ## Change Log
 

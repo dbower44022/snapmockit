@@ -3,8 +3,10 @@
 # every push and pull request; a build of the wheel and sdist, so the packaging
 # metadata is proven on every change too; the Linux AppImage built by the recipe under
 # packaging/appimage/, smoke-tested on the runner and kept as an artifact (packaging
-# decision 2; docs/Packaging-AppImage-Implementation.md); and, on a tag of the form
-# vX.Y.Z, a GitHub release carrying the AppImage, which Check for Updates reads.
+# decision 2; docs/Packaging-AppImage-Implementation.md); the Linux Flatpak built by the
+# recipe under packaging/flatpak/, smoke-tested and kept the same way (Flatpak decision 2;
+# docs/Packaging-Flatpak-Implementation.md); and, on a tag of the form vX.Y.Z, a GitHub
+# release carrying both, which Check for Updates reads.
 name: CI
 
 on:
@@ -132,10 +134,58 @@ jobs:
           path: dist/*.AppImage
           if-no-files-found: error
 
+  flatpak:
+    # The secondary Linux form (Technical Architecture PRD 7.3; Flatpak decision 2).
+    # The runtime, the SDK, and the PyQt base application come from Flathub on every
+    # run: about 1.6 GB, which is the price of building the form Flathub accepts.
+    name: Linux Flatpak
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Flatpak and its builder
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends flatpak flatpak-builder
+          sudo flatpak remote-add --if-not-exists flathub \
+            https://dl.flathub.org/repo/flathub.flatpakrepo
+
+      - name: The runtime, the SDK, and the PyQt base application
+        run: |
+          sudo flatpak install -y --noninteractive flathub \
+            org.kde.Platform//6.11 org.kde.Sdk//6.11 \
+            com.riverbankcomputing.PyQt.BaseApp//6.11
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install
+        run: uv sync --locked
+
+      - name: Build the Flatpak
+        run: uv run python packaging/flatpak/build.py
+
+      - name: Smoke test
+        run: bash packaging/flatpak/smoke.sh dist/Snapmockit-*-x86_64.flatpak
+
+      - name: Show what was built
+        run: ls -l dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: snapmockit-flatpak
+          path: dist/*.flatpak
+          if-no-files-found: error
+
   release:
     name: GitHub release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [checks, build, appimage]
+    needs: [checks, build, appimage, flatpak]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -157,6 +207,11 @@ jobs:
           name: snapmockit-appimage
           path: dist/
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: snapmockit-flatpak
+          path: dist/
+
       - name: Release notes from the tag's message
         run: |
           git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
@@ -164,11 +219,13 @@ jobs:
           [ -s release-notes.md ] || echo "Snapmockit ${GITHUB_REF_NAME#v}." > release-notes.md
           cat release-notes.md
 
-      - name: Publish the release with the AppImage
+      - name: Publish the release with both Linux forms
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" dist/Snapmockit-*-x86_64.AppImage \
+          gh release create "${GITHUB_REF_NAME}" \
+            dist/Snapmockit-*-x86_64.AppImage \
+            dist/Snapmockit-*-x86_64.flatpak \
             --title "Snapmockit ${GITHUB_REF_NAME#v}" \
             --notes-file release-notes.md \
             --verify-tag
