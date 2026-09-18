@@ -1,6 +1,6 @@
 # Packaging: the Linux Flatpak — Implementation Notes
 
-Last Updated: 09-17-26 23:34 · Revision 1.6
+Last Updated: 09-18-26 10:27 · Revision 1.7
 
 Implements the Flatpak that Technical Architecture PRD 7.3 names as the secondary Linux form, the next part of step 3 of the release-engineering list (`docs/Release-Engineering.md`, Sections 1 and 4), which Doug put ahead of the Python Package Index on 09-17-26. The kickoff prompt is `docs/Packaging-Flatpak-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The AppImage's notes, `docs/Packaging-AppImage-Implementation.md`, hold the recipe and the release job this work builds beside.
 
@@ -8,6 +8,7 @@ Implements the Flatpak that Technical Architecture PRD 7.3 names as the secondar
 
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
+| 1.7 | 09-18-26 10:27 | Claude (Claude Code) | Section 13 closed without a result on Doug's decision: the 1.0.0 bundle under dist/ turned out to contain 1.1.0, so the check could not show the wording; it rides on the next release instead. Section 11 is the one display check still owed. |
 | 1 | The five decisions, this document, the builder and runtimes installed, the suite under Python 3.13, and the manifest under `packaging/flatpak/` with its tests | Done 09-17-26: the bundle built here, 25.4 MB, and proven headless (Sections 2, 6, 7, 8) | 4d6e2ea, 7b594d1, this commit |
 | 2 | The code the sandbox needs (decisions 4 and 5, and the three corrections of Section 5), and the Flatpak proven on this machine through a checklist page | Done 09-18-26 but the Wayland section, which waits for a log-out (Sections 9 to 11.2): seven findings, four of them defects fixed with tests | ae29485 to this commit |
 | 3 | The build in continuous integration: the Flatpak on every push as an artifact, and the release job attaching the bundle beside the AppImage | Done 09-18-26: run 35309600429 green, the Flatpak job in 3 minutes 2 seconds (Section 12) | bda1e43 to this commit |
@@ -237,7 +238,9 @@ Doug gave the word at 01:35 and the annotated tag `v1.1.0` went up on f137f76, w
 
 **What of 7.3 remains:** the Python Package Index (the wheel and sdist the build job already makes, once an account and a trusted publisher exist); the Flathub submission, which decision 2 left for after the bundle had been used, and for which the justification of the home-directory permission is written in Section 2.3; the Windows installer and portable archive, and the macOS bundle, each waiting for its machine. **Out of scope and still open:** the menu entry the AppImage does not install (end-to-end pass finding 1), and the Windows and macOS capture backends.
 
-**Display checks this work owes:** section 11 of the checklist page, the Flatpak capturing through the Wayland portal, which waits for a log-out; and decision 5's Check for Updates wording, written as **section 13** of the checklist page (ids k01 to k05): the 1.0.0 bundle this machine still has under `dist/` installed, the message read, the release page opened, and 1.1.0 put back.
+**Display checks this work owes:** section 11 of the checklist page, the Flatpak capturing through the Wayland portal, which waits for a log-out.
+
+**Section 13 was tried and closed without a result, 09-18-26 10:27.** Doug ran it and the application opened as 1.1.0. The cause is not the check and not the application: **the file `dist/Snapmockit-1.0.0-x86_64.flatpak` contains 1.1.0**, proven by installing it into a throwaway Flatpak installation, which answered `1.1.0`. A bundle is named from the version in the wheel at build time, and something rebuilt that file after the version bump of 09-18-26 without renaming it; the recipe writes the name from the wheel, so a stale name means a rebuild in a tree whose wheel said otherwise. Nothing was rebuilt to chase it, since another session was working in this repository at the time. **Doug's decision, 09-18-26 10:27: the check is not repeated.** Decision 5's wording is held by two tests and was proven headless; the first user of an installed 1.1.0 Flatpak sees it for real when 1.2.0 is released, at no one's cost. **What a later session should take from this:** a bundle kept under `dist/` is not evidence of its own version — read the version out of it before trusting the name.
 
 **The next required step** is the one Doug picks between the Python Package Index and the Flathub submission; the release-engineering notes hold both.
 
