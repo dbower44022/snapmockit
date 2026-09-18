@@ -67,7 +67,7 @@ The sandbox reaches your whole home directory, the display, the graphics device,
 
 ### Other forms
 
-Windows and macOS packages do not exist yet; the capture backends for both are written but untested. A wheel on PyPI and a Flathub submission are the next packaging steps. Until then, every platform can run from source.
+Windows and macOS packages do not exist yet; the capture backends for both are written but untested. A wheel on PyPI is the next packaging step; the Flatpak is published as the bundle above and not on Flathub. Until then, every platform can run from source.
 
 ## Running from source
 

@@ -1,6 +1,8 @@
 # Kickoff Prompt: The Flathub Submission
 
-Last Updated: 09-18-26 01:52 · Revision 1.0
+Last Updated: 09-18-26 10:22 · Revision 1.1
+
+**Closed 09-18-26 at Phase 1; do not paste.** Flathub's Generative AI policy forbids what Phase 4 asks of the session, and Doug decided against a submission. See `docs/Packaging-Flathub-Implementation.md`, Sections 2 and 3, which also correct this prompt for a later reopening.
 
 Paste everything below the line into a new Claude Code session rooted in this repository on the Linux machine. Start it only when no other session is committing in this working directory and no CI run of the current commit is in progress, since a push cancels a run in progress on the same branch. This is the next part of step 3 of the release-engineering list (`docs/Release-Engineering.md`, Sections 1 and 4): the Flathub submission, which Flatpak decision 2 left for after the bundle had been used. Doug chose it on 09-18-26 ahead of the Python Package Index. `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) still governs the standards; this one governs the work. Where the two disagree, the general prompt wins and this one is corrected. The work is four phases and a close-out; a session pasting this prompt starts at the first phase not marked done in Section 1 of the notes document this work creates.
 
@@ -120,4 +122,5 @@ Update the phase table in `docs/Packaging-Flathub-Implementation.md`, bump its r
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.1 | 09-18-26 10:22 | Claude (Claude Code) | Marked closed: the work stopped at Phase 1 on Doug's decision of 09-18-26 (option C, no submission), forced by Flathub's Generative AI and exception policies, which this prompt did not know of. Its corrections are in the notes document, Section 3. |
 | 1.0 | 09-18-26 01:52 | Claude (Claude Code) | Initial kickoff prompt, written after Doug chose the Flathub submission on 09-18-26 ahead of the Python Package Index. Starting state verified on 09-18-26: v1.1.0 released with both Linux forms; `flatpak-builder-lint` already returns `finish-args-home-filesystem-access` and `toplevel-unnecessary-branch` on the current manifest; Flathub forbids a local-directory source and asks for a build from source, which puts the four dependency wheels in question; the metainfo has no screenshots and one release row. Four phases and a close-out; five decisions; five silences. |

@@ -1,6 +1,6 @@
 # Release Engineering Notes
 
-Last Updated: 09-18-26 01:42 · Revision 1.13
+Last Updated: 09-18-26 10:22 · Revision 1.15
 
 The work that turns the finished application into a product: its identity, continuous integration, packaging, and the first release. Every feature row of the nine product requirements documents was built or recorded as a departure by 09-14-26 (`docs/Freehand-Remainder-Implementation.md`, Section 8.1, names the last of them); this document holds what follows, in the order Doug set on 09-14-26: the identity, then continuous integration, then packaging, then an end-to-end pass on real work, then the two platform backends when their machines exist.
 
@@ -10,7 +10,7 @@ The work that turns the finished application into a product: its identity, conti
 |---|---|---|---|
 | 1 | The identity: the name, the repository, the licence, the version's one source, the README | Done | faf8e1b, then this commit |
 | 2 | Continuous integration: lint, format, types, the suite on the offscreen platform, and the wheel and sdist, on every push | Done: green on GitHub 09-14-26 | 632b30b, 74bc47d |
-| 3 | Packaging: the Linux AppImage first (Technical Architecture PRD 7.3), then Flatpak, PyPI, the Windows MSI or portable ZIP, and the macOS bundle | Linux AppImage done 09-15-26 (v0.9.0), v1.0.0 on 09-17-26. **Linux Flatpak done 09-18-26** (`docs/Packaging-Flatpak-Implementation.md`): built in continuous integration on every push and published in **v1.1.0** beside the AppImage. Remaining, in order: the Python Package Index, a Flathub submission, the Windows MSI or portable ZIP, the macOS bundle; and the menu entry the AppImage does not install (end-to-end pass finding 1) | 860f370 to 080e2f3 |
+| 3 | Packaging: the Linux AppImage first (Technical Architecture PRD 7.3), then Flatpak, PyPI, the Windows MSI or portable ZIP, and the macOS bundle | Linux AppImage done 09-15-26 (v0.9.0), v1.0.0 on 09-17-26. **Linux Flatpak done 09-18-26** (`docs/Packaging-Flatpak-Implementation.md`): built in continuous integration on every push and published in **v1.1.0** beside the AppImage. No Flathub submission (Doug's decision of 09-18-26, `docs/Packaging-Flathub-Implementation.md`). Remaining, in order: the Python Package Index, the Windows MSI or portable ZIP, the macOS bundle; and the menu entry the AppImage does not install (end-to-end pass finding 1) | 860f370 to 080e2f3 |
 | 4 | An end-to-end pass on real work, on the released AppImage `Snapmockit-0.9.0-x86_64.AppImage`, then the 1.0.0 release | Done 09-17-26: two sittings, one on real work, ended by Doug's call; sixteen findings, all closed but one follow-up (the menu install); the Wayland capture passed; **v1.0.0 released 09-17-26** and started from the main menu on Doug's display (`docs/End-to-End-Pass.md`, Section 9) | def7507 to this commit (tag v1.0.0 on f53c4e5) |
 | 5 | The Windows and macOS capture backends, when their machines exist | Waiting: both are stubs; no Windows or macOS machine is available; `docs/Windows-Backend-Kickoff-Prompt.md` is ready for the Windows one | |
 
@@ -28,17 +28,19 @@ The product has its first release it stands behind: v1.0.0, the Linux AppImage, 
 
 **The Flatpak is done (09-18-26).** Both Linux forms are built and smoke-tested on every push and published together: **v1.1.0** carries `Snapmockit-1.1.0-x86_64.AppImage` and `Snapmockit-1.1.0-x86_64.flatpak`. The work took four phases and found seven things on the display, four of them defects fixed with tests, two in the Library panel that every form had. Its notes are `docs/Packaging-Flatpak-Implementation.md`; two display checks are still owed there (the Wayland capture inside the Flatpak, and Check for Updates from a 1.0.0 Flatpak).
 
+**No Flathub submission (09-18-26).** Doug chose Flathub ahead of the Python Package Index, and then closed that work at its first phase. Flathub's current documentation forbids an AI tool to open or answer a submission pull request, and refuses the home-directory permission to software that shows signs of large language model use; 394 of this repository's 422 commits carry a Claude co-author line. The bundle on the GitHub release stays the Flatpak route, and a Flatpak user updates by downloading the next one. The notes, with Flathub's requirements checked against the repository for a later reopening, are `docs/Packaging-Flathub-Implementation.md`.
+
 What is left of this list, in order:
 
-1. **A Flathub submission**, next by Doug's choice of 09-18-26, which puts it ahead of the Python Package Index. Its kickoff prompt is `docs/Packaging-Flathub-Kickoff-Prompt.md` (revision 1.0). It is a pull request to `flathub/flathub` and a review out of this project's hands. Two things are known to stand in the way and are decisions inside that work: Flathub forbids a manifest that builds from a local directory and asks for a build from source, which puts the four dependency wheels in question, and its linter already flags the home-directory permission. After it, `flatpak update` brings users a new version instead of a download.
-2. **The Python Package Index.** The build job already makes the wheel and sdist. What is missing is an account, a trusted publisher (or token) for `dbower44022/snapmockit`, and a publish step in the release job. Only Doug can create the account. A kickoff prompt is not yet written.
-3. **The menu entry**, end-to-end pass finding 1: an "Add to Menu" action or a first-start offer that installs the desktop entry and icons the AppImage carries. The Flatpak installs its own, so this is the AppImage's gap alone.
-4. **Windows and macOS**: the packages of step 3 and the capture backends of step 5, each waiting for its machine.
+1. **The Python Package Index**, next. The build job already makes the wheel and sdist. What is missing is an account, a trusted publisher for `dbower44022/snapmockit`, and a publish step in the release job. Only Doug can create the account. Its kickoff prompt is `docs/Packaging-PyPI-Kickoff-Prompt.md` (revision 1.0).
+2. **The menu entry**, end-to-end pass finding 1: an "Add to Menu" action or a first-start offer that installs the desktop entry and icons the AppImage carries. The Flatpak installs its own, so this is the AppImage's gap alone.
+3. **Windows and macOS**: the packages of step 3 and the capture backends of step 5, each waiting for its machine.
 
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.15 | 09-18-26 10:22 | Claude (Claude Code) | No Flathub submission, Doug's decision of 09-18-26 against Flathub's Generative AI and exception policies; step 3 and Section 4 bring the Python Package Index next, its kickoff prompt written. The header's revision, left at 1.13 by the 1.14 row, is brought into step. |
 | 1.14 | 09-18-26 01:52 | Claude (Claude Code) | Section 4: the Flathub submission moved ahead of the Python Package Index on Doug's choice of 09-18-26; its kickoff prompt written, with what the Flathub linter already says about the manifest. |
 | 1.13 | 09-18-26 01:42 | Claude (Claude Code) | Step 3's Flatpak done: both Linux forms built on every push and published together in v1.1.0; Section 4 rewritten, with the Python Package Index and a Flathub submission as what follows. |
 | 1.12 | 09-17-26 13:31 | Claude (Claude Code) | Section 4: Flatpak moved ahead of PyPI on Doug's choice; its kickoff prompt written. |
