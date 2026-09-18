@@ -146,25 +146,20 @@ jobs:
 
       # The recipe renders the icon through Qt before it builds, so the runner needs
       # the same host libraries the checks job installs for PyQt6 to import.
-      - name: Flatpak and the Qt runtime libraries
+      - name: Flatpak, its builder, and the Qt runtime libraries
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends flatpak \
+          sudo apt-get install -y --no-install-recommends flatpak flatpak-builder elfutils \
             libegl1 libgl1 libglib2.0-0 libdbus-1-3 libfontconfig1 libfreetype6 \
             libxkbcommon0 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 \
             libxcb-shape0 libxcb-xkb1 libxcb-render-util0 libxcb-image0 \
             fonts-dejavu-core
-          flatpak remote-add --user --if-not-exists flathub \
+          sudo flatpak remote-add --if-not-exists flathub \
             https://dl.flathub.org/repo/flathub.flatpakrepo
 
-      # Everything in the user's own installation, which is the one the builder
-      # application is given access to; the distribution's flatpak-builder is not
-      # used, so the runner builds with the same tools as the development machine
-      # (Ubuntu's appstreamcli compose fails on a manifest that passes here).
-      - name: The builder, the runtime, the SDK, and the PyQt base application
+      - name: The runtime, the SDK, and the PyQt base application
         run: |
-          flatpak install --user -y --noninteractive flathub \
-            org.flatpak.Builder \
+          sudo flatpak install -y --noninteractive flathub \
             org.kde.Platform//6.11 org.kde.Sdk//6.11 \
             com.riverbankcomputing.PyQt.BaseApp//6.11
 
@@ -181,15 +176,22 @@ jobs:
       - name: Build the Flatpak
         run: uv run python packaging/flatpak/build.py
 
-      # What appstreamcli compose complains about, when it does; the build prints only
-      # that there is a report.
+      # What appstreamcli compose complains about, when it does; the build itself says
+      # only that a report exists, so the same compose is run again here to print it.
       - name: The AppStream report, if the build failed
         if: failure()
         run: |
-          find build/flatpak -name '*hint*' -o -name '*issue*' | head -20
-          for f in $(find build/flatpak -name '*hint*.yml.gz'); do echo "== $f"; zcat "$f"; done
-          for f in $(find build/flatpak -name '*hint*.yml' -o -name '*issue*.yml'); do
-            echo "== $f"; cat "$f"
+          appstreamcli --version || true
+          ls -R build/flatpak/build-dir/files/share/app-info 2>/dev/null || true
+          appstreamcli compose \
+            --components=io.github.dbower44022.snapmockit \
+            --prefix=/ --origin=io.github.dbower44022.snapmockit \
+            --result-root=/tmp/ascompose --data-dir=/tmp/ascompose/xmls \
+            --icons-dir=/tmp/ascompose/icons \
+            build/flatpak/build-dir/files || true
+          find /tmp/ascompose build/flatpak -name '*hint*' | head
+          for f in $(find /tmp/ascompose -name '*.yml.gz' 2>/dev/null); do
+            echo "== $f"; zcat "$f"
           done
 
       - name: Smoke test
