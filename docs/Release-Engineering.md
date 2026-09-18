@@ -30,8 +30,8 @@ The product has its first release it stands behind: v1.0.0, the Linux AppImage, 
 
 What is left of this list, in order:
 
-1. **The Python Package Index.** The build job already makes the wheel and sdist. What is missing is an account, a trusted publisher (or token) for `dbower44022/snapmockit`, and a publish step in the release job. Only Doug can create the account. A kickoff prompt is not yet written.
-2. **A Flathub submission**, which Flatpak decision 2 left for after the bundle had been used. It is a pull request to `flathub/flathub` and a review out of this project's hands; the justification for the home-directory permission it will ask about is written in the Flatpak notes, Section 2.3. After it, `flatpak update` brings users a new version instead of a download.
+1. **A Flathub submission**, next by Doug's choice of 09-18-26, which puts it ahead of the Python Package Index. Its kickoff prompt is `docs/Packaging-Flathub-Kickoff-Prompt.md` (revision 1.0). It is a pull request to `flathub/flathub` and a review out of this project's hands. Two things are known to stand in the way and are decisions inside that work: Flathub forbids a manifest that builds from a local directory and asks for a build from source, which puts the four dependency wheels in question, and its linter already flags the home-directory permission. After it, `flatpak update` brings users a new version instead of a download.
+2. **The Python Package Index.** The build job already makes the wheel and sdist. What is missing is an account, a trusted publisher (or token) for `dbower44022/snapmockit`, and a publish step in the release job. Only Doug can create the account. A kickoff prompt is not yet written.
 3. **The menu entry**, end-to-end pass finding 1: an "Add to Menu" action or a first-start offer that installs the desktop entry and icons the AppImage carries. The Flatpak installs its own, so this is the AppImage's gap alone.
 4. **Windows and macOS**: the packages of step 3 and the capture backends of step 5, each waiting for its machine.
 
@@ -39,6 +39,7 @@ What is left of this list, in order:
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.14 | 09-18-26 01:52 | Claude (Claude Code) | Section 4: the Flathub submission moved ahead of the Python Package Index on Doug's choice of 09-18-26; its kickoff prompt written, with what the Flathub linter already says about the manifest. |
 | 1.13 | 09-18-26 01:42 | Claude (Claude Code) | Step 3's Flatpak done: both Linux forms built on every push and published together in v1.1.0; Section 4 rewritten, with the Python Package Index and a Flathub submission as what follows. |
 | 1.12 | 09-17-26 13:31 | Claude (Claude Code) | Section 4: Flatpak moved ahead of PyPI on Doug's choice; its kickoff prompt written. |
 | 1.11 | 09-17-26 13:25 | Claude (Claude Code) | Step 4 done: v1.0.0 released and started from the menu; step 5 stated as it stands; Section 4 names what is left, PyPI next. |
