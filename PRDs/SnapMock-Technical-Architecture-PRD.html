@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.63</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.64</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.63</dd>
-    <dt>Last Updated</dt>    <dd>09-17-26 18:34</dd>
+    <dt>Document version</dt><dd>1.64</dd>
+    <dt>Last Updated</dt>    <dd>09-18-26 00:16</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.64</td>
+        <td class="nowrap">09-18-26 00:16</td>
+        <td>Doug Bower</td>
+        <td>7.3's Flatpak proven on the development machine (docs/Packaging-Flatpak-Implementation.md, Sections 9 to 11.2), every proof of the form but the Wayland capture, which waits for a log-out: Section 8's startup measured at 0.97 to 1.13 seconds from flatpak run to the window mapped, against the AppImage's 1.63 to 1.70; the bundle is 25.4 MiB and the installed application 134 MB beside the shared runtime. The display run found seven things, four of them defects fixed with tests, two of those in the Library panel and present in every form (Library PRD 1.4, 1.5).</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.63</td>
         <td class="nowrap">09-17-26 18:34</td>
