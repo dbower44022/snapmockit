@@ -257,7 +257,38 @@ def test_outside_a_flatpak_the_message_is_unchanged(
     from snapmock import main_window as module
 
     monkeypatch.setattr(module, "in_flatpak", lambda: False)
+    monkeypatch.setattr(module, "upgrade_instruction", lambda: None)
     newer = UpdateCheckResult(Outcome.NEWER, "1.0.0", "v1.1.0", "https://example.test/r")
     assert main_window.update_message_text(newer) == (
         "Snapmockit v1.1.0 is available. You are running Snapmockit 1.0.0."
+    )
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "Upgrade with pipx upgrade snapmockit.",
+        "Upgrade with uv tool upgrade snapmockit.",
+        "Upgrade with pip install --upgrade snapmockit.",
+    ],
+)
+def test_an_installation_from_the_index_names_its_upgrade(
+    main_window: MainWindow, monkeypatch: pytest.MonkeyPatch, line: str
+) -> None:
+    """PyPI decision 5: upgraded by the tool that installed it, not from the release page."""
+    from snapmock import main_window as module
+
+    monkeypatch.setattr(module, "in_flatpak", lambda: False)
+    monkeypatch.setattr(module, "upgrade_instruction", lambda: line)
+    newer = UpdateCheckResult(Outcome.NEWER, "1.1.0", "v1.2.0", "https://example.test/r")
+    assert main_window.update_message_text(newer) == (
+        f"Snapmockit v1.2.0 is available. You are running Snapmockit 1.1.0. {line}"
+    )
+    assert main_window.update_message_link(newer) == (
+        "Open Release Page",
+        "https://example.test/r",
+    )
+    up_to_date = UpdateCheckResult(Outcome.UP_TO_DATE, "1.2.0", "v1.2.0", "u")
+    assert main_window.update_message_text(up_to_date) == (
+        "Snapmockit 1.2.0 is up to date. The latest release is v1.2.0."
     )

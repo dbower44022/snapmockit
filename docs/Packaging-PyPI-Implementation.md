@@ -1,6 +1,6 @@
 # Packaging: the Python Package Index — Implementation Notes
 
-Last Updated: 09-18-26 16:46 · Revision 1.1
+Last Updated: 09-18-26 16:55 · Revision 1.2
 
 Snapmockit published on the Python Package Index, so that `pipx install snapmockit`, `uv tool install snapmockit`, or `pip install snapmockit` installs the application on any platform with Python 3.12 or later, and every later release reaches the index from the release workflow. The kickoff prompt is `docs/Packaging-PyPI-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -8,8 +8,8 @@ Snapmockit published on the Python Package Index, so that `pipx install snapmock
 
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
-| 1 | The decisions, the metadata, the command, the sdist's contents, proven here | Done 09-18-26 (Sections 2 and 5); Technical Architecture PRD 1.67 | f70ff8b, then this commit |
-| 2 | The fourth form in `config/packaging.py`, and Check for Updates' wording for it | Not started | |
+| 1 | The decisions, the metadata, the command, the sdist's contents, proven here | Done 09-18-26 (Sections 2 and 5); Technical Architecture PRD 1.67 | f70ff8b, ab7baca |
+| 2 | The fourth form in `config/packaging.py`, and Check for Updates' wording for it | Done 09-18-26 (Section 6); General UI PRD 2.51, Screen Capture PRD 1.2 | this commit |
 | 3 | The index's side (Doug), the rehearsal on the test index, the publish job, the first release | Not started | |
 | Close-out | The README, the release-engineering notes, the release process | Not started | |
 
@@ -98,9 +98,28 @@ One more, found in the reading:
 
 **The next required step** is Phase 2: the fourth form in `config/packaging.py` and Check for Updates' upgrade line (decision 2.5), with the shortcut command of silence 6.
 
+## 6. Phase 2: the fourth form (09-18-26)
+
+**`config/packaging.py`** gains `Form.INDEX` and an `Installer` enumeration. `current_form` tests the Flatpak marker, then the AppImage variable, then whether the directory the `snapmock` package was imported from lies in a `site-packages` or `dist-packages` directory. `installer` reads the running environment's prefix: under `<PIPX_HOME>/venvs/` or a `pipx/venvs/` folder it is pipx's; under `<UV_TOOL_DIR>/` or a `uv/tools/` (`uv/data/tools/` on Windows) folder it is uv's; anything else is pip's. `upgrade_instruction` gives the line of decision 2.5 for the index's form and nothing for the others.
+
+**The shortcut command** (silence 6, corrected): for the index's form, `launch_command` names `snapmockit` when the path's `snapmockit` resolves to the command beside the running interpreter, which is how pipx and uv tool install it, links in `~/.local/bin`; that command's full path, quoted, when the path carries none or another installation's; and the interpreter's module line only when no command is installed beside it. The source form keeps its rule, `snapmockit` when the path has one, and now reads the path from the environment it is given, which the tests use. The first-run Wayland page and Preferences > Capture take the command from `capture_command`, as before.
+
+**Check for Updates:** `update_message_text` adds the upgrade line after the newer-release sentence when `upgrade_instruction` gives one; the Flatpak's wording is tested first and is unchanged. Open Release Page stays.
+
+**Proven here:** the wheel reinstalled into the scratch virtual environment of Section 5 reads `Form.INDEX`, `Installer.PIP`, and "Upgrade with pip install --upgrade snapmockit."; its region command is the full path of the environment's `bin/snapmockit` when that folder is off the path, and `snapmockit --capture full` when it is on it. The suite's own run reads the source form, since `uv sync` installs the checkout as editable.
+
+**Tests:** `tests/test_packaging_form.py` gains eleven cases (the checkout is the source form; `site-packages` and `dist-packages` are the index's; the Flatpak and the AppImage win over their own `site-packages`; seven environment places for the installer; `PIPX_HOME` and `UV_TOOL_DIR`; the three upgrade lines; the command on the path through a link, off the path by its full path with a space quoted, and the module line with no command). `tests/test_help_check_updates.py` gains the three wordings, with Open Release Page kept and the up-to-date outcome unchanged.
+
+**General UI PRD 2.51** (3.8) and **Screen Capture PRD 1.2** (3.5, 9.2) record it. Section 10 is unchanged.
+
+**Not proven here:** an installation by pipx or uv tool, which is not installed on this machine by this work without Doug's word; Phase 3 installs from the index with pipx, and the display checks read the message then.
+
+**The next required step** is Phase 3, step 1: the index's side, done by Doug, for which the steps are written next.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.2 | 09-18-26 16:55 | Claude (Claude Code) | Phase 2 done (Section 6): the index's form, its installer, its upgrade line in Check for Updates, and its shortcut command, off the path included. General UI PRD 2.51, Screen Capture PRD 1.2. |
 | 1.1 | 09-18-26 16:46 | Claude (Claude Code) | Phase 1 done (Section 5): the metadata, the console command, the sdist's include list, proven here with `twine check --strict` and an installation of the wheel; one departure (no licence classifier, PEP 639); silence 6 corrected (the command is off the path in a virtual environment that is not activated); decision 2.4's size corrected (38 KB). Technical Architecture PRD 1.67. |
 | 1.0 | 09-18-26 16:43 | Claude (Claude Code) | Initial notes: the five decisions taken on 09-18-26, each as recommended (1 C, 2 A, 3 B, 4 A as corrected, 5 A), with the two places the recommendation departed from the kickoff prompt (decision 1 on the index's documentation, decision 4 on the tests that read `packaging/` and `.github/`); the six silences; the index's documentation read. |

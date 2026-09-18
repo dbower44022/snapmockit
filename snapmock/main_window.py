@@ -73,7 +73,7 @@ from snapmock.config.constants import (
     ZOOM_MAX,
     ZOOM_MIN,
 )
-from snapmock.config.packaging import in_flatpak
+from snapmock.config.packaging import in_flatpak, upgrade_instruction
 from snapmock.config.settings import AppSettings
 from snapmock.config.shortcuts import SHORTCUTS, key_sequences
 from snapmock.core.clipboard_manager import ClipboardManager
@@ -3948,6 +3948,11 @@ class MainWindow(QMainWindow):
             found = f"{APP_NAME} {result.tag} is available. You are running {running}."
             if in_flatpak():
                 return f"{found} {self.FLATPAK_UPDATE_INSTRUCTION}"
+            # An installation from the index is upgraded by the tool that installed it,
+            # not from the release page's files (PyPI decision 5).
+            upgrade = upgrade_instruction()
+            if upgrade is not None:
+                return f"{found} {upgrade}"
             return found
         if result.outcome is Outcome.UP_TO_DATE:
             return f"{running} is up to date. The latest release is {result.tag}."
