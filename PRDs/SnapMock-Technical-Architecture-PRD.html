@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.66</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.67</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.66</dd>
-    <dt>Last Updated</dt>    <dd>09-18-26 10:22</dd>
+    <dt>Document version</dt><dd>1.67</dd>
+    <dt>Last Updated</dt>    <dd>09-18-26 16:45</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.67</td>
+        <td class="nowrap">09-18-26 16:45</td>
+        <td>Doug Bower</td>
+        <td>7.3's Python Package Index form has its package (docs/Packaging-PyPI-Implementation.md, Phase 1): a console command <code>snapmockit</code>, classifiers, keywords, and the project addresses in the metadata; Section 9's lower bounds written into the dependencies; an sdist that carries the package, the suite, and packaging/ and nothing untracked. Section 9's packaging row names the wheel and sdist and the index's trusted publishing. Nothing is uploaded yet.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.66</td>
         <td class="nowrap">09-18-26 10:22</td>
@@ -588,6 +595,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-18-26 16:45</td>
+        <td>7.3, 9</td>
+        <td>Built</td>
+        <td><strong>Built</strong> (09-18-26; <code>docs/Packaging-PyPI-Implementation.md</code>, Sections 2 and 5): the package the Python Package Index will carry. <code>[project.scripts] snapmockit = "snapmock.app:main"</code>, a console command on every platform (decision 3, option B); classifiers for development status, the three operating systems, Python 3.12 and 3.13, the X11 Qt environment, and the graphics, screen capture, and vector editor topics, with no licence classifier beside the SPDX expression (PEP 639); keywords; the Homepage, Documentation, Repository, Issues, and Changelog addresses. The dependencies carry Section 9's lower bounds (PyQt6 6.5, Pillow 10.0, NumPy 1.24) and stay otherwise unpinned. The sdist names what it carries in <code>[tool.hatch.build.targets.sdist]</code>: <code>snapmock/</code>, <code>tests/</code>, <code>packaging/</code>, the README, the licence, and <code>pyproject.toml</code> (decision 4, option A as corrected), so a build here carries no untracked file. Proven here: <code>twine check --strict</code> passes both files; the sdist's files are the tracked files of the included paths exactly, 0.87 MB against 1.69 MB before; the wheel installed into a fresh virtual environment answers <code>snapmockit --version</code> and builds the main window on the offscreen platform. <code>tests/test_packaging_pypi.py</code> holds the command, the classifiers against the interpreters continuous integration runs, the lower bounds, the addresses, and the include list, and builds an sdist to check what it carries. <strong>Section 9</strong>'s packaging row names hatchling's wheel and sdist and the index's trusted publishing. <strong>Section 10</strong> is unchanged: no new package or top-level module. 7.3's Python Package Index bullet stands; nothing is uploaded until Phase 3.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-17-26 13:25</td>
         <td>7.3, 7.1, 8</td>
@@ -2372,7 +2385,7 @@ deferred to a post-1.0 release.</p>
     <tr><th>Trash</th><td>send2trash</td><td>2.1+</td><td>Moves Library files to the platform trash instead of deleting them (Library PRD). Optional under Section 9.1.</td></tr>
     <tr><th>SVG Export</th><td>svgwrite</td><td>1.4+</td><td>Clean SVG file generation for vector export.</td></tr>
     <tr><th>PDF Export</th><td>ReportLab or QPrinter</td><td>Latest</td><td>PDF generation. QPrinter (built into Qt) is the primary option; ReportLab as fallback.</td></tr>
-    <tr><th>Packaging</th><td><code>python-appimage</code> (Linux AppImage); <code>flatpak-builder</code> with the KDE runtime and the PyQt base application (Linux Flatpak); PyInstaller / <code>cx_Freeze</code> (Windows, macOS)</td><td>1.4.6+; 1.4+; Latest</td><td>Linux AppImage: a relocatable CPython with the wheel installed whole, sealed by <code>appimagetool</code> (packaging decision 1, 09-14-26); the tool lives in the <code>packaging</code> dependency group. Linux Flatpak: <code>org.kde.Platform</code> 6.11 with <code>com.riverbankcomputing.PyQt.BaseApp</code> 6.11, the four other dependencies installed as wheels the manifest lists (Flatpak decision 1, 09-17-26); <code>flatpak-builder</code> is installed on the machine that builds, not a Python dependency. Windows and macOS: binary packaging, not yet built.</td></tr>
+    <tr><th>Packaging</th><td><code>python-appimage</code> (Linux AppImage); <code>flatpak-builder</code> with the KDE runtime and the PyQt base application (Linux Flatpak); PyInstaller / <code>cx_Freeze</code> (Windows, macOS)</td><td>1.4.6+; 1.4+; Latest</td><td>Linux AppImage: a relocatable CPython with the wheel installed whole, sealed by <code>appimagetool</code> (packaging decision 1, 09-14-26); the tool lives in the <code>packaging</code> dependency group. Linux Flatpak: <code>org.kde.Platform</code> 6.11 with <code>com.riverbankcomputing.PyQt.BaseApp</code> 6.11, the four other dependencies installed as wheels the manifest lists (Flatpak decision 1, 09-17-26); <code>flatpak-builder</code> is installed on the machine that builds, not a Python dependency. Python Package Index: the wheel and sdist <code>hatchling</code> builds, uploaded from the workflow through the index's trusted publishing with no token kept anywhere (PyPI decision 1, 09-18-26). Windows and macOS: binary packaging, not yet built.</td></tr>
     <tr><th>Testing</th><td>pytest + pytest-qt</td><td>Latest</td><td>Unit and integration testing with Qt widget testing support.</td></tr>
     <tr><th>Linting</th><td>ruff</td><td>Latest</td><td>Fast Python linter and formatter.</td></tr>
     <tr><th>Type Checking</th><td>mypy</td><td>Latest</td><td>Static type analysis for catching bugs early.</td></tr>

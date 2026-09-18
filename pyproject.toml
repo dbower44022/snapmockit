@@ -7,17 +7,52 @@ license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Doug Bower" }]
 requires-python = ">=3.12"
+keywords = [
+    "screenshot",
+    "screen capture",
+    "annotation",
+    "mockup",
+    "image editor",
+    "snagit",
+    "qt",
+]
+# No licence classifier: the licence is the SPDX expression above, and PEP 639
+# deprecates the classifier where an expression is given.
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: X11 Applications :: Qt",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Multimedia :: Graphics :: Capture :: Screen Capture",
+    "Topic :: Multimedia :: Graphics :: Editors :: Vector-Based",
+]
+# Lower bounds from Technical Architecture PRD Section 9; pins belong to uv.lock.
 dependencies = [
-    "PyQt6",
-    "Pillow",
-    "numpy",
+    "PyQt6>=6.5",
+    "Pillow>=10.0",
+    "numpy>=1.24",
     "send2trash>=2.1.0",
     "psutil>=7.2.2",
 ]
 
+[project.scripts]
+# A console command on every platform (PyPI decision 3): on Linux and macOS it is the
+# same launcher a graphical one would be, and on Windows it keeps --version readable.
+snapmockit = "snapmock.app:main"
+
 [project.urls]
+Homepage = "https://github.com/dbower44022/snapmockit"
+Documentation = "https://github.com/dbower44022/snapmockit#readme"
 Repository = "https://github.com/dbower44022/snapmockit"
 Issues = "https://github.com/dbower44022/snapmockit/issues"
+Changelog = "https://github.com/dbower44022/snapmockit/releases"
 
 [dependency-groups]
 dev = [
@@ -43,6 +78,19 @@ path = "snapmock/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["snapmock"]
+
+# What the sdist carries, named so nothing untracked can enter it (PyPI decision 4):
+# the package, the suite, and the recipes the suite reads, which also hold the desktop
+# entry, the metainfo, and the MIME type a distribution needs.
+[tool.hatch.build.targets.sdist]
+include = [
+    "/snapmock",
+    "/tests",
+    "/packaging",
+    "/README.md",
+    "/LICENSE",
+    "/pyproject.toml",
+]
 
 [tool.ruff]
 line-length = 99

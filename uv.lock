@@ -786,10 +786,10 @@ packaging = [
 
 [package.metadata]
 requires-dist = [
-    { name = "numpy" },
-    { name = "pillow" },
+    { name = "numpy", specifier = ">=1.24" },
+    { name = "pillow", specifier = ">=10.0" },
     { name = "psutil", specifier = ">=7.2.2" },
-    { name = "pyqt6" },
+    { name = "pyqt6", specifier = ">=6.5" },
     { name = "send2trash", specifier = ">=2.1.0" },
 ]
 

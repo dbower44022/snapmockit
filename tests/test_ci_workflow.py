@@ -22,6 +22,9 @@ SMOKE = ROOT / "packaging" / "appimage" / "smoke.sh"
 
 @pytest.fixture(scope="module")
 def workflow() -> dict[str, object]:
+    if not WORKFLOW.exists():
+        # The sdist carries the suite but not .github/ (PyPI decision 4).
+        pytest.skip("no workflow file: running from the sdist")
     data = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
     assert isinstance(data, dict)
     return data
