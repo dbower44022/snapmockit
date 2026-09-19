@@ -1,6 +1,6 @@
 # Packaging: the Python Package Index — Implementation Notes
 
-Last Updated: 09-18-26 23:58 · Revision 1.4
+Last Updated: 09-19-26 00:11 · Revision 1.5
 
 Snapmockit published on the Python Package Index, so that `pipx install snapmockit`, `uv tool install snapmockit`, or `pip install snapmockit` installs the application on any platform with Python 3.12 or later, and every later release reaches the index from the release workflow. The kickoff prompt is `docs/Packaging-PyPI-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -10,7 +10,7 @@ Snapmockit published on the Python Package Index, so that `pipx install snapmock
 |---|---|---|---|
 | 1 | The decisions, the metadata, the command, the sdist's contents, proven here | Done 09-18-26 (Sections 2 and 5); Technical Architecture PRD 1.67 | f70ff8b, ab7baca |
 | 2 | The fourth form in `config/packaging.py`, and Check for Updates' wording for it | Done 09-18-26 (Section 6); General UI PRD 2.51, Screen Capture PRD 1.2 | 7c3effd |
-| 3 | The index's side (Doug), the rehearsal on the test index, the publish job, the first release | In progress: step 1 done by Doug, step 2 written (Section 7); a defect the rehearsal found fixed (7.3); the rehearsal again next | dab76f5, this commit |
+| 3 | The index's side (Doug), the rehearsal on the test index, the publish job, the first release | In progress: step 1 done by Doug, step 2 written (Section 7); a defect the rehearsal found fixed (7.3); the rehearsal passed 09-19-26 (7.4); the first release next | dab76f5, 133d0af, this commit |
 | Close-out | The README, the release-engineering notes, the release process | Not started | |
 
 ## 2. Decisions
@@ -145,10 +145,23 @@ On Doug's word at 23:47, the branch `rehearsal-1.2.0rc1` (one commit on dab76f5:
 
 **The next required step** is the rehearsal again: the branch rebased onto this commit, force-pushed (it holds only the rehearsal's one commit), and the workflow started on it once more.
 
+### 7.4 The rehearsal, passed (09-19-26)
+
+The branch was rebased onto 133d0af and force-pushed, and the workflow started on it again at 00:05 (run 35420334832). **Every job passed:** the checks on both interpreters, the wheel and sdist, the AppImage, the Flatpak, and `publish-testpypi`; `release` and `publish-pypi` were skipped, as they are on anything but a tag. **Uploaded to test.pypi.org:** `snapmockit-1.2.0rc1-py3-none-any.whl` (761,024 bytes) and `snapmockit-1.2.0rc1.tar.gz` (872,616 bytes). Both carry an attestation naming the publisher: GitHub, `dbower44022/snapmockit`, `ci.yml`, environment `testpypi`. So the pending publisher and the trusted publishing path work end to end. The index's JSON shows the summary and the five project addresses. The real index still answers 404 for `snapmockit`.
+
+**Installed from the test index** into a scratch Python 3.12 environment: `snapmockit==1.2.0rc1` alone with `--no-deps` from the test index, then its five dependencies from the real index, so nothing but the application came from the test index. `uv pip check` found the environment consistent. `snapmockit --version` answered `Snapmockit 1.2.0rc1`. The main window built on the offscreen platform. The form read `index`, the upgrade line was pip's, and the region command was the environment's `bin/snapmockit` by full path, since that folder is not on the path. A check against the tag `v1.1.0` read up to date, which is the fix of 7.3 working from the installed package.
+
+The branch `rehearsal-1.2.0rc1` was deleted locally and on GitHub at 00:10. `1.2.0rc1` stays on the test index for good, which costs nothing on the real one.
+
+**Not done here:** an installation with pipx, which comes from the real index in step 3.
+
+**The next required step** is step 3, the first release on the index. Its version is Doug's to choose; the release notes are written for him to read before the tag; the tag is pushed only on his word; and `publish-pypi` then waits for his approval in the `pypi` environment.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.5 | 09-19-26 00:11 | Claude (Claude Code) | Section 7.4: the rehearsal passed; 1.2.0rc1 uploaded to the test index through the trusted publisher with its attestation, installed from it, started, and read as the index's form; the branch deleted. |
 | 1.4 | 09-18-26 23:58 | Claude (Claude Code) | Section 7.3: the first rehearsal run uploaded nothing; its checks found that Check for Updates could not read a running pre-release; fixed on Doug's choice of option A. General UI PRD 2.52. |
 | 1.3 | 09-18-26 23:41 | Claude (Claude Code) | Phase 3 steps 1 and 2 (Section 7): the index's side done by Doug; the `pypi` environment's reviewer and tag rule set through the API on his word, since the interface saved a branch rule and no reviewer; the two publish jobs and their tests. |
 | 1.2 | 09-18-26 16:55 | Claude (Claude Code) | Phase 2 done (Section 6): the index's form, its installer, its upgrade line in Check for Updates, and its shortcut command, off the path included. General UI PRD 2.51, Screen Capture PRD 1.2. |
