@@ -2,7 +2,25 @@
 
 Snapmockit is an open-source screenshot annotation and user interface mockup tool for Linux, Windows, and macOS, written in Python with PyQt6. Capture a screen, a window, or a region; annotate it with shapes, arrows, text, callouts, highlights, blur, numbered steps, stamps, and emoji on layers; then export it as PNG, JPEG, SVG, or PDF, or save it as a project to come back to. It reads and writes Snagit's `.snagx` files.
 
-Status: the application is complete against its nine product requirements documents (the `PRDs/` directory). Its current release, 1.0.0, is the Linux AppImage (below), the first the project stands behind after a pass on real screenshot work; it also runs from source; the Windows and macOS capture backends are written but wait for machines to test them on.
+Status: the application is complete against its nine product requirements documents (the `PRDs/` directory). Release 1.2.0 installs from the Python Package Index on any platform with Python 3.12 or later, and on Linux also ships as an AppImage and a Flatpak bundle. The Windows and macOS capture backends are written but have not yet been tested on those machines.
+
+## Install from the Python Package Index (any platform)
+
+With Python 3.12 or later, install Snapmockit as an application of its own with [pipx](https://pipx.pypa.io/) or [uv](https://docs.astral.sh/uv/):
+
+```bash
+pipx install snapmockit
+```
+
+```bash
+uv tool install snapmockit
+```
+
+Either puts a `snapmockit` command on your path; start the application with it. `snapmockit --version` prints the version, and `snapmockit --capture full` takes a capture straight away and opens it. `pip install snapmockit` into a virtual environment works too.
+
+To upgrade, use the tool you installed with: `pipx upgrade snapmockit`, `uv tool upgrade snapmockit`, or `pip install --upgrade snapmockit`. Help > Check for Updates names the right one when a new release is out.
+
+On Linux, Qt needs the same system libraries the AppImage lists below, which every desktop installation has. The package installs no menu entry or icon; start it from a terminal or bind the command to a key. Windows and macOS installations run, but the screen capture backends for both are untested.
 
 ## Install on Linux
 
@@ -67,7 +85,7 @@ The sandbox reaches your whole home directory, the display, the graphics device,
 
 ### Other forms
 
-Windows and macOS packages do not exist yet; the capture backends for both are written but untested. A wheel on PyPI is the next packaging step; the Flatpak is published as the bundle above and not on Flathub. Until then, every platform can run from source.
+Windows and macOS have no package of their own yet; install from the Python Package Index (above) or run from source. The capture backends for both are written but untested. The Flatpak is published as the bundle above and not on Flathub.
 
 ## Running from source
 
