@@ -25,6 +25,7 @@ from snapmock.core.update_check import (
     compare,
     interpret,
     latest_release_url,
+    parse_running_version,
     parse_version,
     repository_path,
     request_headers,
@@ -138,6 +139,48 @@ def test_the_same_or_an_older_release_is_up_to_date(tag: str) -> None:
     result = interpret(200, release_body(tag), running_version="0.1.0")
     assert result.outcome is Outcome.UP_TO_DATE
     assert result.tag == tag
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("1.2.0", ((1, 2, 0), False)),
+        ("1.2.0rc1", ((1, 2, 0), True)),
+        ("1.2.0b2", ((1, 2, 0), True)),
+        ("1.2a1", ((1, 2), True)),
+        ("1.2.0.dev3", ((1, 2, 0), True)),
+        ("v1.2.0RC1", ((1, 2, 0), True)),
+        ("1.2.0-beta", None),
+        ("1.2.0rc1.post1", None),
+        ("latest", None),
+        ("", None),
+    ],
+)
+def test_parse_running_version(text: str, expected: tuple[tuple[int, ...], bool] | None) -> None:
+    assert parse_running_version(text) == expected
+
+
+def test_a_release_tag_with_a_pre_release_suffix_still_does_not_parse() -> None:
+    """Only the running version gains the suffix; a release's tag stays strict."""
+    assert parse_version("v1.2.0rc1") is None
+    result = interpret(200, release_body("v1.2.0rc1"), running_version="1.1.0")
+    assert result.outcome is Outcome.UNREADABLE
+
+
+@pytest.mark.parametrize(
+    ("tag", "outcome"),
+    [
+        ("v1.2.0", Outcome.NEWER),  # the release a candidate comes before
+        ("v1.2.1", Outcome.NEWER),
+        ("v1.1.0", Outcome.UP_TO_DATE),
+        ("v1.1.9", Outcome.UP_TO_DATE),
+    ],
+)
+def test_a_running_pre_release_is_older_than_its_release(tag: str, outcome: Outcome) -> None:
+    """The test index's rehearsal runs 1.2.0rc1 (PyPI decision 2)."""
+    result = interpret(200, release_body(tag), running_version="1.2.0rc1")
+    assert result.outcome is outcome
+    assert result.running_version == "1.2.0rc1"
 
 
 def test_the_running_version_defaults_to_the_package_version() -> None:

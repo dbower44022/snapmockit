@@ -173,7 +173,8 @@ def test_up_to_date_rate_limited_and_unreadable_offer_close_only(
     main_window: MainWindow, shown: list[QMessageBox]
 ) -> None:
     _row(main_window).trigger()
-    _checker(main_window).receive(200, _release(__version__))
+    # Older than any running version, a release candidate's included (PyPI decision 2).
+    _checker(main_window).receive(200, _release("v0.0.1"))
     _row(main_window).trigger()
     _checker(main_window).receive(429, b"{}")
     _row(main_window).trigger()
@@ -182,7 +183,7 @@ def test_up_to_date_rate_limited_and_unreadable_offer_close_only(
     _checker(main_window).receive(200, _release("latest"))
     texts = [box.text() for box in shown]
     assert texts == [
-        f"Snapmockit {__version__} is up to date. The latest release is {__version__}.",
+        f"Snapmockit {__version__} is up to date. The latest release is v0.0.1.",
         "GitHub declined the request; try again later.",
         "The latest release could not be read. Try again later.",
         "The latest release could not be read. Try again later.",

@@ -17,6 +17,7 @@ hands the reply to :func:`interpret`; a test feeds it a canned reply through
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from enum import Enum
 from urllib.parse import urlparse
@@ -70,6 +71,29 @@ def parse_version(text: str) -> tuple[int, ...] | None:
     if not all(part.isdigit() for part in parts):
         return None
     return tuple(int(part) for part in parts)
+
+
+PRE_RELEASE = re.compile(r"(?P<release>\d+(?:\.\d+)*)\.?(?:a|b|rc|dev)\d*", re.IGNORECASE)
+"""A pre-release of a release in PEP 440's forms: ``1.2.0rc1``, ``1.2.0b2``, ``1.2.0.dev3``."""
+
+
+def parse_running_version(text: str) -> tuple[tuple[int, ...], bool] | None:
+    """The running version and whether it is a pre-release; None when it is neither.
+
+    A release candidate installed for the test index's rehearsal (PyPI decision 2)
+    runs as ``1.2.0rc1``, which :func:`parse_version` refuses. The running version
+    alone accepts the suffix; a release's tag stays as strict as before.
+    """
+    release = parse_version(text)
+    if release is not None:
+        return release, False
+    body = text.strip()
+    if body[:1] in ("v", "V"):
+        body = body[1:]
+    match = PRE_RELEASE.fullmatch(body)
+    if match is None:
+        return None
+    return tuple(int(part) for part in match["release"].split(".")), True
 
 
 class Comparison(Enum):
@@ -145,10 +169,13 @@ def interpret(
     tag = str(data.get("tag_name") or "")
     release_url = str(data.get("html_url") or "")
     release = parse_version(tag)
-    running = parse_version(running_version)
+    running = parse_running_version(running_version)
     if release is None or running is None:
         return UpdateCheckResult(Outcome.UNREADABLE, running_version, tag, release_url)
-    if compare(release, running) is Comparison.NEWER:
+    running_release, pre_release = running
+    comparison = compare(release, running_release)
+    # A pre-release comes before its release: 1.2.0 is newer than 1.2.0rc1.
+    if comparison is Comparison.NEWER or (comparison is Comparison.SAME and pre_release):
         return UpdateCheckResult(Outcome.NEWER, running_version, tag, release_url)
     return UpdateCheckResult(Outcome.UP_TO_DATE, running_version, tag, release_url)
 

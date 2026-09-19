@@ -1,6 +1,6 @@
 # Packaging: the Python Package Index — Implementation Notes
 
-Last Updated: 09-18-26 23:41 · Revision 1.3
+Last Updated: 09-18-26 23:58 · Revision 1.4
 
 Snapmockit published on the Python Package Index, so that `pipx install snapmockit`, `uv tool install snapmockit`, or `pip install snapmockit` installs the application on any platform with Python 3.12 or later, and every later release reaches the index from the release workflow. The kickoff prompt is `docs/Packaging-PyPI-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -10,7 +10,7 @@ Snapmockit published on the Python Package Index, so that `pipx install snapmock
 |---|---|---|---|
 | 1 | The decisions, the metadata, the command, the sdist's contents, proven here | Done 09-18-26 (Sections 2 and 5); Technical Architecture PRD 1.67 | f70ff8b, ab7baca |
 | 2 | The fourth form in `config/packaging.py`, and Check for Updates' wording for it | Done 09-18-26 (Section 6); General UI PRD 2.51, Screen Capture PRD 1.2 | 7c3effd |
-| 3 | The index's side (Doug), the rehearsal on the test index, the publish job, the first release | In progress: step 1 done by Doug, step 2 written (Section 7); the rehearsal next | this commit |
+| 3 | The index's side (Doug), the rehearsal on the test index, the publish job, the first release | In progress: step 1 done by Doug, step 2 written (Section 7); a defect the rehearsal found fixed (7.3); the rehearsal again next | dab76f5, this commit |
 | Close-out | The README, the release-engineering notes, the release process | Not started | |
 
 ## 2. Decisions
@@ -135,10 +135,21 @@ The steps were written for Doug with the `instruction-discipline` skill and publ
 
 **The next required step** is the rehearsal (step 3's first half), which needs Doug's word: a branch `rehearsal-1.2.0rc1` whose `snapmock/__init__.py` reads `1.2.0rc1`, pushed, and `publish-testpypi` started on it from the Actions tab.
 
+### 7.3 The first rehearsal run, and the defect it found
+
+On Doug's word at 23:47, the branch `rehearsal-1.2.0rc1` (one commit on dab76f5: `__version__ = "1.2.0rc1"`) was pushed and the workflow started on it with `gh workflow run ci.yml --ref rehearsal-1.2.0rc1` (run 35419613807). **Nothing was uploaded:** the checks failed on both interpreters, 3 failed and 1779 passed each, so `publish-testpypi`, which needs them, was skipped. The AppImage, the Flatpak, and the wheel and sdist all built.
+
+**The defect:** Check for Updates could not read a running pre-release. `parse_version` accepts digits and dots only, so a running `1.2.0rc1` made every check report "The latest release could not be read". Nothing released was affected, since no release has carried a suffix. **Doug chose option A at 23:55**: fix the checker, then rehearse at `1.2.0rc1` as planned. The alternatives were a plain version on the test index with the checker left as it was, and an upload job that skips the checks.
+
+**The fix:** `parse_running_version` in `snapmock/core/update_check.py` reads the running version, accepting PEP 440's `a`, `b`, `rc`, and `dev` suffixes, and `interpret` counts a pre-release as older than its release. So `1.2.0rc1` is offered `v1.2.0` and is up to date against `v1.1.0`. A release's tag is parsed as strictly as before. One test in `tests/test_help_check_updates.py` had fed the running version back as the release tag; it now uses `v0.0.1`, older than any running version. `tests/test_update_check.py` gains the parse table, the tag's strictness, and the pre-release's four comparisons. The two test files pass both at `1.1.0` and with the package set to `1.2.0rc1`. General UI PRD 2.52.
+
+**The next required step** is the rehearsal again: the branch rebased onto this commit, force-pushed (it holds only the rehearsal's one commit), and the workflow started on it once more.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.4 | 09-18-26 23:58 | Claude (Claude Code) | Section 7.3: the first rehearsal run uploaded nothing; its checks found that Check for Updates could not read a running pre-release; fixed on Doug's choice of option A. General UI PRD 2.52. |
 | 1.3 | 09-18-26 23:41 | Claude (Claude Code) | Phase 3 steps 1 and 2 (Section 7): the index's side done by Doug; the `pypi` environment's reviewer and tag rule set through the API on his word, since the interface saved a branch rule and no reviewer; the two publish jobs and their tests. |
 | 1.2 | 09-18-26 16:55 | Claude (Claude Code) | Phase 2 done (Section 6): the index's form, its installer, its upgrade line in Check for Updates, and its shortcut command, off the path included. General UI PRD 2.51, Screen Capture PRD 1.2. |
 | 1.1 | 09-18-26 16:46 | Claude (Claude Code) | Phase 1 done (Section 5): the metadata, the console command, the sdist's include list, proven here with `twine check --strict` and an installation of the wheel; one departure (no licence classifier, PEP 639); silence 6 corrected (the command is off the path in a virtual environment that is not activated); decision 2.4's size corrected (38 KB). Technical Architecture PRD 1.67. |
