@@ -1,6 +1,6 @@
 # Packaging: the Python Package Index — Implementation Notes
 
-Last Updated: 09-18-26 16:55 · Revision 1.2
+Last Updated: 09-18-26 23:41 · Revision 1.3
 
 Snapmockit published on the Python Package Index, so that `pipx install snapmockit`, `uv tool install snapmockit`, or `pip install snapmockit` installs the application on any platform with Python 3.12 or later, and every later release reaches the index from the release workflow. The kickoff prompt is `docs/Packaging-PyPI-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -9,8 +9,8 @@ Snapmockit published on the Python Package Index, so that `pipx install snapmock
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
 | 1 | The decisions, the metadata, the command, the sdist's contents, proven here | Done 09-18-26 (Sections 2 and 5); Technical Architecture PRD 1.67 | f70ff8b, ab7baca |
-| 2 | The fourth form in `config/packaging.py`, and Check for Updates' wording for it | Done 09-18-26 (Section 6); General UI PRD 2.51, Screen Capture PRD 1.2 | this commit |
-| 3 | The index's side (Doug), the rehearsal on the test index, the publish job, the first release | Not started | |
+| 2 | The fourth form in `config/packaging.py`, and Check for Updates' wording for it | Done 09-18-26 (Section 6); General UI PRD 2.51, Screen Capture PRD 1.2 | 7c3effd |
+| 3 | The index's side (Doug), the rehearsal on the test index, the publish job, the first release | In progress: step 1 done by Doug, step 2 written (Section 7); the rehearsal next | this commit |
 | Close-out | The README, the release-engineering notes, the release process | Not started | |
 
 ## 2. Decisions
@@ -116,10 +116,30 @@ One more, found in the reading:
 
 **The next required step** is Phase 3, step 1: the index's side, done by Doug, for which the steps are written next.
 
+## 7. Phase 3: publication (09-18-26)
+
+### 7.1 The index's side (step 1)
+
+The steps were written for Doug with the `instruction-discipline` skill and published as a page (https://claude.ai/artifact/KaPnW5upxurXHdw7FLKqXr): the pypi.org account with two-factor authentication, its pending publisher (`snapmockit`, `dbower44022/snapmockit`, `ci.yml`, environment `pypi`), the same on test.pypi.org with environment `testpypi`, and the two GitHub environments. Doug did them by 23:39. Neither index lets the pending publishers be read without Doug's login, so they are proven only by the rehearsal's upload.
+
+**What the GitHub interface did differently, read back through the API at 23:39:** section 4, step 10 had no "Configure environment" button, yet `testpypi` existed with no rules, as intended. `pypi` had its `v*.*.*` rule saved as a branch rule, not a tag rule, and no required reviewer. As it stood, a tag would have been refused the environment, and nothing would have gated the upload once that was fixed. **Fixed at 23:40 through the API on Doug's word (option A of the question put to him):** `dbower44022` (id 36448107) set as the required reviewer with Prevent self-review off; the branch rule deleted; `v*.*.*` added as a tag rule (id 60386684). Read back: the environment carries `required_reviewers` with `dbower44022` and the one tag rule. The page's section 4 carried labels that the interface of 09-18-26 does not show, and a later reader should prefer the API.
+
+### 7.2 The publish jobs (step 2)
+
+`.github/workflows/ci.yml` gains a `workflow_dispatch` trigger and two jobs, per decisions 2.1 and 2.2 and Section 4's two corrections:
+
+- **`publish-pypi`**, on a `v` tag only, after `release`: in the `pypi` environment (address `https://pypi.org/p/snapmockit`), with `id-token: write` on the job and nowhere else, it downloads `snapmockit-dist` and runs `pypa/gh-action-pypi-publish@release/v1`. It builds nothing. It waits for Doug's approval before it starts.
+- **`publish-testpypi`**, on `workflow_dispatch` only, after `checks` and `build`: the same, in the `testpypi` environment, with `repository-url: https://test.pypi.org/legacy/`.
+
+`tests/test_ci_workflow.py` holds the trigger, the seven jobs, and each publish job's condition, needs, environment, permission, download, and action, with no build command in the real one. `actionlint` 1.7.12, run through `uvx`, finds nothing in the workflow.
+
+**The next required step** is the rehearsal (step 3's first half), which needs Doug's word: a branch `rehearsal-1.2.0rc1` whose `snapmock/__init__.py` reads `1.2.0rc1`, pushed, and `publish-testpypi` started on it from the Actions tab.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.3 | 09-18-26 23:41 | Claude (Claude Code) | Phase 3 steps 1 and 2 (Section 7): the index's side done by Doug; the `pypi` environment's reviewer and tag rule set through the API on his word, since the interface saved a branch rule and no reviewer; the two publish jobs and their tests. |
 | 1.2 | 09-18-26 16:55 | Claude (Claude Code) | Phase 2 done (Section 6): the index's form, its installer, its upgrade line in Check for Updates, and its shortcut command, off the path included. General UI PRD 2.51, Screen Capture PRD 1.2. |
 | 1.1 | 09-18-26 16:46 | Claude (Claude Code) | Phase 1 done (Section 5): the metadata, the console command, the sdist's include list, proven here with `twine check --strict` and an installation of the wheel; one departure (no licence classifier, PEP 639); silence 6 corrected (the command is off the path in a virtual environment that is not activated); decision 2.4's size corrected (38 KB). Technical Architecture PRD 1.67. |
 | 1.0 | 09-18-26 16:43 | Claude (Claude Code) | Initial notes: the five decisions taken on 09-18-26, each as recommended (1 C, 2 A, 3 B, 4 A as corrected, 5 A), with the two places the recommendation departed from the kickoff prompt (decision 1 on the index's documentation, decision 4 on the tests that read `packaging/` and `.github/`); the six silences; the index's documentation read. |

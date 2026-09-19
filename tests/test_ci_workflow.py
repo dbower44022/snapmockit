@@ -38,12 +38,21 @@ def test_workflow_runs_on_pushes_pull_requests_and_release_tags(
     assert on["push"]["branches"] == ["main"]
     assert on["push"]["tags"] == ["v*.*.*"]
     assert "pull_request" in on
+    assert "workflow_dispatch" in on  # the test index's rehearsal (PyPI decision 2)
 
 
-def test_workflow_has_the_five_jobs_and_their_needs(workflow: dict[str, object]) -> None:
+def test_workflow_has_the_seven_jobs_and_their_needs(workflow: dict[str, object]) -> None:
     jobs = workflow["jobs"]
     assert isinstance(jobs, dict)
-    assert set(jobs) == {"checks", "build", "appimage", "flatpak", "release"}
+    assert set(jobs) == {
+        "checks",
+        "build",
+        "appimage",
+        "flatpak",
+        "release",
+        "publish-pypi",
+        "publish-testpypi",
+    }
     assert jobs["appimage"]["runs-on"] == "ubuntu-latest"
     assert set(jobs["release"]["needs"]) == {"checks", "build", "appimage", "flatpak"}
     assert "startsWith(github.ref, 'refs/tags/v')" in jobs["release"]["if"]
@@ -154,3 +163,55 @@ def test_smoke_script_passes_against_the_built_appimage() -> None:
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert "smoke test passed" in result.stdout
+
+
+def _publish_steps(job: dict[str, object]) -> tuple[list[str], list[dict[str, object]]]:
+    steps = job["steps"]
+    assert isinstance(steps, list)
+    downloads = [
+        str(step["with"]["name"])
+        for step in steps
+        if str(step.get("uses", "")).startswith("actions/download-artifact")
+    ]
+    publishes = [
+        step
+        for step in steps
+        if str(step.get("uses", "")) == "pypa/gh-action-pypi-publish@release/v1"
+    ]
+    return downloads, publishes
+
+
+def test_the_index_upload_follows_the_release_in_the_approved_environment(
+    workflow: dict[str, object],
+) -> None:
+    """PyPI decision 1: trusted publishing after the GitHub release, gated by approval."""
+    job = workflow["jobs"]["publish-pypi"]  # type: ignore[index]
+    assert "startsWith(github.ref, 'refs/tags/v')" in job["if"]
+    assert job["needs"] == ["release"]
+    assert job["environment"] == {"name": "pypi", "url": "https://pypi.org/p/snapmockit"}
+    assert job["permissions"] == {"id-token": "write"}  # the job's alone, nothing more
+    assert "id-token" not in str(workflow.get("permissions", ""))
+    downloads, publishes = _publish_steps(job)
+    assert downloads == ["snapmockit-dist"]
+    assert len(publishes) == 1
+    assert "with" not in publishes[0]  # the real index, and no token
+    runs = "\n".join(str(step.get("run", "")) for step in job["steps"])
+    assert "uv build" not in runs  # the guide: never build in a publishing job
+
+
+def test_the_rehearsal_uploads_to_the_test_index_only_when_started_by_hand(
+    workflow: dict[str, object],
+) -> None:
+    """PyPI decision 2: a job started from the Actions tab, never on a tag."""
+    job = workflow["jobs"]["publish-testpypi"]  # type: ignore[index]
+    assert job["if"] == "github.event_name == 'workflow_dispatch'"
+    assert set(job["needs"]) == {"checks", "build"}
+    assert job["environment"] == {
+        "name": "testpypi",
+        "url": "https://test.pypi.org/p/snapmockit",
+    }
+    assert job["permissions"] == {"id-token": "write"}
+    downloads, publishes = _publish_steps(job)
+    assert downloads == ["snapmockit-dist"]
+    assert len(publishes) == 1
+    assert publishes[0]["with"] == {"repository-url": "https://test.pypi.org/legacy/"}

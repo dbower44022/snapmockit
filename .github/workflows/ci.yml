@@ -5,8 +5,11 @@
 # packaging/appimage/, smoke-tested on the runner and kept as an artifact (packaging
 # decision 2; docs/Packaging-AppImage-Implementation.md); the Linux Flatpak built by the
 # recipe under packaging/flatpak/, smoke-tested and kept the same way (Flatpak decision 2;
-# docs/Packaging-Flatpak-Implementation.md); and, on a tag of the form vX.Y.Z, a GitHub
-# release carrying both, which Check for Updates reads.
+# docs/Packaging-Flatpak-Implementation.md); on a tag of the form vX.Y.Z, a GitHub
+# release carrying both, which Check for Updates reads, and then the wheel and sdist
+# uploaded to the Python Package Index once Doug approves the pypi environment's run
+# (PyPI decision 1; docs/Packaging-PyPI-Implementation.md); and, started by hand, the
+# same upload to the test index as a rehearsal (PyPI decision 2).
 name: CI
 
 on:
@@ -14,6 +17,7 @@ on:
     branches: ["main"]
     tags: ["v*.*.*"]
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -237,3 +241,57 @@ jobs:
             --title "Snapmockit ${GITHUB_REF_NAME#v}" \
             --notes-file release-notes.md \
             --verify-tag
+
+  # The index's trusted publishing: no token exists anywhere. The job only downloads
+  # what the build job made and uploads it, since the Python Packaging User Guide calls
+  # building in a publishing job unsupported; the pypi environment requires Doug's
+  # approval on each run and admits only v*.*.* tags (PyPI decision 1).
+  publish-pypi:
+    name: Python Package Index
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: pypi
+      url: https://pypi.org/p/snapmockit
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: snapmockit-dist
+          path: dist/
+
+      - name: Show what is uploaded
+        run: ls -l dist/
+
+      - name: Upload to the Python Package Index
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  # The rehearsal on the test index, started by hand from the Actions tab on a branch
+  # whose version is a release candidate (PyPI decision 2). It never runs on a tag.
+  publish-testpypi:
+    name: Test index (rehearsal)
+    if: github.event_name == 'workflow_dispatch'
+    needs: [checks, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/snapmockit
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: snapmockit-dist
+          path: dist/
+
+      - name: Show what is uploaded
+        run: ls -l dist/
+
+      - name: Upload to the test index
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
