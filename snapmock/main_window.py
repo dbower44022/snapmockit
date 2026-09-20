@@ -60,6 +60,7 @@ from snapmock.capture.models import (
     CaptureResult,
 )
 from snapmock.capture.tray import make_tray_icon
+from snapmock.config import desktop_entry
 from snapmock.config.constants import (
     APP_NAME,
     DEFAULT_PANEL_WIDTH,
@@ -209,6 +210,14 @@ def _as_color(value: object) -> QColor:
 log = logging.getLogger("snapmock")
 
 
+def _megabytes(path: Path) -> str:
+    """A file's size for a sentence the user reads, in whole megabytes."""
+    try:
+        return f"{path.stat().st_size / 1_000_000:.0f} MB"
+    except OSError:
+        return "its size unknown"
+
+
 class MainWindow(QMainWindow):
     """Primary application window.
 
@@ -332,6 +341,10 @@ class MainWindow(QMainWindow):
             lambda _d: self._library_panel.refresh_open_state()
         )
         self._toast = Toast(self)
+        # A start that owes the user a message keeps the toast; the desktop-entry
+        # offer waits for the next start rather than replacing it (menu-entry
+        # decision 1).
+        self._startup_message_shown = False
 
         self._status_bar = SnapStatusBar(first)
         self.setStatusBar(self._status_bar)
@@ -1777,6 +1790,16 @@ class MainWindow(QMainWindow):
         if bug_action is not None:
             bug_action.triggered.connect(self._help_report_bug)
 
+        # The permanent route into the desktop's menu and back out of it
+        # (menu-entry decision 1, option C); its label follows the entry's state,
+        # refreshed each time the menu opens, since another form can install one.
+        self._menu_entry_action = None
+        entry_action = help_menu.addAction(self._menu_entry_label())
+        if entry_action is not None:
+            entry_action.triggered.connect(self._help_menu_entry)
+            self._menu_entry_action = entry_action
+            help_menu.aboutToShow.connect(self._refresh_menu_entry_label)
+
         help_menu.addSeparator()
 
         updates_action = help_menu.addAction("Check for &Updates")
@@ -2043,6 +2066,7 @@ class MainWindow(QMainWindow):
         a message, never a dialog that blocks (General UI PRD 1.3).
         """
         log.info("%s", text)
+        self._startup_message_shown = True
         self._toast.show_message(text)
 
     def open_paths(self, paths: Iterable[Path]) -> None:
@@ -3907,6 +3931,142 @@ class MainWindow(QMainWindow):
 
     def _help_report_bug(self) -> None:
         QDesktopServices.openUrl(QUrl(ISSUES_URL))
+
+    # ---- Help > Add to Menu / Remove from Menu (menu-entry decisions 1 to 4) ----
+
+    ADD_TO_MENU_TITLE = "Add to Menu"
+    REMOVE_FROM_MENU_TITLE = "Remove from Menu"
+    ICON_RESCAN_NOTE = (
+        "If the icon is missing, the desktop has not rescanned its icon folders yet: "
+        "it appears after the desktop shell restarts or at your next login."
+    )
+
+    def _menu_entry_label(self) -> str:
+        """The row's text, which follows whether our own entry is in place."""
+        return "&Remove from Menu" if desktop_entry.installed() else "Add to &Menu"
+
+    def _refresh_menu_entry_label(self) -> None:
+        """Read the entry's state each time the Help menu opens, not once at start."""
+        if self._menu_entry_action is not None:
+            self._menu_entry_action.setText(self._menu_entry_label())
+
+    def _help_menu_entry(self) -> None:
+        """Write the desktop entry, the icons, and the file type, or take them away.
+
+        A form that needs nothing says so rather than showing a disabled row
+        (General UI PRD 1.3).
+        """
+        installed = desktop_entry.installed()
+        title = self.REMOVE_FROM_MENU_TITLE if installed else self.ADD_TO_MENU_TITLE
+        reason = desktop_entry.unsupported_reason()
+        if reason is not None:
+            QMessageBox.information(self, title, reason)
+            return
+        if installed:
+            self._remove_desktop_entry(title)
+        else:
+            self._add_desktop_entry(title)
+        self._refresh_menu_entry_label()
+
+    def _add_desktop_entry(self, title: str) -> None:
+        """Ask the AppImage's question if there is one, write, and report the outcome."""
+        proceed, program = self._appimage_copy_choice(title)
+        if not proceed:
+            return
+        outcome = desktop_entry.install(program=program)
+        text = outcome.message()
+        if outcome.changed:
+            text = f"{text} {self.ICON_RESCAN_NOTE}"
+        log.info("%s: %s", title, text)
+        QMessageBox.information(self, title, text)
+
+    def _remove_desktop_entry(self, title: str) -> None:
+        """Delete what was written, then offer the AppImage's copy separately (decision 3)."""
+        outcome = desktop_entry.remove()
+        log.info("%s: %s", title, outcome.message())
+        QMessageBox.information(self, title, outcome.message())
+        self._offer_to_delete_appimage_copy(title)
+
+    def _appimage_copy_choice(self, title: str) -> tuple[bool, str | None]:
+        """Decision 3: where the AppImage's entry points, asked once, with a default.
+
+        Returns whether to go on, and the ``Exec`` path to use in place of the running
+        file. Every other form, and an AppImage already at the fixed name, is asked
+        nothing.
+        """
+        running = desktop_entry.running_appimage()
+        if running is None:
+            return True, None
+        destination = desktop_entry.appimage_destination()
+        if running == destination:
+            return True, None
+
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Question)
+        box.setWindowTitle(title)
+        box.setText(
+            f"{APP_NAME} can copy itself to {destination} ({_megabytes(running)}) and point "
+            "the menu entry at the copy, so the entry keeps working if the file you are "
+            "running now is moved or deleted."
+        )
+        copy_button = box.addButton("Copy and Add", QMessageBox.ButtonRole.AcceptRole)
+        here_button = box.addButton("Add Without Copying", QMessageBox.ButtonRole.AcceptRole)
+        box.addButton(QMessageBox.StandardButton.Cancel)
+        box.setDefaultButton(copy_button)
+        box.exec()
+        clicked = box.clickedButton()
+        if clicked is here_button:
+            return True, str(running)
+        if clicked is not copy_button:
+            return False, None
+        try:
+            copied = desktop_entry.copy_appimage(running, destination)
+        except (OSError, ValueError) as error:
+            QMessageBox.information(
+                self, title, f"{destination} could not be written ({error}); nothing was copied."
+            )
+            return False, None
+        return True, str(copied)
+
+    def _offer_to_delete_appimage_copy(self, title: str) -> None:
+        """The copy is named and deleted only on request, never silently (decision 3)."""
+        destination = desktop_entry.appimage_destination()
+        running = desktop_entry.running_appimage()
+        if not destination.is_file() or running == destination:
+            return
+        answer = QMessageBox.question(
+            self,
+            title,
+            f"The copy at {destination} ({_megabytes(destination)}) is left in place. "
+            "Delete it as well?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if answer is not QMessageBox.StandardButton.Yes:
+            return
+        try:
+            destination.unlink()
+        except OSError as error:
+            QMessageBox.information(self, title, f"{destination} could not be deleted ({error}).")
+
+    def offer_desktop_entry_once(self) -> None:
+        """The one offer of menu-entry decision 1, on a first start with no entry.
+
+        A message that does not block, with the action on it (General UI PRD 1.3); the
+        Help menu row is the permanent route, so the offer is never made twice. A start
+        that has already shown a startup message keeps that message and leaves the offer
+        to the next start, since both use the one toast.
+        """
+        if self._startup_message_shown or self._settings.desktop_entry_offer_shown():
+            return
+        if desktop_entry.installed() or desktop_entry.unsupported_reason() is not None:
+            return
+        self._settings.set_desktop_entry_offer_shown(True)
+        self._toast.show_message(
+            f"{APP_NAME} is not in your desktop's menu.",
+            "Add to Menu",
+            self._help_menu_entry,
+        )
 
     # ---- Help > Check for Updates (PRD 3.8; implementation notes Section 19) ----
 

@@ -230,7 +230,11 @@ def test_help_menu_order_and_links(window: MainWindow) -> None:
     from snapmock.config.constants import DOCUMENTATION_URL, ISSUES_URL
 
     texts = _texts(_menu(window, "&Help"))
-    assert texts == [
+    # The fifth row reads Add to Menu, or Remove from Menu where this machine
+    # already has the entry (menu-entry decision 1), so the label is read as
+    # either rather than fixed to the developer's own desktop.
+    assert texts[4] in {"Add to Menu", "Remove from Menu"}
+    assert texts[:4] + texts[5:] == [
         "Welcome / Getting Started",
         "Documentation",
         "Keyboard Shortcuts",

@@ -230,6 +230,17 @@ class AppSettings:
     def set_first_run_done(self, done: bool) -> None:
         self._qs.setValue("general/firstRunDone", done)
 
+    def desktop_entry_offer_shown(self) -> bool:
+        """Whether the offer to put the application in the desktop menu has been made.
+
+        Shown once, on the first start of a form that has no entry (menu-entry
+        decision 1, option C); the Help menu row is the permanent route afterwards.
+        """
+        return _as_bool(self._qs.value("general/desktopEntryOfferShown", False))
+
+    def set_desktop_entry_offer_shown(self, shown: bool) -> None:
+        self._qs.setValue("general/desktopEntryOfferShown", shown)
+
     def show_welcome_at_startup(self) -> bool:
         """Whether the Welcome panel opens at launch; the first run turns it on and
         the panel's "Don't show this again" checkbox turns it off."""

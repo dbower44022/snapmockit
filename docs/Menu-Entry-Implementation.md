@@ -1,6 +1,6 @@
 # The Menu Entry — Implementation Notes
 
-Last Updated: 09-20-26 15:14 · Revision 1.1
+Last Updated: 09-20-26 15:49 · Revision 1.2
 
 Snapmockit put into the desktop's main menu from inside the application, and taken out again, so that a user who downloaded the AppImage or installed from the Python Package Index reaches the application the way every other application is reached. This is end-to-end pass finding 1 (`docs/End-to-End-Pass.md`, Section 5.1) and step 2 of what is left on the release-engineering list (`docs/Release-Engineering.md`, Section 4). The kickoff prompt is `docs/Menu-Entry-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -9,7 +9,7 @@ Snapmockit put into the desktop's main menu from inside the application, and tak
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
 | 1 | The decisions, the module that writes and removes the entry, what the entry says per form, the tests | Done 09-20-26 (Sections 2 and 5); Technical Architecture PRD 1.69 | 8c22e71, this commit |
-| 2 | The Help menu row, the offer on the first start, what the user is told, the tests through the window | Not started | |
+| 2 | The Help menu row, the offer on the first start, what the user is told, the tests through the window | Done 09-20-26 (Section 6); General UI PRD 2.53 | this commit |
 | 3 | Doug's run on his display, and what it finds | Not started | |
 | Close-out | The README, the release-engineering notes, the product requirements document rows, the next required step | Not started | |
 
@@ -107,9 +107,28 @@ Read and run here before anything was written, and two of the kickoff prompt's s
 
 **The next required step** is Phase 2, step 1: the Help menu row, with its label following the entry's state and a sentence for the form that needs nothing.
 
+## 6. Phase 2: the application (09-20-26)
+
+**The Help menu row** sits between Report a Bug and the separator, so Check for Updates and About keep their group (General UI PRD 2.53, 3.8). It reads "Add to Menu", or "Remove from Menu" once our own entry is in place. **The label is read each time the Help menu opens**, through `aboutToShow`, not once at construction: another installed form can put an entry there while the window is open, and a window left running across an install would otherwise offer to add what is already added.
+
+**A form that needs nothing says so.** The Flatpak's row is present and does nothing when used except explain that this installation is already in the menu because its entry is part of the package. No row is greyed out and none is absent, so the Help menu has the same shape in every form (General UI PRD 1.3).
+
+**What the user is told after adding** is one message: what was written, then each thing that could not be written, then — **this is Phase 2 step 3** — the sentence finding 1 earned. Finding 1 saw the entry appear in the menu at once and its icon only after the desktop shell was restarted, because the running desktop had not rescanned its icon directories. The message therefore ends: "If the icon is missing, the desktop has not rescanned its icon folders yet: it appears after the desktop shell restarts or at your next login." It is added only when something was actually written, so a failed install does not offer an explanation for an icon that was never made.
+
+**The AppImage's question** (decision 3) is asked once, before anything is written, and only when the running file is not already at the fixed name: a short choice, "Copy and Add" as the default, "Add Without Copying", and Cancel, with the destination and the running file's size in the sentence. A copy that fails is reported and nothing is written. On removal the copy is named and deleted only if the user says so, and the file the session is running from is never offered for deletion.
+
+**The offer on the first start** is the toast the Welcome panel's own route already uses, with "Add to Menu" on it (General UI PRD 1.3). It is made once, remembered in `general/desktopEntryOfferShown`, and only where the form has no entry and needs one, so a user who removes a Flatpak and keeps an AppImage is offered it then.
+
+**One thing built differently from the plan.** The kickoff has the offer shown after the storage migration's message. Both use the one toast, so the second would replace the first and the user would lose the message that was owed them. `MainWindow` now records that a startup message has been shown and declines the offer for that start; the entry point calls `offer_desktop_entry_once` unconditionally and the window decides. The decision lives in the window, where a test can reach it, rather than in the entry point's control flow, where it could only be asserted by reading the source.
+
+**Tests:** `tests/test_menu_entry_action.py`, 19 cases through the window on the offscreen platform with the writing module stubbed, so nothing here writes an entry or reads the developer's own data directory. The row's place in the menu and its label following the entry's state; the form that needs nothing explaining itself and writing nothing; adding, with the rescan sentence, and a failed add without it; removing; the AppImage's three answers and its failed copy; an AppImage already at the fixed name asked nothing; the copy offered on removal, kept on no, deleted on yes, and never offered for the running file; the offer made once, with its action, declined where an entry exists or the form needs nothing, and deferred by a start that owes a message. `tests/test_menus.py`'s Help menu row reads the new label as either of its two texts, so it does not depend on whether the machine running the suite has the entry.
+
+**The next required step** is Phase 3: Doug's run on his display, written as a checklist page with the `instruction-discipline` skill.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.2 | 09-20-26 15:49 | Claude (Claude Code) | Phase 2 done (Section 6): the Help menu row with its label read each time the menu opens, the sentence about the desktop's icon rescan that finding 1 earned, the AppImage's copy question and the offer to delete the copy on removal, and the first-start offer remembered in `general/desktopEntryOfferShown`. Built differently from the kickoff in one place: the window, not the entry point, declines the offer on a start that already owes a message, since both use the one toast. 19 tests through the window with the writing module stubbed. General UI PRD 2.53. |
 | 1.1 | 09-20-26 15:14 | Claude (Claude Code) | Phase 1 done (Section 5): `config/desktop_entry.py` writes and removes the entry, the eight-size icon set and the scalable file, and the `.smk` MIME type, all under `$XDG_DATA_HOME`; the `Exec` is an absolute path quoted by the desktop entry specification's rules, a correction made in the building, since `shlex.quote`'s single quotes are not quoting to a desktop entry; the entry and the MIME file moved into `snapmock/resources/desktop/` under silence 8, with both recipes and their tests following them; 24 tests, every one against a temporary home. Technical Architecture PRD 1.69. |
 | 1.0 | 09-20-26 15:08 | Claude (Claude Code) | Initial notes: the four decisions taken on 09-20-26, each as recommended (1 C, 2 B, 3 C, 4 B); the kickoff's seven silences and an eighth decided here (the desktop entry and the MIME file move into the package's resources, so every form carries them); the starting state verified here, which found two of the kickoff prompt's statements wrong (no installation from the index on this machine; this desktop session's `PATH` does carry `~/.local/bin`). |

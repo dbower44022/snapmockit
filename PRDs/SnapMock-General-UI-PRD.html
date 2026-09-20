@@ -15,8 +15,8 @@
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.52</dd>
-    <dt>Last Updated</dt>    <dd>09-18-26 23:58</dd>
+    <dt>Document version</dt><dd>2.53</dd>
+    <dt>Last Updated</dt>    <dd>09-20-26 15:47</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.53</td>
+        <td class="nowrap">09-20-26 15:47</td>
+        <td>Doug Bower</td>
+        <td><strong>3.8</strong> gains one row, between Report a Bug and the separator: <strong>Add to Menu</strong>, which becomes <strong>Remove from Menu</strong> once the entry is in place (<code>docs/Menu-Entry-Implementation.md</code>, Phase 2; end-to-end pass finding 1). It writes the desktop entry, the icon set, and the <code>.smk</code> file type under the user's own data directory and nowhere else, and removes exactly what it wrote. The label is read each time the Help menu opens, since another installed form can put an entry there. A form that installs its own entry says so when the row is used rather than showing a disabled row (<strong>1.3</strong>). <strong>16</strong>: on the first start of a form with no entry the offer is made once as a message that does not block with the action on it, remembered in the setting <code>general/desktopEntryOfferShown</code>; a start that already owes the user a message keeps that message and leaves the offer to the next start, since both use the one toast. What the action reports after writing names the file association and says that a missing icon means the desktop has not rescanned its icon folders yet, which finding 1 saw. The AppImage is asked once, with a default, whether to copy itself to a fixed name first, and its copy is named and deleted only on request.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.52</td>
         <td class="nowrap">09-18-26 23:58</td>
@@ -2157,6 +2164,7 @@ currently active tool has a checkmark.</p>
     <tr><th>Documentation</th><td>Open the project's online documentation in the default browser.</td></tr>
     <tr><th>Keyboard Shortcuts</th><td>Open a searchable shortcut reference dialog.</td></tr>
     <tr><th>Report a Bug</th><td>Open the GitHub issues page in the default browser.</td></tr>
+    <tr><th>Add to Menu / Remove from Menu</th><td>Write the desktop entry, the icon set, and the <code>.smk</code> file type under the user's own data directory, so the application starts from the desktop's main menu and a project opens on a double-click; and take them away again. The label follows whether the entry is in place. A form that installs its own entry, which the Flatpak does, says so when the row is used, since no control is disabled (1.3).</td></tr>
     <tr><th>---</th><td>Separator</td></tr>
     <tr><th>Check for Updates</th><td>Check if a newer version is available (queries GitHub releases API).</td></tr>
     <tr><th>About SnapMock</th><td>Show application version, license info, credits, and links.</td></tr>

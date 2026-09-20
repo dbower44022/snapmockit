@@ -147,6 +147,18 @@ def installed(environ: Mapping[str, str] | None = None, home: Path | None = None
     return entry_path(environ, home).is_file()
 
 
+def running_appimage(
+    environ: Mapping[str, str] | None = None,
+    marker: Path = FLATPAK_MARKER,
+    package_directory: Path = PACKAGE_DIRECTORY,
+) -> Path | None:
+    """The AppImage file this process is running from, or None for every other form."""
+    env = os.environ if environ is None else environ
+    if current_form(env, marker, package_directory) is not Form.APPIMAGE:
+        return None
+    return Path(env[APPIMAGE_VARIABLE]).resolve()
+
+
 def appimage_destination(
     environ: Mapping[str, str] | None = None, home: Path | None = None
 ) -> Path:

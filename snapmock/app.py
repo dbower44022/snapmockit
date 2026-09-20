@@ -92,6 +92,9 @@ def main(argv: list[str] | None = None) -> None:
     startup_messages = [text for text in (migration.message(), imported.message()) if text]
     if startup_messages:
         window.show_startup_message(" ".join(startup_messages))
+    # Offered once, on a start of a form with no entry; the window declines when it has
+    # already shown a message, since both use the one toast (menu-entry decision 1).
+    window.offer_desktop_entry_once()
     if files:
         window.open_paths([Path(name) for name in files])
     if command is not None:
