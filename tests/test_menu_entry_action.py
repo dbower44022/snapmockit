@@ -333,6 +333,7 @@ def test_removing_offers_to_delete_the_copy_and_leaves_it_on_no(
     destination.parent.mkdir(parents=True)
     destination.write_bytes(b"\x00" * 4096)
     entry.destination = destination
+    entry.running = tmp_path / "Downloads" / f"{APP_NAME}-1.2.0-x86_64.AppImage"
     entry._installed = True
     messages: list[tuple[str, str]] = []
     answer_boxes(monkeypatch, messages, button="")  # the question answers No
@@ -352,6 +353,7 @@ def test_removing_deletes_the_copy_on_yes(
     destination.parent.mkdir(parents=True)
     destination.write_bytes(b"\x00" * 4096)
     entry.destination = destination
+    entry.running = tmp_path / "Downloads" / f"{APP_NAME}-1.2.0-x86_64.AppImage"
     entry._installed = True
     answer_boxes(monkeypatch, [], button="yes")
 
@@ -362,9 +364,10 @@ def test_removing_deletes_the_copy_on_yes(
     assert not destination.exists()
 
 
-def test_the_running_appimage_is_never_offered_for_deletion(
+def test_the_running_appimage_is_named_as_left_in_place_not_offered(
     qtbot: Any, entry: FakeEntry, monkeypatch: MonkeyPatch, tmp_path: Path
 ) -> None:
+    """Deleting a mounted AppImage takes the running application's own files away."""
     destination = tmp_path / "Applications" / f"{APP_NAME}.AppImage"
     destination.parent.mkdir(parents=True)
     destination.write_bytes(b"\x00")
@@ -380,6 +383,28 @@ def test_the_running_appimage_is_never_offered_for_deletion(
 
     assert destination.is_file()
     assert not any("Delete it as well?" in text for _, text in messages)
+    assert any("is the file you are running" in text for _, text in messages)
+
+
+def test_another_form_is_never_offered_the_appimage_copy(
+    qtbot: Any, entry: FakeEntry, monkeypatch: MonkeyPatch, tmp_path: Path
+) -> None:
+    """A copy at that path under an installation from the index is the user's own."""
+    destination = tmp_path / "Applications" / f"{APP_NAME}.AppImage"
+    destination.parent.mkdir(parents=True)
+    destination.write_bytes(b"\x00" * 4096)
+    entry.destination = destination
+    entry.running = None
+    entry._installed = True
+    messages: list[tuple[str, str]] = []
+    answer_boxes(monkeypatch, messages, button="yes")
+
+    window = MainWindow()
+    qtbot.addWidget(window)
+    menu_row(window).trigger()
+
+    assert destination.is_file()
+    assert len(messages) == 1  # the removal alone
 
 
 # ---- the offer on the first start (decision 1) -----------------------------------------

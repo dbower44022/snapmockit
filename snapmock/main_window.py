@@ -4029,10 +4029,27 @@ class MainWindow(QMainWindow):
         return True, str(copied)
 
     def _offer_to_delete_appimage_copy(self, title: str) -> None:
-        """The copy is named and deleted only on request, never silently (decision 3)."""
-        destination = desktop_entry.appimage_destination()
+        """The copy is named and deleted only on request, never silently (decision 3).
+
+        Only the AppImage is asked: a copy at that path under any other form was put
+        there by the user, not by this action, and is not ours to offer. The file the
+        session is running from is named as left in place rather than offered, since
+        deleting a mounted AppImage takes the running application's own files away.
+        """
         running = desktop_entry.running_appimage()
-        if not destination.is_file() or running == destination:
+        if running is None:
+            return
+        destination = desktop_entry.appimage_destination()
+        if not destination.is_file():
+            return
+        if running == destination:
+            QMessageBox.information(
+                self,
+                title,
+                f"The copy at {destination} is the file you are running, so it is left "
+                "in place. Delete it yourself, once Snapmockit is closed, if you no "
+                "longer want it.",
+            )
             return
         answer = QMessageBox.question(
             self,
