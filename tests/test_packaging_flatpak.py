@@ -80,8 +80,11 @@ def test_manifest_id_matches_the_desktop_entry_the_metainfo_and_the_mime_file(
     """One id for both Linux forms (silence 1)."""
     assert manifest["id"] == DESKTOP_ENTRY_ID
     assert MANIFEST.name == f"{DESKTOP_ENTRY_ID}.yml"
-    assert (APPIMAGE / f"{DESKTOP_ENTRY_ID}.desktop").is_file()
-    assert (APPIMAGE / f"{DESKTOP_ENTRY_ID}.xml").is_file()
+    # Both files ship inside the package, so every form carries them and the
+    # application installs them itself (menu-entry silence 8).
+    desktop_resources = ROOT / "snapmock" / "resources" / "desktop"
+    assert (desktop_resources / f"{DESKTOP_ENTRY_ID}.desktop").is_file()
+    assert (desktop_resources / f"{DESKTOP_ENTRY_ID}.xml").is_file()
     metainfo = (APPIMAGE / f"{DESKTOP_ENTRY_ID}.appdata.xml").read_text(encoding="utf-8")
     assert f"<id>{DESKTOP_ENTRY_ID}</id>" in metainfo
 

@@ -32,9 +32,12 @@ from snapmock.ui.icons import (
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGING = ROOT / "packaging" / "appimage"
-DESKTOP_FILE = PACKAGING / f"{DESKTOP_ENTRY_ID}.desktop"
+DESKTOP_RESOURCES = ROOT / "snapmock" / "resources" / "desktop"
+# The entry and the shared-mime-info file ship inside the package, so the application
+# installs them itself (menu-entry silence 8); the metainfo is read only by a build.
+DESKTOP_FILE = DESKTOP_RESOURCES / f"{DESKTOP_ENTRY_ID}.desktop"
 METAINFO_FILE = PACKAGING / f"{DESKTOP_ENTRY_ID}.appdata.xml"
-MIME_FILE = PACKAGING / f"{DESKTOP_ENTRY_ID}.xml"
+MIME_FILE = DESKTOP_RESOURCES / f"{DESKTOP_ENTRY_ID}.xml"
 ENTRYPOINT_FILE = PACKAGING / "entrypoint.sh"
 MIME_TYPE = "application/x-snapmockit-project"
 
@@ -217,5 +220,6 @@ def test_the_recipe_files_exist_and_the_desktop_id_is_the_constant(
     for path in (DESKTOP_FILE, METAINFO_FILE, MIME_FILE, ENTRYPOINT_FILE):
         assert path.exists(), path
     assert build_module.DESKTOP_FILE == DESKTOP_FILE
+    assert build_module.MIME_FILE == MIME_FILE
     assert build_module.BASE_IMAGE.startswith("python3.12.")
     assert "manylinux_2_28_x86_64" in build_module.BASE_IMAGE

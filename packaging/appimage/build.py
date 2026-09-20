@@ -44,11 +44,15 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
 from snapmock.config.constants import APP_NAME, DESKTOP_ENTRY_ID  # noqa: E402
+from snapmock.config.desktop_entry import DESKTOP_TEMPLATE, MIME_TEMPLATE  # noqa: E402
+from snapmock.config.desktop_entry import ICON_SIZES as _ICON_SIZES  # noqa: E402
 
 ARCH = "x86_64"
 DISTRIBUTION_NAME = "snapmockit"
 ICON_SOURCE = ROOT / "snapmock" / "resources" / "icons" / "snapmockit.svg"
-ICON_SIZES: tuple[int, ...] = (16, 24, 32, 48, 64, 128, 256, 512)
+ICON_SIZES: tuple[int, ...] = _ICON_SIZES
+"""The sizes the desktop reads; the one source is config/desktop_entry.py, which the
+application itself renders from at run time (menu-entry silence 8)."""
 BUNDLED_ICON_SIZE = 256
 """The one PNG handed to python-appimage, and the AppImage's own top-level icon."""
 
@@ -62,9 +66,12 @@ BASE_IMAGE_URL = (
     f"{BASE_IMAGE}"
 )
 
-DESKTOP_FILE = HERE / f"{DESKTOP_ENTRY_ID}.desktop"
+DESKTOP_FILE = DESKTOP_TEMPLATE
 METAINFO_FILE = HERE / f"{DESKTOP_ENTRY_ID}.appdata.xml"
-MIME_FILE = HERE / f"{DESKTOP_ENTRY_ID}.xml"
+MIME_FILE = MIME_TEMPLATE
+"""The entry and the shared-mime-info file ship inside the package, so every installed
+form carries them and the application can install them itself (menu-entry silence 8);
+only the AppStream metainfo, which nothing but a build reads, stays beside this recipe."""
 ENTRYPOINT_FILE = HERE / "entrypoint.sh"
 
 WHEEL_NAME = re.compile(rf"^{DISTRIBUTION_NAME}-(?P<version>[^-]+)-py3-none-any\.whl$")

@@ -1,6 +1,6 @@
 # The Menu Entry — Implementation Notes
 
-Last Updated: 09-20-26 15:08 · Revision 1.0
+Last Updated: 09-20-26 15:14 · Revision 1.1
 
 Snapmockit put into the desktop's main menu from inside the application, and taken out again, so that a user who downloaded the AppImage or installed from the Python Package Index reaches the application the way every other application is reached. This is end-to-end pass finding 1 (`docs/End-to-End-Pass.md`, Section 5.1) and step 2 of what is left on the release-engineering list (`docs/Release-Engineering.md`, Section 4). The kickoff prompt is `docs/Menu-Entry-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -8,7 +8,7 @@ Snapmockit put into the desktop's main menu from inside the application, and tak
 
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
-| 1 | The decisions, the module that writes and removes the entry, what the entry says per form, the tests | Decisions taken 09-20-26 (Section 2); the module owed | this commit |
+| 1 | The decisions, the module that writes and removes the entry, what the entry says per form, the tests | Done 09-20-26 (Sections 2 and 5); Technical Architecture PRD 1.69 | 8c22e71, this commit |
 | 2 | The Help menu row, the offer on the first start, what the user is told, the tests through the window | Not started | |
 | 3 | Doug's run on his display, and what it finds | Not started | |
 | Close-out | The README, the release-engineering notes, the product requirements document rows, the next required step | Not started | |
@@ -79,8 +79,37 @@ Read and run here before anything was written, and two of the kickoff prompt's s
 - `update-mime-database`, `update-desktop-database`, and `xdg-mime` are all present at `/usr/bin`.
 - `~/Applications/Snapmockit.AppImage` is the v1.0.0 copy of 09-17-26, 128,293,368 bytes; `~/Downloads` holds no Snapmockit AppImage.
 
+## 5. Phase 1: the module (09-20-26)
+
+**`snapmock/config/desktop_entry.py`** (Technical Architecture PRD 1.69, Section 10), beside `packaging.py`, which tells it which form is running, and `migration.py`, which is the other module that writes outside the application's own storage. It knows nothing of widgets or settings: the caller decides, this writes.
+
+**What an install writes**, all of it under `$XDG_DATA_HOME` (default `~/.local/share`) and nowhere else, never as root:
+
+- `applications/io.github.dbower44022.snapmockit.desktop`, the packaged entry with its `Exec` line replaced and `%F` kept. Every other field — the name, the comment, the categories, the keywords, the icon, the window class, the MIME type — is the packaged file's, so a user's entry cannot drift from a package's.
+- `icons/hicolor/<size>x<size>/apps/io.github.dbower44022.snapmockit.png` at 16, 24, 32, 48, 64, 128, 256, and 512 pixels, rendered from `resources/icons/snapmockit.svg` through Qt's own SVG renderer into a `QImage` — not a `QPixmap`, so it needs no display and no application object — plus that SVG at `icons/hicolor/scalable/apps/`.
+- `mime/packages/io.github.dbower44022.snapmockit.xml` (decision 4).
+
+**The `Exec` line** (decision 2) is an absolute path in every form: the AppImage's own file resolved from the `APPIMAGE` variable, or the installed command found beside the running interpreter or on the path, or, where no command is installed at all, the interpreter's own path with `-m snapmock`, which exists whatever the path holds. **A correction made in the building:** the quoting is the desktop entry specification's, not the shell's. `shlex.quote` wraps a path containing a space in single quotes, which a desktop entry does not read as quoting at all; the specification encloses such an argument in double quotes and escapes a double quote, a backslash, a dollar sign, or a backtick with a backslash, which the entry file format then escapes a second time. `quote_exec` does that and a test holds both a path with a space and a path with a dollar sign.
+
+**What it reports.** `Outcome` carries what was written or deleted and a note for each thing that did not happen, each note a sentence a user can read. An install whose entry cannot be written returns an outcome that says so; nothing raises, so a menu action never ends in a traceback. A read-only `mime` directory still installs the entry and the icons and says the file association was not made.
+
+**The two database tools** are run where they are on the path and, where they are not, produce a note that the desktop reads the change at next login (silence 6). Neither absence is a failure.
+
+**Removal** deletes exactly the files an install writes and nothing else: no directory is pruned, and the AppImage's copy at `~/Applications` is not touched, since decision 3 offers it separately. The Flatpak form writes nothing and removes nothing, and `unsupported_reason` gives the sentence the Help menu row shows instead of greying out (General UI PRD 1.3).
+
+**The copy** (decision 3) is `copy_appimage`, which writes through a `.part` file and replaces the destination, sets the executable bit, and refuses a destination that exists and is not a type 2 AppImage, so nothing of the user's is overwritten.
+
+**The move of silence 8.** `io.github.dbower44022.snapmockit.desktop` and `io.github.dbower44022.snapmockit.xml` moved from `packaging/appimage/` to `snapmock/resources/desktop/`. The AppImage recipe now reads both from there and takes its icon sizes from the module, so the sizes have one source; the Flatpak recipe reads them through the AppImage recipe and needed no change; the AppStream metainfo stays in `packaging/appimage/`, since only a build reads it. `tests/test_packaging_appimage.py` and `tests/test_packaging_flatpak.py` follow the files.
+
+**Tests:** `tests/test_desktop_entry.py`, 24 cases, every one of them writing to a temporary home. The entry written for each form with the right `Exec` (the AppImage's file, the command beside the interpreter, a path with a space quoted, the interpreter's module line); the packaged fields kept; each icon written at its own size and the scalable file copied byte for byte; the entry read back by `app.desktop_entry_installed`, which is what gives Qt the desktop id at start; a second install over the first leaving one entry with the new `Exec`; removal leaving nothing behind and a removal with nothing installed saying so; a read-only applications directory reported and not raised, and a read-only `mime` directory still installing the entry; the Flatpak form refusing to write or remove at all; a missing database tool as a note rather than a failure, and both tools run with the right argument where they exist; and the copy's overwrite, its executable bit, and its refusal of a destination that is not an AppImage.
+
+**Not proven here:** anything that needs a display or a real installation. The action itself is Phase 2 and the display run is Phase 3.
+
+**The next required step** is Phase 2, step 1: the Help menu row, with its label following the entry's state and a sentence for the form that needs nothing.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.1 | 09-20-26 15:14 | Claude (Claude Code) | Phase 1 done (Section 5): `config/desktop_entry.py` writes and removes the entry, the eight-size icon set and the scalable file, and the `.smk` MIME type, all under `$XDG_DATA_HOME`; the `Exec` is an absolute path quoted by the desktop entry specification's rules, a correction made in the building, since `shlex.quote`'s single quotes are not quoting to a desktop entry; the entry and the MIME file moved into `snapmock/resources/desktop/` under silence 8, with both recipes and their tests following them; 24 tests, every one against a temporary home. Technical Architecture PRD 1.69. |
 | 1.0 | 09-20-26 15:08 | Claude (Claude Code) | Initial notes: the four decisions taken on 09-20-26, each as recommended (1 C, 2 B, 3 C, 4 B); the kickoff's seven silences and an eighth decided here (the desktop entry and the MIME file move into the package's resources, so every form carries them); the starting state verified here, which found two of the kickoff prompt's statements wrong (no installation from the index on this machine; this desktop session's `PATH` does carry `~/.local/bin`). |
