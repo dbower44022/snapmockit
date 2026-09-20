@@ -1,6 +1,6 @@
 # Release Engineering Notes
 
-Last Updated: 09-18-26 10:22 · Revision 1.15
+Last Updated: 09-20-26 13:31 · Revision 1.16
 
 The work that turns the finished application into a product: its identity, continuous integration, packaging, and the first release. Every feature row of the nine product requirements documents was built or recorded as a departure by 09-14-26 (`docs/Freehand-Remainder-Implementation.md`, Section 8.1, names the last of them); this document holds what follows, in the order Doug set on 09-14-26: the identity, then continuous integration, then packaging, then an end-to-end pass on real work, then the two platform backends when their machines exist.
 
@@ -10,7 +10,7 @@ The work that turns the finished application into a product: its identity, conti
 |---|---|---|---|
 | 1 | The identity: the name, the repository, the licence, the version's one source, the README | Done | faf8e1b, then this commit |
 | 2 | Continuous integration: lint, format, types, the suite on the offscreen platform, and the wheel and sdist, on every push | Done: green on GitHub 09-14-26 | 632b30b, 74bc47d |
-| 3 | Packaging: the Linux AppImage first (Technical Architecture PRD 7.3), then Flatpak, PyPI, the Windows MSI or portable ZIP, and the macOS bundle | Linux AppImage done 09-15-26 (v0.9.0), v1.0.0 on 09-17-26. **Linux Flatpak done 09-18-26** (`docs/Packaging-Flatpak-Implementation.md`): built in continuous integration on every push and published in **v1.1.0** beside the AppImage. No Flathub submission (Doug's decision of 09-18-26, `docs/Packaging-Flathub-Implementation.md`). Remaining, in order: the Python Package Index, the Windows MSI or portable ZIP, the macOS bundle; and the menu entry the AppImage does not install (end-to-end pass finding 1) | 860f370 to 080e2f3 |
+| 3 | Packaging: the Linux AppImage first (Technical Architecture PRD 7.3), then Flatpak, PyPI, the Windows MSI or portable ZIP, and the macOS bundle | Linux AppImage done 09-15-26 (v0.9.0), v1.0.0 on 09-17-26. **Linux Flatpak done 09-18-26** (`docs/Packaging-Flatpak-Implementation.md`): built in continuous integration on every push and published in **v1.1.0** beside the AppImage. No Flathub submission (Doug's decision of 09-18-26, `docs/Packaging-Flathub-Implementation.md`). **The Python Package Index done 09-19-26** (`docs/Packaging-PyPI-Implementation.md`): `pipx install snapmockit` installs the application on any platform with Python 3.12 or later, published from the release workflow through trusted publishing on Doug's approval, first as **v1.2.0**. Remaining, in order: the Windows MSI or portable ZIP, the macOS bundle; and the menu entry the AppImage does not install (end-to-end pass finding 1) | 860f370 to 080e2f3 |
 | 4 | An end-to-end pass on real work, on the released AppImage `Snapmockit-0.9.0-x86_64.AppImage`, then the 1.0.0 release | Done 09-17-26: two sittings, one on real work, ended by Doug's call; sixteen findings, all closed but one follow-up (the menu install); the Wayland capture passed; **v1.0.0 released 09-17-26** and started from the main menu on Doug's display (`docs/End-to-End-Pass.md`, Section 9) | def7507 to this commit (tag v1.0.0 on f53c4e5) |
 | 5 | The Windows and macOS capture backends, when their machines exist | Waiting: both are stubs; no Windows or macOS machine is available; `docs/Windows-Backend-Kickoff-Prompt.md` is ready for the Windows one | |
 
@@ -30,16 +30,32 @@ The product has its first release it stands behind: v1.0.0, the Linux AppImage, 
 
 **No Flathub submission (09-18-26).** Doug chose Flathub ahead of the Python Package Index, and then closed that work at its first phase. Flathub's current documentation forbids an AI tool to open or answer a submission pull request, and refuses the home-directory permission to software that shows signs of large language model use; 394 of this repository's 422 commits carry a Claude co-author line. The bundle on the GitHub release stays the Flatpak route, and a Flatpak user updates by downloading the next one. The notes, with Flathub's requirements checked against the repository for a later reopening, are `docs/Packaging-Flathub-Implementation.md`.
 
+**The Python Package Index is done (09-19-26).** **v1.2.0**, published 09-19-26, is the first release there and carries the AppImage and the Flatpak bundle as well. The work took three phases and a close-out, and five decisions; its notes are `docs/Packaging-PyPI-Implementation.md`. The rehearsal on the test index found one defect, which is fixed: Check for Updates could not read a running pre-release. Three display checks are owed there.
+
 What is left of this list, in order:
 
-1. **The Python Package Index**, next. The build job already makes the wheel and sdist. What is missing is an account, a trusted publisher for `dbower44022/snapmockit`, and a publish step in the release job. Only Doug can create the account. Its kickoff prompt is `docs/Packaging-PyPI-Kickoff-Prompt.md` (revision 1.0).
-2. **The menu entry**, end-to-end pass finding 1: an "Add to Menu" action or a first-start offer that installs the desktop entry and icons the AppImage carries. The Flatpak installs its own, so this is the AppImage's gap alone.
-3. **Windows and macOS**: the packages of step 3 and the capture backends of step 5, each waiting for its machine.
+1. **The menu entry**, end-to-end pass finding 1: an "Add to Menu" action or a first-start offer that installs the desktop entry and icons the AppImage carries. The Flatpak installs its own, and the wheel installs none, so this is the AppImage's gap and the index form's.
+2. **Windows and macOS**: the packages of step 3 and the capture backends of step 5, each waiting for its machine.
+
+## 5. The release process
+
+Every release is built and published from a clean runner; nothing is built here for a release. The steps, in order:
+
+1. **The release commit on `main`**: `snapmock/__init__.py` carries the version, and every document a user reads is brought to it. **The README is part of this commit**, since the Python Package Index shows the description uploaded with the files and a later edit reaches that page only with the next release.
+2. **The suite at that commit**, run from a scratch `git worktree` with `QT_QPA_PLATFORM=offscreen uv run pytest -q -o faulthandler_timeout=120 --deselect tests/test_property_panel.py::test_font_combo_reflects_text_item_font`.
+3. **`uv build`, then `uvx twine check --strict dist/*`**, so the index will take the files and render the README.
+4. **Push `main`** and wait for the run to be green in all five jobs.
+5. **The release notes**, written for Doug to read before the tag.
+6. **The annotated tag** `vX.Y.Z` on that commit, with the notes as its message, pushed on Doug's word. The release job refuses a tag that is not `v` followed by the package's version.
+7. **The GitHub release** is published by the workflow with the AppImage and the Flatpak bundle attached.
+8. **The upload to the Python Package Index** waits for Doug's approval of the `pypi` environment on the run's page (Review deployments, tick `pypi`, Approve and deploy). It uploads the wheel and sdist of the same run through trusted publishing. A version uploaded there can never be reused, so the approval is the last point at which a release can be stopped.
+9. **Read back**: the release page, `https://pypi.org/project/snapmockit/`, and the attestation of each uploaded file.
 
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.16 | 09-20-26 13:31 | Claude (Claude Code) | Step 3's Python Package Index done: v1.2.0 published there 09-19-26 through trusted publishing on Doug's approval. Section 4 rewritten, with the menu entry next and Windows and macOS after it; new Section 5, the release process, with the upload to the index as its step 8. |
 | 1.15 | 09-18-26 10:22 | Claude (Claude Code) | No Flathub submission, Doug's decision of 09-18-26 against Flathub's Generative AI and exception policies; step 3 and Section 4 bring the Python Package Index next, its kickoff prompt written. The header's revision, left at 1.13 by the 1.14 row, is brought into step. |
 | 1.14 | 09-18-26 01:52 | Claude (Claude Code) | Section 4: the Flathub submission moved ahead of the Python Package Index on Doug's choice of 09-18-26; its kickoff prompt written, with what the Flathub linter already says about the manifest. |
 | 1.13 | 09-18-26 01:42 | Claude (Claude Code) | Step 3's Flatpak done: both Linux forms built on every push and published together in v1.1.0; Section 4 rewritten, with the Python Package Index and a Flathub submission as what follows. |

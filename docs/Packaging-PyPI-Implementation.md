@@ -1,6 +1,6 @@
 # Packaging: the Python Package Index — Implementation Notes
 
-Last Updated: 09-19-26 00:11 · Revision 1.5
+Last Updated: 09-20-26 13:31 · Revision 1.6
 
 Snapmockit published on the Python Package Index, so that `pipx install snapmockit`, `uv tool install snapmockit`, or `pip install snapmockit` installs the application on any platform with Python 3.12 or later, and every later release reaches the index from the release workflow. The kickoff prompt is `docs/Packaging-PyPI-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -10,8 +10,8 @@ Snapmockit published on the Python Package Index, so that `pipx install snapmock
 |---|---|---|---|
 | 1 | The decisions, the metadata, the command, the sdist's contents, proven here | Done 09-18-26 (Sections 2 and 5); Technical Architecture PRD 1.67 | f70ff8b, ab7baca |
 | 2 | The fourth form in `config/packaging.py`, and Check for Updates' wording for it | Done 09-18-26 (Section 6); General UI PRD 2.51, Screen Capture PRD 1.2 | 7c3effd |
-| 3 | The index's side (Doug), the rehearsal on the test index, the publish job, the first release | In progress: step 1 done by Doug, step 2 written (Section 7); a defect the rehearsal found fixed (7.3); the rehearsal passed 09-19-26 (7.4); the first release next | dab76f5, 133d0af, this commit |
-| Close-out | The README, the release-engineering notes, the release process | Not started | |
+| 3 | The index's side (Doug), the rehearsal on the test index, the publish job, the first release | Done 09-19-26: v1.2.0 published on the index (7.5) | dab76f5, 133d0af, 7dd118f, 9b307a7, tag v1.2.0 |
+| Close-out | The README, the release-engineering notes, the release process | Done 09-20-26 (Section 8); Technical Architecture PRD 1.68 | 9b307a7 (the README), this commit |
 
 ## 2. Decisions
 
@@ -157,10 +157,37 @@ The branch `rehearsal-1.2.0rc1` was deleted locally and on GitHub at 00:10. `1.2
 
 **The next required step** is step 3, the first release on the index. Its version is Doug's to choose; the release notes are written for him to read before the tag; the tag is pushed only on his word; and `publish-pypi` then waits for his approval in the `pypi` environment.
 
+### 7.5 The first release on the index: v1.2.0 (step 3)
+
+**The version** is Doug's choice of 09-19-26: `1.2.0`, since the release adds a way to install, a command, and a wording, against `1.1.1` for a patch. The release commit is 9b307a7: `__version__ = "1.2.0"` and the README's new first section, "Install from the Python Package Index (any platform)", which recommends pipx or uv tool, gives each upgrade command, and names the system libraries Linux needs. **The README had to be in the release commit**, since the index shows the description uploaded with the files and a later edit reaches the page only with the next release. The AppStream release row needed nothing: the recipe fills it from the version at build time.
+
+**Proven before the tag:** the suite at 9b307a7 (1804 passed, 14 skipped, 1 deselected, 6 minutes 6 seconds here); `twine check --strict` on both 1.2.0 files; and the continuous-integration run of the commit, green in all five jobs (run 35420957401).
+
+**The tag** `v1.2.0`, annotated with the release notes Doug read first, was pushed at 00:23 on his word (run 35421164271). The `release` job published the GitHub release with `Snapmockit-1.2.0-x86_64.AppImage` (128,309,752 bytes) and `Snapmockit-1.2.0-x86_64.flatpak` (26,636,608 bytes), not marked a pre-release. `publish-pypi` then waited. **Doug approved the `pypi` environment**, and the upload ran from 18:49:48 to 18:50:07 UTC on 09-19-26. The gate held: the run waited about 18 hours, and GitHub recorded no approval until his.
+
+**On the index, read at 14:50 on 09-19-26:** https://pypi.org/project/snapmockit/ at 1.2.0, carrying `snapmockit-1.2.0-py3-none-any.whl` (761,230 bytes) and `snapmockit-1.2.0.tar.gz` (872,796 bytes), each with an attestation naming GitHub, `dbower44022/snapmockit`, `ci.yml`, and the environment `pypi`. The page shows the README as Markdown, the five project addresses, thirteen classifiers, and Python 3.12 or later.
+
+**Installed from the index on this machine** with `pipx install snapmockit` on Doug's word, 09-20-26 13:30: `snapmockit 1.2.0` on Python 3.12.3, with `~/.local/bin/snapmockit` linked to the environment's command. `snapmockit --version` answered `Snapmockit 1.2.0`; the main window built on the offscreen platform from the installed package; the form read `index` with installer `pipx`, the upgrade line was "Upgrade with pipx upgrade snapmockit.", and the shortcut command was `snapmockit --capture region`, the bare command, since pipx's link is on the path. Phase 2's four branches are therefore proven from a real installation.
+
+## 8. Close-out (09-20-26)
+
+**What the work leaves.** Snapmockit installs from the Python Package Index on any platform with Python 3.12 or later, as `pipx install snapmockit`, `uv tool install snapmockit`, or `pip install snapmockit`, and starts from the `snapmockit` command. Every later release reaches the index from the release workflow, through trusted publishing, with no token anywhere, after Doug approves the `pypi` environment's run. Check for Updates tells such an installation how to upgrade itself.
+
+**What changed, beyond the phases' own commits:** the README's install sections (9b307a7), `docs/Release-Engineering.md` Sections 1, 4, and its new Section 5, the release process with the upload as a step; and Technical Architecture PRD 1.68 for 7.3.
+
+**What of Technical Architecture PRD 7.3 remains:** the Windows installer and portable archive, and the macOS bundle. Neither has a machine. **Also open and named here:** the menu entry the AppImage does not install (end-to-end pass finding 1), which is the next step of the release-engineering list, and the Windows and macOS capture backends.
+
+**An installation from the index updates** by `pipx upgrade snapmockit`, `uv tool upgrade snapmockit`, or `pip install --upgrade snapmockit`, whichever installed it; Check for Updates names the right one. It does not update itself, and the release page's AppImage and bundle are not its files.
+
+**The display checks this work owes**, none of which a headless test can settle: the application started from the `snapmockit` command on Doug's display, with a capture, a save, and an export from that installation; Check for Updates from a 1.2.0 installation once 1.3.0 exists, showing the pipx wording; and the project's page on pypi.org read as a user reads it.
+
+**The next required step** is the menu entry (end-to-end pass finding 1), then the Windows package and backend, then macOS.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.6 | 09-20-26 13:31 | Claude (Claude Code) | Phase 3 done and the work closed out (Sections 7.5 and 8): v1.2.0 published on the index after Doug's approval, its attestation and page read, and the package installed here with pipx; the release-engineering notes, the release process, and Technical Architecture PRD 1.68. |
 | 1.5 | 09-19-26 00:11 | Claude (Claude Code) | Section 7.4: the rehearsal passed; 1.2.0rc1 uploaded to the test index through the trusted publisher with its attestation, installed from it, started, and read as the index's form; the branch deleted. |
 | 1.4 | 09-18-26 23:58 | Claude (Claude Code) | Section 7.3: the first rehearsal run uploaded nothing; its checks found that Check for Updates could not read a running pre-release; fixed on Doug's choice of option A. General UI PRD 2.52. |
 | 1.3 | 09-18-26 23:41 | Claude (Claude Code) | Phase 3 steps 1 and 2 (Section 7): the index's side done by Doug; the `pypi` environment's reviewer and tag rule set through the API on his word, since the interface saved a branch rule and no reviewer; the two publish jobs and their tests. |

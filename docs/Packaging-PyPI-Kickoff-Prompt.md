@@ -1,6 +1,6 @@
 # Kickoff Prompt: The Python Package Index
 
-Last Updated: 09-18-26 10:24 · Revision 1.0
+Last Updated: 09-20-26 13:32 · Revision 1.1
 
 Paste everything below the line into a new Claude Code session rooted in this repository on the Linux machine. Start it only when no other session is committing in this working directory and no continuous-integration run of the current commit is in progress, since a push cancels a run in progress on the same branch. This is the next part of step 3 of the release-engineering list (`docs/Release-Engineering.md`, Sections 1 and 4). It comes after Doug closed the Flathub submission on 09-18-26 (`docs/Packaging-Flathub-Implementation.md`). `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) still governs the standards, and this prompt governs the work. Where the two disagree, the general prompt wins and this one is corrected. The work is three phases and a close-out. A session pasting this prompt starts at the first phase not marked done in Section 1 of the notes document this work creates.
 
@@ -117,4 +117,5 @@ Update the phase table in `docs/Packaging-PyPI-Implementation.md`, bump its revi
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.1 | 09-20-26 13:32 | Claude (Claude Code) | **Done.** The work was carried out 09-18-26 to 09-20-26 and closed; v1.2.0 is published on the index. Its notes are `docs/Packaging-PyPI-Implementation.md` (revision 1.6), which records four corrections to this prompt: publishing is a job of its own, the `pypi` environment must require approval on each run, no licence classifier beside the SPDX expression, and the sdist carries `packaging/` because the suite reads it. |
 | 1.0 | 09-18-26 10:24 | Claude (Claude Code) | Initial kickoff prompt, written after Doug closed the Flathub submission on 09-18-26 and put the Python Package Index next. Starting state verified on 09-18-26: the name `snapmockit` free on the index; the sdist carrying the whole working tree, local files included when built here; no command in the metadata; no classifiers. Three phases and a close-out; five decisions, presented one at a time; five silences. |

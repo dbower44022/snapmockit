@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.67</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.68</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.67</dd>
-    <dt>Last Updated</dt>    <dd>09-18-26 16:45</dd>
+    <dt>Document version</dt><dd>1.68</dd>
+    <dt>Last Updated</dt>    <dd>09-20-26 13:31</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.68</td>
+        <td class="nowrap">09-20-26 13:31</td>
+        <td>Doug Bower</td>
+        <td>7.3's Python Package Index form is released: v1.2.0, published 09-19-26, installs on any platform with Python 3.12 or later as pipx install snapmockit, uv tool install snapmockit, or pip install snapmockit, and starts from the snapmockit command. It is uploaded by the release workflow through the index's trusted publishing, with no token, after Doug approves the pypi environment's run (docs/Packaging-PyPI-Implementation.md). What remains of 7.3: the Windows installer and portable archive, and the macOS bundle.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.67</td>
         <td class="nowrap">09-18-26 16:45</td>
@@ -595,6 +602,7 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr><td class="nowrap">09-20-26 13:31</td><td>7.3</td><td>Released</td><td><strong>Released</strong> (09-19-26; <code>docs/Packaging-PyPI-Implementation.md</code>, Sections 7.5 and 8): version 1.2.0, tagged <code>v1.2.0</code> on 9b307a7 and published by run 35421164271 as an ordinary GitHub release with both Linux forms attached, then uploaded to the Python Package Index at 18:49 UTC once Doug approved the <code>pypi</code> environment. On the index: <code>snapmockit-1.2.0-py3-none-any.whl</code> (761,230 bytes) and <code>snapmockit-1.2.0.tar.gz</code> (872,796 bytes), each with an attestation naming GitHub, <code>dbower44022/snapmockit</code>, <code>ci.yml</code>, and the environment <code>pypi</code>; the page carries the README, the five project addresses, and thirteen classifiers. Installed here with <code>pipx install snapmockit</code>: the command answers <code>Snapmockit 1.2.0</code>, the main window builds, the form reads as the index's with pipx as its installer, and the shortcut command is <code>snapmockit --capture region</code>. <strong>7.3 stands as follows:</strong> the Linux AppImage (primary), the Linux Flatpak (secondary), and the Python Package Index are done; the Windows installer and portable archive and the macOS bundle remain, each waiting for its machine. The release process, with the upload as a step, is <code>docs/Release-Engineering.md</code> Section 5.</td></tr>
       <tr>
         <td class="nowrap">09-18-26 16:45</td>
         <td>7.3, 9</td>
