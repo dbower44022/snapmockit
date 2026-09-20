@@ -1,6 +1,6 @@
 # Packaging: the Python Package Index — Implementation Notes
 
-Last Updated: 09-20-26 13:31 · Revision 1.6
+Last Updated: 09-20-26 14:15 · Revision 1.7
 
 Snapmockit published on the Python Package Index, so that `pipx install snapmockit`, `uv tool install snapmockit`, or `pip install snapmockit` installs the application on any platform with Python 3.12 or later, and every later release reaches the index from the release workflow. The kickoff prompt is `docs/Packaging-PyPI-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -167,7 +167,7 @@ The branch `rehearsal-1.2.0rc1` was deleted locally and on GitHub at 00:10. `1.2
 
 **On the index, read at 14:50 on 09-19-26:** https://pypi.org/project/snapmockit/ at 1.2.0, carrying `snapmockit-1.2.0-py3-none-any.whl` (761,230 bytes) and `snapmockit-1.2.0.tar.gz` (872,796 bytes), each with an attestation naming GitHub, `dbower44022/snapmockit`, `ci.yml`, and the environment `pypi`. The page shows the README as Markdown, the five project addresses, thirteen classifiers, and Python 3.12 or later.
 
-**Installed from the index on this machine** with `pipx install snapmockit` on Doug's word, 09-20-26 13:30: `snapmockit 1.2.0` on Python 3.12.3, with `~/.local/bin/snapmockit` linked to the environment's command. `snapmockit --version` answered `Snapmockit 1.2.0`; the main window built on the offscreen platform from the installed package; the form read `index` with installer `pipx`, the upgrade line was "Upgrade with pipx upgrade snapmockit.", and the shortcut command was `snapmockit --capture region`, the bare command, since pipx's link is on the path. Phase 2's four branches are therefore proven from a real installation.
+**Installed from the index on this machine** with `pipx install snapmockit` on Doug's word, 09-20-26 13:30: `snapmockit 1.2.0` on Python 3.12.3, with `~/.local/bin/snapmockit` linked to the environment's command. `snapmockit --version` answered `Snapmockit 1.2.0`; the main window built on the offscreen platform from the installed package; the form read `index` with installer `pipx`, the upgrade line was "Upgrade with pipx upgrade snapmockit.", and the shortcut command was `snapmockit --capture region`, the bare command, since pipx's link is on the path. Phase 2's four branches are therefore proven from a real installation. **The installation was removed again** with `pipx uninstall snapmockit` on Doug's word at 14:15 on 09-20-26, so this machine carries no installed copy; the proof above is the record.
 
 ## 8. Close-out (09-20-26)
 
@@ -187,6 +187,7 @@ The branch `rehearsal-1.2.0rc1` was deleted locally and on GitHub at 00:10. `1.2
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.7 | 09-20-26 14:15 | Claude (Claude Code) | Section 7.5: the pipx installation used for the proof was removed again on Doug's word. |
 | 1.6 | 09-20-26 13:31 | Claude (Claude Code) | Phase 3 done and the work closed out (Sections 7.5 and 8): v1.2.0 published on the index after Doug's approval, its attestation and page read, and the package installed here with pipx; the release-engineering notes, the release process, and Technical Architecture PRD 1.68. |
 | 1.5 | 09-19-26 00:11 | Claude (Claude Code) | Section 7.4: the rehearsal passed; 1.2.0rc1 uploaded to the test index through the trusted publisher with its attestation, installed from it, started, and read as the index's form; the branch deleted. |
 | 1.4 | 09-18-26 23:58 | Claude (Claude Code) | Section 7.3: the first rehearsal run uploaded nothing; its checks found that Check for Updates could not read a running pre-release; fixed on Doug's choice of option A. General UI PRD 2.52. |
