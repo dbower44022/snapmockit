@@ -1,6 +1,6 @@
 # Release Engineering Notes
 
-Last Updated: 09-20-26 13:34 · Revision 1.17
+Last Updated: 09-20-26 14:05 · Revision 1.17
 
 The work that turns the finished application into a product: its identity, continuous integration, packaging, and the first release. Every feature row of the nine product requirements documents was built or recorded as a departure by 09-14-26 (`docs/Freehand-Remainder-Implementation.md`, Section 8.1, names the last of them); this document holds what follows, in the order Doug set on 09-14-26: the identity, then continuous integration, then packaging, then an end-to-end pass on real work, then the two platform backends when their machines exist.
 
@@ -55,7 +55,7 @@ Every release is built and published from a clean runner; nothing is built here 
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
-| 1.17 | 09-20-26 13:34 | Claude (Claude Code) | Section 4: the menu entry is next on Doug's choice of 09-20-26, and its kickoff prompt is written. |
+| 1.17 | 09-20-26 14:05 | Claude (Claude Code) | Section 4: the menu entry is next on Doug's choice of 09-20-26, and its kickoff prompt is written. |
 | 1.16 | 09-20-26 13:31 | Claude (Claude Code) | Step 3's Python Package Index done: v1.2.0 published there 09-19-26 through trusted publishing on Doug's approval. Section 4 rewritten, with the menu entry next and Windows and macOS after it; new Section 5, the release process, with the upload to the index as its step 8. |
 | 1.15 | 09-18-26 10:22 | Claude (Claude Code) | No Flathub submission, Doug's decision of 09-18-26 against Flathub's Generative AI and exception policies; step 3 and Section 4 bring the Python Package Index next, its kickoff prompt written. The header's revision, left at 1.13 by the 1.14 row, is brought into step. |
 | 1.14 | 09-18-26 01:52 | Claude (Claude Code) | Section 4: the Flathub submission moved ahead of the Python Package Index on Doug's choice of 09-18-26; its kickoff prompt written, with what the Flathub linter already says about the manifest. |

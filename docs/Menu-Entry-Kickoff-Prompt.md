@@ -1,6 +1,6 @@
 # Kickoff Prompt: The Menu Entry
 
-Last Updated: 09-20-26 13:34 · Revision 1.0
+Last Updated: 09-20-26 14:05 · Revision 1.0
 
 Paste everything below the line into a new Claude Code session rooted in this repository on the Linux machine. Start it only when no other session is committing in this working directory and no continuous-integration run of the current commit is in progress, since a push cancels a run in progress on the same branch. This is end-to-end pass finding 1 (`docs/End-to-End-Pass.md`, Section 5.1) and step 2 of what is left on the release-engineering list (`docs/Release-Engineering.md`, Section 4). It comes after the Python Package Index work closed on 09-19-26 with v1.2.0 (`docs/Packaging-PyPI-Implementation.md`). `docs/General-UI-Implementation-Kickoff-Prompt.md` (revision 1.1) still governs the standards, and this prompt governs the work. Where the two disagree, the general prompt wins and this one is corrected. The work is three phases and a close-out. A session pasting this prompt starts at the first phase not marked done in Section 1 of the notes document this work creates.
 
@@ -116,4 +116,4 @@ Update the phase table in `docs/Menu-Entry-Implementation.md`, bump its revision
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
-| 1.0 | 09-20-26 13:34 | Claude (Claude Code) | Initial kickoff prompt, written when Doug chose the menu entry as the next step after the Python Package Index closed on 09-19-26. Starting state verified on 09-20-26: the AppImage and the index's form install no entry or icon; the Flatpak installs its own; the entry template, the icon rendering, and `desktop_entry_installed` already exist. Three phases and a close-out; four decisions, presented one at a time; seven silences. |
+| 1.0 | 09-20-26 14:05 | Claude (Claude Code) | Initial kickoff prompt, written when Doug chose the menu entry as the next step after the Python Package Index closed on 09-19-26. Starting state verified on 09-20-26: the AppImage and the index's form install no entry or icon; the Flatpak installs its own; the entry template, the icon rendering, and `desktop_entry_installed` already exist. Three phases and a close-out; four decisions, presented one at a time; seven silences. |
