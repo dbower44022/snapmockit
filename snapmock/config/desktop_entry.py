@@ -159,6 +159,63 @@ def running_appimage(
     return Path(env[APPIMAGE_VARIABLE]).resolve()
 
 
+FLATPAK_EXPORT_SUFFIX = Path("flatpak") / "exports" / "share"
+"""Where a user-installed Flatpak exports its own entry, under ``$XDG_DATA_HOME``."""
+
+SYSTEM_FLATPAK_EXPORTS = Path("/var/lib/flatpak/exports/share")
+"""Where a system-installed Flatpak exports its own entry."""
+
+
+def other_entries(
+    environ: Mapping[str, str] | None = None, home: Path | None = None
+) -> tuple[Path, ...]:
+    """Entries for this identifier that another installed form already provides.
+
+    The specification makes two files of one name one entry, and a conformant menu
+    shows the first on the path. Cinnamon lists a Flatpak's export beside it, so a
+    machine with the Flatpak installed shows Snapmockit twice once this action has
+    written its own (found on the display, 09-20-26). Nothing here changes what is
+    written; the caller names what it found, so the user is not surprised by it.
+
+    The Flatpak export directories are looked in whether or not the environment's
+    ``$XDG_DATA_DIRS`` carries them, since a process started from a terminal may have
+    inherited a path from before the Flatpak was installed.
+    """
+    env = os.environ if environ is None else environ
+    ours = entry_path(env, home)
+    data_dirs = env.get("XDG_DATA_DIRS") or "/usr/local/share:/usr/share"
+    bases = [base for base in data_dirs.split(":") if base]
+    bases.append(str(data_home(env, home) / FLATPAK_EXPORT_SUFFIX))
+    bases.append(str(SYSTEM_FLATPAK_EXPORTS))
+    found: list[Path] = []
+    seen: set[Path] = set()
+    for base in bases:
+        candidate = Path(base) / "applications" / f"{DESKTOP_ENTRY_ID}.desktop"
+        if candidate == ours or not candidate.is_file():
+            continue
+        target = candidate.resolve()
+        if target in seen:
+            continue
+        seen.add(target)
+        found.append(candidate)
+    return tuple(found)
+
+
+def other_entry_note(entries: tuple[Path, ...]) -> str | None:
+    """The sentence that names another form's entry, or None where there is none."""
+    if not entries:
+        return None
+    if any("flatpak" in part for path in entries for part in path.parts):
+        return (
+            f"A Flatpak installation of {APP_NAME} also has a menu entry, so your desktop "
+            f"may list {APP_NAME} twice."
+        )
+    return (
+        f"Another installation of {APP_NAME} already has a menu entry ({entries[0]}), so "
+        f"your desktop may list {APP_NAME} twice."
+    )
+
+
 def appimage_destination(
     environ: Mapping[str, str] | None = None, home: Path | None = None
 ) -> Path:
@@ -418,6 +475,9 @@ def install(
             f"({error.strerror or error}), so a double-click on a project will not open it."
         )
 
+    duplicate = other_entry_note(other_entries(environ, home))
+    if duplicate is not None:
+        notes.append(duplicate)
     notes.extend(refresh_databases(environ, home, run_databases))
     return Outcome(
         action=(

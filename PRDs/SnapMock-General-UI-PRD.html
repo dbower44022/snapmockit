@@ -15,8 +15,8 @@
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.53</dd>
-    <dt>Last Updated</dt>    <dd>09-20-26 15:47</dd>
+    <dt>Document version</dt><dd>2.54</dd>
+    <dt>Last Updated</dt>    <dd>09-20-26 23:14</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.54</td>
+        <td class="nowrap">09-20-26 23:14</td>
+        <td>Doug Bower</td>
+        <td><strong>3.8</strong>'s Add to Menu names another installed form's entry when it finds one: "A Flatpak installation of Snapmockit also has a menu entry, so your desktop may list Snapmockit twice." Found on Doug's display on 09-20-26 (<code>docs/Menu-Entry-Implementation.md</code>, Section 7.1): the desktop entry specification makes two files of one identifier one entry, and a conformant menu shows the first on the path, but Cinnamon lists a Flatpak's export beside the user's own, so a machine with the Flatpak installed showed two Snapmockit entries once the action had written its own. Decision of 09-20-26, option A: the action still writes the entry and says what it found, rather than refusing on a machine that has another form (option B), which would take the feature away from the AppImage and index users it exists for; changing the identifier was ruled out, since the window class, the portal registration, and the file association all hang on it. The search covers <code>$XDG_DATA_DIRS</code> and both Flatpak export directories, whether or not the environment names them, since a process started from a terminal may carry a path from before the Flatpak was installed. The README's claim that the desktop shows one entry is corrected in the same commit.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.53</td>
         <td class="nowrap">09-20-26 15:47</td>

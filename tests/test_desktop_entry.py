@@ -332,3 +332,58 @@ def test_the_entry_can_be_pointed_at_the_copy(qapp: object, env: dict[str, str])
     desktop_entry.install(source_environment(env), program=str(destination), run_databases=False)
     text = desktop_entry.entry_path(env).read_text(encoding="utf-8")
     assert f"Exec={destination} %F" in text
+
+
+# ---- another form's entry (found on the display, 09-20-26) -------------------------------
+
+
+def test_another_form_s_entry_is_found_in_the_flatpak_exports(
+    env: dict[str, str], home: Path
+) -> None:
+    exported = (
+        home / ".local" / "share" / "flatpak" / "exports" / "share" / "applications"
+    ) / f"{DESKTOP_ENTRY_ID}.desktop"
+    exported.parent.mkdir(parents=True)
+    exported.write_text("[Desktop Entry]\n", encoding="utf-8")
+
+    found = desktop_entry.other_entries(env)
+    assert found == (exported,)
+    note = desktop_entry.other_entry_note(found)
+    assert note is not None and "Flatpak" in note and "twice" in note
+
+
+def test_our_own_entry_is_never_counted_as_another_form_s(
+    qapp: object, env: dict[str, str]
+) -> None:
+    desktop_entry.install(source_environment(env), run_databases=False)
+    assert desktop_entry.other_entries(env) == ()
+    assert desktop_entry.other_entry_note(()) is None
+
+
+def test_an_entry_on_the_data_dirs_path_is_named_without_the_flatpak_wording(
+    env: dict[str, str], tmp_path: Path
+) -> None:
+    system = tmp_path / "usr" / "share" / "applications"
+    system.mkdir(parents=True)
+    other = system / f"{DESKTOP_ENTRY_ID}.desktop"
+    other.write_text("[Desktop Entry]\n", encoding="utf-8")
+
+    found = desktop_entry.other_entries({**env, "XDG_DATA_DIRS": str(tmp_path / "usr" / "share")})
+    assert found == (other,)
+    note = desktop_entry.other_entry_note(found)
+    assert note is not None and "Flatpak" not in note and str(other) in note
+
+
+def test_the_install_message_names_the_other_entry(
+    qapp: object, env: dict[str, str], home: Path
+) -> None:
+    exported = (
+        home / ".local" / "share" / "flatpak" / "exports" / "share" / "applications"
+    ) / f"{DESKTOP_ENTRY_ID}.desktop"
+    exported.parent.mkdir(parents=True)
+    exported.write_text("[Desktop Entry]\n", encoding="utf-8")
+
+    outcome = desktop_entry.install(source_environment(env), run_databases=False)
+    assert outcome.changed
+    assert any("may list" in note for note in outcome.notes)
+    assert "twice" in outcome.message()
