@@ -1,6 +1,6 @@
 # Release Engineering Notes
 
-Last Updated: 09-21-26 00:28 · Revision 1.19
+Last Updated: 09-21-26 00:39 · Revision 1.20
 
 The work that turns the finished application into a product: its identity, continuous integration, packaging, and the first release. Every feature row of the nine product requirements documents was built or recorded as a departure by 09-14-26 (`docs/Freehand-Remainder-Implementation.md`, Section 8.1, names the last of them); this document holds what follows, in the order Doug set on 09-14-26: the identity, then continuous integration, then packaging, then an end-to-end pass on real work, then the two platform backends when their machines exist.
 
@@ -52,10 +52,24 @@ Every release is built and published from a clean runner; nothing is built here 
 8. **The upload to the Python Package Index** waits for Doug's approval of the `pypi` environment on the run's page (Review deployments, tick `pypi`, Approve and deploy). It uploads the wheel and sdist of the same run through trusted publishing. A version uploaded there can never be reused, so the approval is the last point at which a release can be stopped.
 9. **Read back**: the release page, `https://pypi.org/project/snapmockit/`, and the attestation of each uploaded file.
 
+## 6. Waiting, and on what (09-21-26)
+
+Everything below is ready to start and blocked only on the thing named. Nothing here is in progress, and no session should begin one of these without the condition being met.
+
+| What | Waiting on | Ready |
+|---|---|---|
+| The two display checks v1.3.0 owes: Help > Add to Menu from the **released** AppImage, and from `pipx install snapmockit` of 1.3.0 | Doug, about ten minutes at his display. No new machine needed | The checks are the ones already passed on local builds (`docs/Menu-Entry-Implementation.md`, Sections 7 to 7.2); a short checklist page is written when he says |
+| **The Windows package**: the MSI or the portable archive of Technical Architecture PRD 7.3 | **A Windows personal computer Doug has access to.** Doug's decision of 09-21-26: this waits until he has one | No kickoff prompt yet; it is written when the machine is in sight, since what it can assume depends on the machine |
+| **The Windows capture backend**: `snapmock/capture/windows.py`, written and never run on Windows | The same machine | `docs/Windows-Backend-Kickoff-Prompt.md` is written and ready |
+| **macOS**: the bundle of 7.3 and the backend of step 5 | A Mac, which does not exist here | `docs/Windows-macOS-Backends-Kickoff-Prompt.md` covers the backend |
+
+The Windows package and the Windows capture backend are one sitting's work on one machine and should be taken together.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.20 | 09-21-26 00:39 | Claude (Claude Code) | Section 6 added: what is waiting and on what. The Windows package and the Windows capture backend wait on a Windows personal computer Doug has access to (his decision of 09-21-26); macOS waits on a Mac; and v1.3.0's two display checks wait only on ten minutes of Doug's time. |
 | 1.19 | 09-21-26 00:28 | Claude (Claude Code) | **v1.3.0 released 09-21-26**: the menu entry reaches users. Tag `v1.3.0` on `f2e0d0e`; the GitHub release carries both Linux files and the index took the wheel and source distribution on Doug's approval at 00:27, attested to the repository's workflow. Two display checks are owed on the released files. |
 | 1.18 | 09-20-26 23:34 | Claude (Claude Code) | Sections 1 and 4: the menu entry is done, which closes the last finding the end-to-end pass left open. Help > Add to Menu writes the desktop entry, the icon set, and the `.smk` file type, and Remove from Menu takes them away; the display run of 09-20-26 passed and found one thing besides, that a machine with the Flatpak installed lists two menu entries. Nothing of it is in a release yet: the run was made on builds of the commit, since v1.2.0 predates the work. What is left of the list is Windows and macOS. |
 | 1.17 | 09-20-26 14:05 | Claude (Claude Code) | Section 4: the menu entry is next on Doug's choice of 09-20-26, and its kickoff prompt is written. |
