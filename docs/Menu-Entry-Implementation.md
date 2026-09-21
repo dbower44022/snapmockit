@@ -1,6 +1,6 @@
 # The Menu Entry — Implementation Notes
 
-Last Updated: 09-20-26 16:13 · Revision 1.3
+Last Updated: 09-20-26 22:20 · Revision 1.4
 
 Snapmockit put into the desktop's main menu from inside the application, and taken out again, so that a user who downloaded the AppImage or installed from the Python Package Index reaches the application the way every other application is reached. This is end-to-end pass finding 1 (`docs/End-to-End-Pass.md`, Section 5.1) and step 2 of what is left on the release-engineering list (`docs/Release-Engineering.md`, Section 4). The kickoff prompt is `docs/Menu-Entry-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -10,7 +10,7 @@ Snapmockit put into the desktop's main menu from inside the application, and tak
 |---|---|---|---|
 | 1 | The decisions, the module that writes and removes the entry, what the entry says per form, the tests | Done 09-20-26 (Sections 2 and 5); Technical Architecture PRD 1.69 | 8c22e71, this commit |
 | 2 | The Help menu row, the offer on the first start, what the user is told, the tests through the window | Done 09-20-26 (Section 6); General UI PRD 2.53 | this commit |
-| 3 | Doug's run on his display, and what it finds | Checklist written 09-20-26 (Section 7); the run is Doug's | this commit |
+| 3 | Doug's run on his display, and what it finds | Under way 09-20-26 (Sections 7 and 7.1): sections 1 and 2 to step 12 passed; step 13 met the fault fixed in a17fd41 and both files were rebuilt | this commit |
 | Close-out | The README, the release-engineering notes, the product requirements document rows, the next required step | Not started | |
 
 ## 2. Decisions
@@ -147,10 +147,21 @@ Read and run here before anything was written, and two of the kickoff prompt's s
 
 **The next required step** is Doug's run, and then what it finds, fixed with tests.
 
+### 7.1 The run, 09-20-26 21:10 to 22:15, and the rebuild it forced
+
+**Sections 1 and 2 up to step 12 passed.** The wheel installed with pipx, the command answered `Snapmockit 1.2.0`, the Help menu's row read "Add to Menu", the action wrote the entry and reported it, the row then read "Remove from Menu", the entry's `Exec` and the nine icon files were as this document says, the entry reached the main menu, the application started from it, its row read "Remove from Menu" — which is what tells the form apart from the Flatpak — and a `.smk` project opened on a double-click.
+
+**Step 13 showed a second box**, Doug's words: "The copy at /home/doug/Applications/Snapmockit.AppImage (128 MB) is left in place. Delete it as well". **This is not a new finding.** It is exactly the fault Section 6 records as found while writing this checklist and fixed in `a17fd41`: the offer to delete the copy fired under every form, so an installation from the index was offered a file it never wrote. The builds Doug installed were made at 16:08 and the fix was committed at 16:14, six minutes later; the installed `main_window.py` under `~/.local/share/pipx/venvs/snapmockit/` was read here and carries the old handler, which settles it. **The run found the defect independently, on the display, which is what the display run is for; the fix it confirms was already written and tested.**
+
+**Both files were rebuilt from `a17fd41` at 22:18**, to the same paths: `dist/Snapmockit-1.2.0-x86_64.AppImage`, 128,330,232 bytes, SHA-256 beginning **`c3506c18594d1efc`**, and `dist/snapmockit-1.2.0-py3-none-any.whl`, 770,605 bytes, whose `main_window.py` was read out of the archive here to confirm the fix is in it. The AppImage was rebuilt too, since Section 3 of the run reads the other side of the same handler: under the old build, removing while running the copy showed no second box at all, where the fixed one names the file as left in place.
+
+**The checklist page gains Section 2B** (version 2 of the page): uninstall, check the new fingerprint, reinstall, confirm the copy at `~/Applications` survived, add to the menu again, and run the removal again — which must now show one box and nothing about the copy. Steps 14 and 15 of section 2, which Doug had not reached, moved into it, so the run stays linear. Everything ticked above section 2B still stands: nothing but that one handler changed between the two builds.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.4 | 09-20-26 22:20 | Claude (Claude Code) | Doug's run of 09-20-26 21:10 to 22:15 recorded (Section 7.1): sections 1 and 2 to step 12 passed on the display; step 13 showed the copy-deletion box under the index's form, which is the fault already fixed in a17fd41 six minutes after the build he had installed, confirmed by reading the installed module. Both files rebuilt from a17fd41 at 22:18, SHA-256 beginning c3506c18594d1efc, the fix read back out of the wheel; the checklist page gains section 2B for the reinstall and the removal again. |
 | 1.3 | 09-20-26 16:13 | Claude (Claude Code) | Phase 3's checklist written (Section 7) and one Phase 2 correction (Section 6). Doug took option C on 09-20-26 at 16:00: the display run on local builds of this commit now, since neither the released v1.2.0 AppImage nor the published index form carries the action, and the released files checked at the next release. The two builds, the machine's starting state (no entry of ours, two icon files left from finding 1, the Flatpak installed and exporting its own entry), and the discriminator the run uses. The correction: the offer to delete the AppImage's copy is the AppImage's alone, and the running file is named as left in place rather than offered. |
 | 1.2 | 09-20-26 15:49 | Claude (Claude Code) | Phase 2 done (Section 6): the Help menu row with its label read each time the menu opens, the sentence about the desktop's icon rescan that finding 1 earned, the AppImage's copy question and the offer to delete the copy on removal, and the first-start offer remembered in `general/desktopEntryOfferShown`. Built differently from the kickoff in one place: the window, not the entry point, declines the offer on a start that already owes a message, since both use the one toast. 19 tests through the window with the writing module stubbed. General UI PRD 2.53. |
 | 1.1 | 09-20-26 15:14 | Claude (Claude Code) | Phase 1 done (Section 5): `config/desktop_entry.py` writes and removes the entry, the eight-size icon set and the scalable file, and the `.smk` MIME type, all under `$XDG_DATA_HOME`; the `Exec` is an absolute path quoted by the desktop entry specification's rules, a correction made in the building, since `shlex.quote`'s single quotes are not quoting to a desktop entry; the entry and the MIME file moved into `snapmock/resources/desktop/` under silence 8, with both recipes and their tests following them; 24 tests, every one against a temporary home. Technical Architecture PRD 1.69. |
