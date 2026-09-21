@@ -31,7 +31,7 @@ snapmock/              # Main application package
     __main__.py        # Entry point for python -m snapmock
     app.py             # QApplication bootstrap
     main_window.py     # MainWindow — owns all subsystems, menus, shortcuts
-    config/            # Constants, settings (QSettings), keyboard shortcuts
+    config/            # Constants, settings (QSettings), keyboard shortcuts, the installed form, the desktop entry
     core/              # Scene, view, layers, command stack, selection, clipboard, rendering
     items/             # SnapGraphicsItem subclasses (vector, text, raster, the marker items, etc.)
     tools/             # BaseTool subclasses and ToolManager (19 tools)
@@ -40,7 +40,7 @@ snapmock/              # Main application package
     capture/           # Screen capture — CaptureManager, region overlay, X11/Wayland/Windows/macOS backends, hotkeys, tray
     library/           # Library — LibraryManager, LibraryModel, LibraryFileInfo, commands, render
     ui/                # UI panels — toolbar, layer panel, property panel, library panel, tabs, status bar, dialogs, overlays
-    resources/         # Icons, sounds, stamps, themes
+    resources/         # Icons, sounds, stamps, themes, the desktop entry and MIME files
 tests/                 # Test suite (pytest + pytest-qt)
 ```
 
