@@ -20,7 +20,7 @@ Either puts a `snapmockit` command on your path; start the application with it. 
 
 To upgrade, use the tool you installed with: `pipx upgrade snapmockit`, `uv tool upgrade snapmockit`, or `pip install --upgrade snapmockit`. Help > Check for Updates names the right one when a new release is out.
 
-On Linux, Qt needs the same system libraries the AppImage lists below, which every desktop installation has. The package installs no menu entry or icon; start it from a terminal or bind the command to a key. Windows and macOS installations run, but the screen capture backends for both are untested.
+On Linux, Qt needs the same system libraries the AppImage lists below, which every desktop installation has. The package installs no menu entry or icon of its own; **Help > Add to Menu** in the application puts Snapmockit in the desktop's main menu, as described under "Putting it in the menu" below. Windows and macOS installations run, but the screen capture backends for both are untested.
 
 ## Install on Linux
 
@@ -42,7 +42,17 @@ The file needs these libraries from the system, which every desktop installation
 
 ### Putting it in the menu
 
-The file carries its menu entry and icon but does not install them yet. To have Snapmockit in the desktop's main menu, copy the file to a fixed name, take the icons out of it, and write an entry that points at the copy:
+**Help > Add to Menu**, in the application, writes the desktop entry, the icon set, and the `.smk` file type under `~/.local/share`, so Snapmockit starts from the desktop's main menu and a project file opens on a double-click. The same row then reads **Remove from Menu** and takes away exactly what it wrote. Nothing outside your own home directory is touched and nothing asks for a password. It works from the AppImage and from an installation from the Python Package Index; the Flatpak installs its own entry with the package, so its row says so and writes nothing.
+
+The AppImage is asked one question first: whether to copy itself to `~/Applications/Snapmockit.AppImage` and point the entry at the copy, which is the default, or to point the entry at the file where it sits. The copy costs 122 MB and means the entry survives a tidy-up of the Downloads folder; a later release replaces that one file and the entry stays. Removing the entry offers to delete the copy as well, and never deletes the file you are running.
+
+If the entry appears but its icon does not, the running desktop has not rescanned its icon folders yet: a restart of the desktop shell (Ctrl+Alt+Esc on Cinnamon under X11) or a fresh login shows it.
+
+With the Flatpak installed and Snapmockit also added to the menu from another form, some desktops — Cinnamon among them — list two entries, one of them marked as the Flatpak's, although the desktop entry specification makes two files of one application id a single entry. Add to Menu says so when it finds another form's entry.
+
+#### By hand
+
+The same thing without the application, if you would rather do it yourself. Copy the AppImage to a fixed name, take the icons out of it, and write an entry that points at the copy:
 
 ```bash
 mkdir -p ~/Applications ~/.local/share/applications ~/.local/share/icons/hicolor/256x256/apps ~/.local/share/icons/hicolor/scalable/apps
@@ -69,7 +79,7 @@ EOF
 update-desktop-database ~/.local/share/applications
 ```
 
-The entry appears at once; if its icon does not, the running desktop has not rescanned its icon folders yet, and a restart of the desktop shell (Ctrl+Alt+Esc on Cinnamon under X11) or a fresh login shows it. A later release replaces the copy at `~/Applications/Snapmockit.AppImage` and the entry stays. To remove it, delete the entry file, the two icon files, and the copy.
+This writes two of the icon sizes; Add to Menu writes eight and the scalable file, and registers the `.smk` file type as well, which the recipe above does not. To undo it, delete the entry file, the two icon files, and the copy.
 
 ### The Flatpak
 

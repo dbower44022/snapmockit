@@ -1,6 +1,6 @@
 # Release Engineering Notes
 
-Last Updated: 09-20-26 14:05 · Revision 1.17
+Last Updated: 09-20-26 23:34 · Revision 1.18
 
 The work that turns the finished application into a product: its identity, continuous integration, packaging, and the first release. Every feature row of the nine product requirements documents was built or recorded as a departure by 09-14-26 (`docs/Freehand-Remainder-Implementation.md`, Section 8.1, names the last of them); this document holds what follows, in the order Doug set on 09-14-26: the identity, then continuous integration, then packaging, then an end-to-end pass on real work, then the two platform backends when their machines exist.
 
@@ -10,7 +10,7 @@ The work that turns the finished application into a product: its identity, conti
 |---|---|---|---|
 | 1 | The identity: the name, the repository, the licence, the version's one source, the README | Done | faf8e1b, then this commit |
 | 2 | Continuous integration: lint, format, types, the suite on the offscreen platform, and the wheel and sdist, on every push | Done: green on GitHub 09-14-26 | 632b30b, 74bc47d |
-| 3 | Packaging: the Linux AppImage first (Technical Architecture PRD 7.3), then Flatpak, PyPI, the Windows MSI or portable ZIP, and the macOS bundle | Linux AppImage done 09-15-26 (v0.9.0), v1.0.0 on 09-17-26. **Linux Flatpak done 09-18-26** (`docs/Packaging-Flatpak-Implementation.md`): built in continuous integration on every push and published in **v1.1.0** beside the AppImage. No Flathub submission (Doug's decision of 09-18-26, `docs/Packaging-Flathub-Implementation.md`). **The Python Package Index done 09-19-26** (`docs/Packaging-PyPI-Implementation.md`): `pipx install snapmockit` installs the application on any platform with Python 3.12 or later, published from the release workflow through trusted publishing on Doug's approval, first as **v1.2.0**. Remaining, in order: the Windows MSI or portable ZIP, the macOS bundle; and the menu entry the AppImage does not install (end-to-end pass finding 1) | 860f370 to 080e2f3 |
+| 3 | Packaging: the Linux AppImage first (Technical Architecture PRD 7.3), then Flatpak, PyPI, the Windows MSI or portable ZIP, and the macOS bundle | Linux AppImage done 09-15-26 (v0.9.0), v1.0.0 on 09-17-26. **Linux Flatpak done 09-18-26** (`docs/Packaging-Flatpak-Implementation.md`): built in continuous integration on every push and published in **v1.1.0** beside the AppImage. No Flathub submission (Doug's decision of 09-18-26, `docs/Packaging-Flathub-Implementation.md`). **The Python Package Index done 09-19-26** (`docs/Packaging-PyPI-Implementation.md`): `pipx install snapmockit` installs the application on any platform with Python 3.12 or later, published from the release workflow through trusted publishing on Doug's approval, first as **v1.2.0**. **The menu entry done 09-20-26** (`docs/Menu-Entry-Implementation.md`): Help > Add to Menu writes the desktop entry, the icon set, and the `.smk` file type from inside the application, and Remove from Menu takes them away, which closes end-to-end pass finding 1 for the AppImage and the index's form. Remaining, in order: the Windows MSI or portable ZIP, the macOS bundle | 860f370 to 080e2f3 |
 | 4 | An end-to-end pass on real work, on the released AppImage `Snapmockit-0.9.0-x86_64.AppImage`, then the 1.0.0 release | Done 09-17-26: two sittings, one on real work, ended by Doug's call; sixteen findings, all closed but one follow-up (the menu install); the Wayland capture passed; **v1.0.0 released 09-17-26** and started from the main menu on Doug's display (`docs/End-to-End-Pass.md`, Section 9) | def7507 to this commit (tag v1.0.0 on f53c4e5) |
 | 5 | The Windows and macOS capture backends, when their machines exist | Waiting: both are stubs; no Windows or macOS machine is available; `docs/Windows-Backend-Kickoff-Prompt.md` is ready for the Windows one | |
 
@@ -32,10 +32,11 @@ The product has its first release it stands behind: v1.0.0, the Linux AppImage, 
 
 **The Python Package Index is done (09-19-26).** **v1.2.0**, published 09-19-26, is the first release there and carries the AppImage and the Flatpak bundle as well. The work took three phases and a close-out, and five decisions; its notes are `docs/Packaging-PyPI-Implementation.md`. The rehearsal on the test index found one defect, which is fixed: Check for Updates could not read a running pre-release. Three display checks are owed there.
 
+**The menu entry is done (09-20-26).** End-to-end pass finding 1, the last one left open by that pass, is closed for the two forms it applied to. The work took three phases and a close-out and four decisions; its notes are `docs/Menu-Entry-Implementation.md`. The display run found one thing the tests could not: with a Flatpak installed, Cinnamon lists its exported entry beside the user's own file of the same application id, so the desktop shows two Snapmockit entries, and the action now says so when it finds another form's entry. **Nothing of this is in a release yet**: the run was made on builds of the commit, since the published v1.2.0 predates the work. The released AppImage and the released installation from the index are checked at the next release.
+
 What is left of this list, in order:
 
-1. **The menu entry**, next, end-to-end pass finding 1: an "Add to Menu" action or a first-start offer that installs the desktop entry and icons the AppImage carries. The Flatpak installs its own, and the wheel installs none, so this is the AppImage's gap and the index form's. Its kickoff prompt is `docs/Menu-Entry-Kickoff-Prompt.md` (revision 1.0), written 09-20-26 on Doug's choice: three phases, four decisions.
-2. **Windows and macOS**: the packages of step 3 and the capture backends of step 5, each waiting for its machine.
+1. **Windows and macOS**: the packages of step 3 and the capture backends of step 5, each waiting for its machine. `docs/Windows-Backend-Kickoff-Prompt.md` is ready for the Windows backend; the Windows package has no kickoff prompt yet.
 
 ## 5. The release process
 
@@ -55,6 +56,7 @@ Every release is built and published from a clean runner; nothing is built here 
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.18 | 09-20-26 23:34 | Claude (Claude Code) | Sections 1 and 4: the menu entry is done, which closes the last finding the end-to-end pass left open. Help > Add to Menu writes the desktop entry, the icon set, and the `.smk` file type, and Remove from Menu takes them away; the display run of 09-20-26 passed and found one thing besides, that a machine with the Flatpak installed lists two menu entries. Nothing of it is in a release yet: the run was made on builds of the commit, since v1.2.0 predates the work. What is left of the list is Windows and macOS. |
 | 1.17 | 09-20-26 14:05 | Claude (Claude Code) | Section 4: the menu entry is next on Doug's choice of 09-20-26, and its kickoff prompt is written. |
 | 1.16 | 09-20-26 13:31 | Claude (Claude Code) | Step 3's Python Package Index done: v1.2.0 published there 09-19-26 through trusted publishing on Doug's approval. Section 4 rewritten, with the menu entry next and Windows and macOS after it; new Section 5, the release process, with the upload to the index as its step 8. |
 | 1.15 | 09-18-26 10:22 | Claude (Claude Code) | No Flathub submission, Doug's decision of 09-18-26 against Flathub's Generative AI and exception policies; step 3 and Section 4 bring the Python Package Index next, its kickoff prompt written. The header's revision, left at 1.13 by the 1.14 row, is brought into step. |

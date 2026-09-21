@@ -1,6 +1,6 @@
 # The Menu Entry — Implementation Notes
 
-Last Updated: 09-20-26 23:14 · Revision 1.5
+Last Updated: 09-20-26 23:35 · Revision 1.6
 
 Snapmockit put into the desktop's main menu from inside the application, and taken out again, so that a user who downloaded the AppImage or installed from the Python Package Index reaches the application the way every other application is reached. This is end-to-end pass finding 1 (`docs/End-to-End-Pass.md`, Section 5.1) and step 2 of what is left on the release-engineering list (`docs/Release-Engineering.md`, Section 4). The kickoff prompt is `docs/Menu-Entry-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -8,10 +8,10 @@ Snapmockit put into the desktop's main menu from inside the application, and tak
 
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
-| 1 | The decisions, the module that writes and removes the entry, what the entry says per form, the tests | Done 09-20-26 (Sections 2 and 5); Technical Architecture PRD 1.69 | 8c22e71, this commit |
-| 2 | The Help menu row, the offer on the first start, what the user is told, the tests through the window | Done 09-20-26 (Section 6); General UI PRD 2.53 | this commit |
-| 3 | Doug's run on his display, and what it finds | Under way 09-20-26 (Sections 7 and 7.1): sections 1 and 2 to step 12 passed; step 13 met the fault fixed in a17fd41 and both files were rebuilt | this commit |
-| Close-out | The README, the release-engineering notes, the product requirements document rows, the next required step | Not started | |
+| 1 | The decisions, the module that writes and removes the entry, what the entry says per form, the tests | Done 09-20-26 (Sections 2 and 5); Technical Architecture PRD 1.69 | 8c22e71, 49d7087 |
+| 2 | The Help menu row, the offer on the first start, what the user is told, the tests through the window | Done 09-20-26 (Section 6); General UI PRD 2.53 | 4eb25b1, a17fd41 |
+| 3 | Doug's run on his display, and what it finds | Done 09-20-26 (Sections 7 to 7.2): every check passed; one finding, the two menu entries | 1aa54c1, 195a1a1 |
+| Close-out | The README, the release-engineering notes, the product requirements document rows, the next required step | Done 09-20-26 (Section 8); Technical Architecture PRD 1.70, Release-Engineering 1.18 | this commit |
 
 ## 2. Decisions
 
@@ -163,10 +163,37 @@ Read and run here before anything was written, and two of the kickoff prompt's s
 
 **Also found:** starting the application from the desktop's menu after a removal starts the Flatpak, whose 1.1.0 build has no such row, which read as a missing feature until the running processes were listed. The checklist's start steps now say to use the terminal and name the Flatpak as what the menu holds.
 
+### 7.2 The run finished, 09-20-26 23:27 to 23:32
+
+The last nine steps were run from a page of their own (https://claude.ai/artifact/TC3o3z1xn3B5i1CgCFHZer), written because the first checklist had grown a history the reader had to scroll past. **Every one passed.**
+
+- **The Flatpak's row explains itself.** A Flatpak built from this commit was installed in place of the released 1.1.0, since 1.1.0 predates the work and has no row at all. Its Help menu's row reads "Add to Menu" and, used, says the installation is already in the menu because its entry is part of the package. No control is disabled and none is absent (General UI PRD 1.3).
+- **The Flatpak writes nothing of ours**: no entry under `~/.local/share/applications`.
+- **The notice about two entries reads on the display**, the sentence General UI PRD 2.54 records, at the end of what Add to Menu reports.
+- **The menu shows two Snapmockit entries while ours is installed and one after the removal**, which is what the notice warns of.
+- **The machine is back as it was**: no entry, no icon, no installation from the index, and the released 1.1.0 Flatpak reinstalled. The two icon files that finding 1 left behind in 09-15-26 are gone with it, which is the right end state.
+
+**Every display check this work owed is now made**, except the two that belong to the next release: the action from the *released* AppImage and from a *released* installation from the index. They are named in `docs/Release-Engineering.md` Section 4.
+
+## 8. Close-out (09-20-26)
+
+**The README.** "Putting it in the menu" is now the action: what Add to Menu writes and where, that Remove from Menu takes away exactly that, the AppImage's copy question and what it costs, the icon-rescan sentence, and the two-entry behaviour with the Flatpak. The nine-line shell recipe is kept below it under "By hand", for anyone who would rather do it themselves, with a line saying what it does not do — six of the icon sizes and the file type. The Python Package Index section's "start it from a terminal or bind the command to a key" now names the action instead.
+
+**The product requirements documents.** Technical Architecture PRD 1.69 (Section 10: `config/desktop_entry.py` and `resources/desktop/`) and 1.70 (7.3, the work and its display run). General UI PRD 2.53 (3.8, the Help menu row and the first-start offer) and 2.54 (3.8, the notice about another form's entry). No Section 10 change since 1.69.
+
+**`docs/Release-Engineering.md`** revision 1.18: Sections 1 and 4 carry the work, and the list of what is left is now Windows and macOS alone.
+
+**What a user of each form does now.** From the **AppImage**: run the file, Help > Add to Menu, answer whether to copy it to `~/Applications` (the default), and Snapmockit is in the menu with its icon and opens `.smk` projects on a double-click. From an **installation from the Python Package Index** (`pipx install snapmockit`): start it, Help > Add to Menu, and the same, with the entry naming the installed command's full path. From the **Flatpak**: nothing, its entry comes with the package. From a **checkout**: the same row, which writes an entry naming the interpreter, for a developer who wants one. Removing is the same row in every case.
+
+**What of end-to-end pass finding 1 remains: nothing of the finding, one thing of its delivery.** The finding asked for an action that installs the entry and icons the AppImage carries and removes them on request; that exists and has been run on the display. What remains is that no *released* file carries it yet. The next release puts it in front of users, and that release is where the released AppImage and the released index form get their display check.
+
+**The next required step** is the Windows package, and with it the Windows capture backend, for which `docs/Windows-Backend-Kickoff-Prompt.md` is ready; the package itself has no kickoff prompt yet. **Said plainly: what is left of this product is Windows and macOS.** Neither has a package, neither capture backend has ever run on its own platform, and neither machine exists here. Everything else — the nine product requirements documents, the three Linux forms, continuous integration, the end-to-end pass, and now the menu entry — is done.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.6 | 09-20-26 23:35 | Claude (Claude Code) | Phase 3 finished and the work closed out (Sections 7.2 and 8). Every display check passed, the Flatpak's row and the two-entry notice among them, on a Flatpak built from this commit since the released 1.1.0 predates the work; the machine is back as it was. The README's menu section is the action, with the shell recipe kept as the manual route; the release-engineering notes and Technical Architecture PRD 1.70 follow. What remains of finding 1 is only that no released file carries it yet. The next required step is the Windows package. |
 | 1.5 | 09-20-26 23:14 | Claude (Claude Code) | The run's first finding (Section 7.1): a machine with the Flatpak installed shows two menu entries, since Cinnamon lists the Flatpak's export beside the user's own file of the same identifier. Option A taken: the action writes the entry and names what it found, with the README's one-entry claim corrected and four tests. General UI PRD 2.54. Also recorded: the session wrongly asked Doug to reconstruct state it could read itself, and the checklist's start steps now name the terminal, since the menu starts the Flatpak after a removal. |
 | 1.4 | 09-20-26 22:20 | Claude (Claude Code) | Doug's run of 09-20-26 21:10 to 22:15 recorded (Section 7.1): sections 1 and 2 to step 12 passed on the display; step 13 showed the copy-deletion box under the index's form, which is the fault already fixed in a17fd41 six minutes after the build he had installed, confirmed by reading the installed module. Both files rebuilt from a17fd41 at 22:18, SHA-256 beginning c3506c18594d1efc, the fix read back out of the wheel; the checklist page gains section 2B for the reinstall and the removal again. |
 | 1.3 | 09-20-26 16:13 | Claude (Claude Code) | Phase 3's checklist written (Section 7) and one Phase 2 correction (Section 6). Doug took option C on 09-20-26 at 16:00: the display run on local builds of this commit now, since neither the released v1.2.0 AppImage nor the published index form carries the action, and the released files checked at the next release. The two builds, the machine's starting state (no entry of ours, two icon files left from finding 1, the Flatpak installed and exporting its own entry), and the discriminator the run uses. The correction: the offer to delete the AppImage's copy is the AppImage's alone, and the running file is named as left in place rather than offered. |
