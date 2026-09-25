@@ -1,6 +1,6 @@
 # The Border Tool — Implementation Notes
 
-Last Updated: 09-25-26 01:07 · Revision 1.2
+Last Updated: 09-25-26 10:34 · Revision 1.3
 
 A border around the image, built as the twenty-second tool in the palette, and Snagit's own
 Border effect read back as an editable border. The requirement is Section 10 of
@@ -216,7 +216,9 @@ exactly one of them — the reference file — comes back with a border.
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
-| 1.2 | 09-25-26 01:07 | Claude (Claude Code) | The reference-file test skips when the file is absent: `*.snagx` is git-ignored, so the release run of 1.4.0 failed on the runner where it asserted the file existed. |
+| 1.3 | 09-25-26 10:34 | Claude (Claude Code) | Released in v1.4.0 on 09-25-26 (`docs/Release-Engineering.md` 1.21); the whole-document copy of General UI PRD 2.55 to 2.57 covers the border, as the export does (Raster PRD 1.11). |
+| 1.2 | 09-25-26 10:34 | 8 | Added | **Added** the release: v1.4.0 carries the tool. |
+| 09-25-26 01:07 | Claude (Claude Code) | The reference-file test skips when the file is absent: `*.snagx` is git-ignored, so the release run of 1.4.0 failed on the runner where it asserted the file existed. |
 | 1.1 | 09-21-26 16:24 | Claude (Claude Code) | Section 5 added: Doug's display run of 09-21-26, the crash on activating the tool a second time, its cause, the fix, and the test that reproduces it. Later sections renumbered; test count 31 to 34. |
 | 1.0 | 09-21-26 16:06 | Claude (Claude Code) | First issue: the decisions, the one departure, what was built, the silences, the tests. |
 
