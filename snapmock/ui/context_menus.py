@@ -11,17 +11,23 @@ from typing import TYPE_CHECKING
 from PyQt6.QtWidgets import QMenu
 
 if TYPE_CHECKING:
+    from PyQt6.QtCore import QPointF
+
     from snapmock.core.layer_manager import LayerManager
     from snapmock.main_window import MainWindow
 
 
-def build_canvas_context_menu(parent: MainWindow) -> QMenu:
-    """Build the context menu shown when right-clicking empty canvas (PRD §10.1)."""
+def build_canvas_context_menu(parent: MainWindow, scene_pos: QPointF | None = None) -> QMenu:
+    """Build the context menu shown when right-clicking empty canvas (PRD §10.1).
+
+    *scene_pos* is the right-click point: Paste puts the content there (Raster PRD 9.3.1),
+    since by the time the row is chosen the pointer is over the menu, not the canvas.
+    """
     menu = QMenu(parent)
 
     paste_action = menu.addAction("Paste")
     if paste_action is not None:
-        paste_action.triggered.connect(parent._edit_paste)  # noqa: SLF001
+        paste_action.triggered.connect(lambda: parent._edit_paste(at=scene_pos))  # noqa: SLF001
 
     paste_in_place_action = menu.addAction("Paste in Place")
     if paste_in_place_action is not None:
@@ -60,8 +66,11 @@ def build_canvas_context_menu(parent: MainWindow) -> QMenu:
     return menu
 
 
-def build_item_context_menu(parent: MainWindow) -> QMenu:
-    """Build the context menu shown when right-clicking a selected item (PRD §10.2)."""
+def build_item_context_menu(parent: MainWindow, scene_pos: QPointF | None = None) -> QMenu:
+    """Build the context menu shown when right-clicking a selected item (PRD §10.2).
+
+    *scene_pos* is the right-click point, where Paste puts the content.
+    """
     menu = QMenu(parent)
 
     # --- Clipboard actions ---
@@ -75,7 +84,7 @@ def build_item_context_menu(parent: MainWindow) -> QMenu:
 
     paste_action = menu.addAction("Paste")
     if paste_action is not None:
-        paste_action.triggered.connect(parent._edit_paste)  # noqa: SLF001
+        paste_action.triggered.connect(lambda: parent._edit_paste(at=scene_pos))  # noqa: SLF001
 
     duplicate_action = menu.addAction("Duplicate")
     if duplicate_action is not None:

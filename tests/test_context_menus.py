@@ -419,7 +419,7 @@ class TestContextMenuThroughView:
         window.tool_manager.activate("select")
         captured: list[object] = []
 
-        def fake_canvas_menu(parent: object) -> QMenu:
+        def fake_canvas_menu(parent: object, *_args: object) -> QMenu:
             captured.append(parent)
             return QMenu()
 

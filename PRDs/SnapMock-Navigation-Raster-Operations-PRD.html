@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Navigation &amp; Raster Operations</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.10</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.12</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Select / Move · Pan · Zoom · Raster selection · Crop · Resize canvas · Border · Copy, cut, paste, duplicate</dd>
-    <dt>Document version</dt><dd>1.11</dd>
-    <dt>Last Updated</dt>    <dd>09-25-26 00:33</dd>
+    <dt>Document version</dt><dd>1.12</dd>
+    <dt>Last Updated</dt>    <dd>09-25-26 11:03</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.12</td>
+        <td class="nowrap">09-25-26 11:03</td>
+        <td>Doug Bower</td>
+        <td><strong>5.5.3, 9.3.1, 9.3.3, 9.3.4</strong> built as written, by Doug's request of 09-25-26: Paste puts the content where the pointer is. Until now items landed ten pixels from the original, a raster at its source rectangle, and an image or text at the viewport centre. The cursor position is the pointer's last position over the canvas viewport; the top-left corner of the pasted content (the joint bounding box of several items, their arrangement kept) lands there. Two cases the sections leave open, decided here: when the pointer is not over the canvas (Edit &gt; Paste, the Welcome card, a shortcut pressed with the pointer elsewhere) the top-left corner goes to the viewport centre; a Paste chosen from a canvas or item context menu lands at the right-click point, since by then the pointer is over the menu. <strong>9.4</strong>, Paste in Place, unchanged for items and for a raster with a source rectangle; content with no original position lands where Paste would put it. Pasted items are now selected under the Select tool, as 9.3.1 says. The AddItemCommand per item stands in for the MacroCommand of 9.3.1, as before.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.11</td>
         <td class="nowrap">09-24-26 23:29</td>
@@ -1686,6 +1693,10 @@ selection is kept (1.11).</p>
   <li>Select all newly pasted items. Switch to Select tool if not already active.</li>
   <li>Each subsequent Ctrl+V paste places items at the current cursor position. No automatic
   cascade offset is applied since the user controls placement via the cursor.</li>
+  <li>The cursor position is the pointer's last position over the canvas viewport. When the
+  pointer is not over the canvas (Edit &gt; Paste, the Welcome card, a shortcut pressed with
+  the pointer elsewhere) the top-left corner goes to the viewport centre. A Paste chosen from
+  a canvas or item context menu lands at the right-click point (1.12).</li>
 </ol>
 
 <p><strong>9.3.2 Internal Clipboard Has Raster Data:</strong></p>

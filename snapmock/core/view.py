@@ -109,6 +109,9 @@ class SnapView(QGraphicsView):
         # Crosshairs (General UI PRD 3.3): full-width lines through the cursor position
         self._crosshairs_visible: bool = False
         self._crosshair_pos: QPointF | None = None
+        # Where the pointer last was over the viewport, in scene coordinates, or None
+        # while it is elsewhere: the anchor for Paste (Raster PRD 9.3.1)
+        self._pointer_scene_pos: QPointF | None = None
 
         # The guide lines from a shape being drawn to the rulers (Basic Shape PRD 2.4):
         # the shape's own edges in scene coordinates while a drag lasts, else None
@@ -236,6 +239,13 @@ class SnapView(QGraphicsView):
     def crosshair_pos(self) -> QPointF | None:
         """Scene position of the crosshairs, or None while the cursor is off the viewport."""
         return QPointF(self._crosshair_pos) if self._crosshair_pos is not None else None
+
+    @property
+    def pointer_scene_pos(self) -> QPointF | None:
+        """Scene position of the pointer, or None while it is off the viewport."""
+        if self._pointer_scene_pos is None:
+            return None
+        return QPointF(self._pointer_scene_pos)
 
     def _move_crosshairs(self, scene_pos: QPointF | None) -> None:
         """Repaint the strips of the old and new crosshair lines only."""
@@ -1131,6 +1141,7 @@ class SnapView(QGraphicsView):
     def leaveEvent(self, event: object) -> None:  # noqa: N802
         """Stop auto-scroll and hide the crosshairs when the mouse leaves the viewport."""
         self._stop_auto_scroll()
+        self._pointer_scene_pos = None
         if self._crosshair_pos is not None:
             self._move_crosshairs(None)
         super().leaveEvent(event)  # type: ignore[arg-type]
@@ -1206,6 +1217,7 @@ class SnapView(QGraphicsView):
             return
         # Emit cursor position for status bar
         scene_pos = self.mapToScene(event.position().toPoint())
+        self._pointer_scene_pos = scene_pos
         self.cursor_moved.emit(scene_pos.x(), scene_pos.y())
         if self._crosshairs_visible:
             self._move_crosshairs(scene_pos)

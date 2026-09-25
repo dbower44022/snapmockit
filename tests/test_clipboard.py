@@ -1,7 +1,7 @@
 """Tests for ClipboardManager."""
 
 import pytest
-from PyQt6.QtCore import QRectF
+from PyQt6.QtCore import QPointF, QRectF
 from PyQt6.QtWidgets import QApplication
 
 from snapmock.commands.add_item import AddItemCommand
@@ -100,7 +100,8 @@ def test_pasted_system_image_becomes_the_background_of_an_empty_project(
     regions = [i for i in scene.annotation_items() if isinstance(i, RasterRegionItem)]
     assert len(regions) == 1 and regions[0].layer_id == background.layer_id
     assert (scene.canvas_size.width(), scene.canvas_size.height()) == (30, 20)
-    # A second paste is a region on the active layer at the viewport centre
+    # A second paste is a region on the active layer; with the pointer off the canvas its
+    # top-left corner is at the viewport centre (Raster PRD 1.12)
     main_window._edit_paste()  # noqa: SLF001
     regions = [i for i in scene.annotation_items() if isinstance(i, RasterRegionItem)]
     assert len(regions) == 2 and lm.count == 2
@@ -108,7 +109,7 @@ def test_pasted_system_image_becomes_the_background_of_an_empty_project(
     viewport = main_window.view.viewport()
     assert viewport is not None
     centre = main_window.view.mapToScene(viewport.rect().center())
-    assert second.pos().x() == centre.x() - 15 and second.pos().y() == centre.y() - 10
+    assert second.pos() == centre
     scene.command_stack.undo()
     scene.command_stack.undo()
     assert lm.count == 1 and lm.background_layer is None
@@ -228,3 +229,175 @@ def test_whole_canvas_copy_and_select_all_include_the_border(main_window: MainWi
     assert isinstance(tool, RasterSelectTool) and tool.selection_rect == scene.output_rect
     main_window._edit_copy()  # noqa: SLF001
     assert _clipboard_image_size() == (40, 30)
+
+
+# --- Paste at the pointer (Raster PRD 5.5.3, 9.3.1, 9.3.3, 9.3.4; 1.12) ---
+
+
+def _point_at(main_window: MainWindow, x: int, y: int) -> QPointF:
+    """Move the pointer over the viewport to (*x*, *y*) and return the scene point there.
+
+    The window is shown first: a pointer position only counts on a visible viewport.
+    """
+    from PyQt6.QtCore import QPoint, QPointF, Qt
+    from PyQt6.QtGui import QMouseEvent
+
+    main_window.show()
+    view = main_window.view
+    event = QMouseEvent(
+        QMouseEvent.Type.MouseMove,
+        QPointF(x, y),
+        view.mapToGlobal(QPoint(x, y)).toPointF(),
+        Qt.MouseButton.NoButton,
+        Qt.MouseButton.NoButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
+    view.mouseMoveEvent(event)
+    pos = view.pointer_scene_pos
+    assert pos is not None
+    return pos
+
+
+def _two_rectangles(main_window: MainWindow) -> tuple[RectangleItem, RectangleItem]:
+    scene = main_window.scene
+    layer = scene.layer_manager.active_layer
+    assert layer is not None
+    a = RectangleItem(QRectF(0, 0, 50, 40))
+    b = RectangleItem(QRectF(0, 0, 30, 30))
+    a.setPos(100, 100)
+    b.setPos(220, 160)
+    for item in (a, b):
+        scene.command_stack.push(AddItemCommand(scene, item, layer.layer_id))
+    return a, b
+
+
+def _pasted(main_window: MainWindow, originals: tuple[RectangleItem, ...]) -> list[RectangleItem]:
+    return [
+        i
+        for i in main_window.scene.annotation_items()
+        if isinstance(i, RectangleItem) and i not in originals
+    ]
+
+
+def _joint_bounds(items: list[RectangleItem]) -> QRectF:
+    bounds = items[0].sceneBoundingRect()
+    for item in items[1:]:
+        bounds = bounds.united(item.sceneBoundingRect())
+    return bounds
+
+
+def test_paste_puts_the_items_bounding_box_at_the_pointer(main_window: MainWindow) -> None:
+    """9.3.1: the top-left of the joint bounding box lands where the pointer is, the
+    arrangement kept, the copies selected under the Select tool."""
+    a, b = _two_rectangles(main_window)
+    main_window.selection_manager.select_items([a, b])
+    main_window._edit_copy()  # noqa: SLF001
+    main_window.tool_manager.activate("rectangle")
+    anchor = _point_at(main_window, 40, 30)
+    main_window._edit_paste()  # noqa: SLF001
+    pasted = _pasted(main_window, (a, b))
+    assert len(pasted) == 2
+    bounds = _joint_bounds(pasted)
+    assert bounds.topLeft() == anchor
+    first, second = sorted(pasted, key=lambda i: i.pos().x())
+    assert second.pos() - first.pos() == b.pos() - a.pos()
+    assert set(main_window.selection_manager.items) == set(pasted)
+    assert main_window.tool_manager.active_tool_id == "select"
+
+
+def test_paste_twice_lands_at_the_pointer_each_time(main_window: MainWindow) -> None:
+    """9.3.1: no cascade offset; the pointer decides."""
+    a, b = _two_rectangles(main_window)
+    main_window.selection_manager.select_items([a])
+    main_window._edit_copy()  # noqa: SLF001
+    first = _point_at(main_window, 10, 10)
+    main_window._edit_paste()  # noqa: SLF001
+    second = _point_at(main_window, 300, 200)
+    main_window._edit_paste()  # noqa: SLF001
+    pasted = _pasted(main_window, (a, b))
+    assert len(pasted) == 2
+    assert sorted(i.sceneBoundingRect().topLeft().x() for i in pasted) == sorted(
+        (first.x(), second.x())
+    )
+
+
+def test_paste_from_a_context_menu_lands_at_the_right_click_point(
+    main_window: MainWindow,
+) -> None:
+    """The row is chosen with the pointer over the menu, so the menu passes the point."""
+    from PyQt6.QtCore import QPointF
+
+    a, b = _two_rectangles(main_window)
+    main_window.selection_manager.select_items([b])
+    main_window._edit_copy()  # noqa: SLF001
+    _point_at(main_window, 5, 5)
+    main_window._edit_paste(at=QPointF(400, 300))  # noqa: SLF001
+    pasted = _pasted(main_window, (a, b))
+    assert len(pasted) == 1
+    assert pasted[0].sceneBoundingRect().topLeft() == QPointF(400, 300)
+
+
+def test_paste_with_the_pointer_off_the_canvas_lands_at_the_viewport_centre(
+    main_window: MainWindow,
+) -> None:
+    """Edit > Paste, the Welcome card, or a shortcut with the pointer elsewhere."""
+    a, b = _two_rectangles(main_window)
+    main_window.selection_manager.select_items([a])
+    main_window._edit_copy()  # noqa: SLF001
+    _point_at(main_window, 5, 5)
+    main_window.view.leaveEvent(None)
+    assert main_window.view.pointer_scene_pos is None
+    main_window._edit_paste()  # noqa: SLF001
+    pasted = _pasted(main_window, (a, b))
+    viewport = main_window.view.viewport()
+    assert viewport is not None
+    centre = main_window.view.mapToScene(viewport.rect().center())
+    assert len(pasted) == 1
+    assert pasted[0].sceneBoundingRect().topLeft() == centre
+
+
+def test_paste_in_place_keeps_the_original_positions(main_window: MainWindow) -> None:
+    a, b = _two_rectangles(main_window)
+    main_window.selection_manager.select_items([a, b])
+    main_window._edit_copy()  # noqa: SLF001
+    _point_at(main_window, 5, 5)
+    main_window._edit_paste_in_place()  # noqa: SLF001
+    pasted = _pasted(main_window, (a, b))
+    assert sorted(i.pos().x() for i in pasted) == [100, 220]
+    assert sorted(i.pos().y() for i in pasted) == [100, 160]
+    assert set(main_window.selection_manager.items) == set(pasted)
+
+
+def test_raster_paste_lands_at_the_pointer_and_in_place_at_its_source(
+    main_window: MainWindow,
+) -> None:
+    """5.5.3: a raster copy at the pointer; Paste in Place at the source rectangle."""
+    from PyQt6.QtGui import QColor, QImage
+
+    from snapmock.items.raster_region_item import RasterRegionItem
+
+    image = QImage(20, 10, QImage.Format.Format_ARGB32)
+    image.fill(QColor("red"))
+    main_window.clipboard.copy_raster_region(image, QRectF(50, 60, 20, 10))
+    anchor = _point_at(main_window, 70, 80)
+    main_window._edit_paste()  # noqa: SLF001
+    main_window._edit_paste_in_place()  # noqa: SLF001
+    regions = [i for i in main_window.scene.annotation_items() if isinstance(i, RasterRegionItem)]
+    assert sorted((r.pos().x(), r.pos().y()) for r in regions) == sorted(
+        [(anchor.x(), anchor.y()), (50.0, 60.0)]
+    )
+
+
+def test_system_text_pastes_at_the_pointer(main_window: MainWindow) -> None:
+    """9.3.4: the text item's top-left corner at the pointer."""
+    from snapmock.items.text_item import TextItem
+
+    clipboard = QApplication.clipboard()
+    assert clipboard is not None
+    main_window.clipboard.clear()
+    clipboard.setText("hello")
+    anchor = _point_at(main_window, 120, 90)
+    main_window._edit_paste()  # noqa: SLF001
+    texts = [i for i in main_window.scene.annotation_items() if isinstance(i, TextItem)]
+    assert len(texts) == 1 and texts[0].pos() == anchor
+    clipboard.clear()

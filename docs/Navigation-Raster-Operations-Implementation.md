@@ -1,5 +1,7 @@
 # Navigation & Raster Operations — Implementation Notes
 
+Last Updated: 09-25-26 11:03 · Revision 1.1
+
 This document describes every change made to implement the Navigation & Raster Operations PRD. It covers what was changed, why, and how the pieces fit together.
 
 ---
@@ -218,14 +220,24 @@ Copying raster data clears internal item data to prevent ambiguity in paste prio
 
 `_edit_paste()` follows a 4-tier priority:
 
-1. **Internal vector items** — `paste_items()` returns serialized data → deserialize and add with 10px offset.
-2. **Internal raster data** — `paste_raster()` returns QImage → create `RasterRegionItem` at source position.
-3. **System clipboard image** — `paste_image_from_system()` → create `RasterRegionItem` at viewport center.
-4. **System clipboard text** — `QApplication.clipboard().text()` → create `TextItem` at viewport center.
+1. **Internal vector items** — `paste_items()` returns serialized data → deserialize and add.
+2. **Internal raster data** — `paste_raster()` returns QImage → create `RasterRegionItem`.
+3. **System clipboard image** — `paste_image_from_system()` → `place_image` (the background of an empty project, else a `RasterRegionItem`).
+4. **System clipboard text** — `QApplication.clipboard().text()` → create `TextItem`.
 
 Each tier returns early if it has data, so the first match wins. After pasting, the tool switches to Select and the new items are selected.
 
-`_edit_paste_in_place()` follows the same logic but without the 10px offset for items.
+### Where a paste lands (PRD 5.5.3, 9.3.1, 9.3.3, 9.3.4; 1.12, 09-25-26)
+
+Every tier puts the top-left corner of the content, for several items the top-left of their joint bounding box with the arrangement kept, at one anchor from `_paste_anchor(at)`:
+
+1. `at`, an explicit scene point. The canvas and item context menus pass the right-click point (`build_canvas_context_menu(parent, scene_pos)`, `build_item_context_menu(parent, scene_pos)`), since by the time a row is chosen the pointer is over the menu.
+2. Else `SnapView.pointer_scene_pos`, the pointer's last position over the viewport. The view records it in `mouseMoveEvent` and clears it in `leaveEvent`; it counts only while the viewport is visible, so a paste from the Welcome card never uses a stale point.
+3. Else the viewport centre: Edit > Paste, or a shortcut pressed with the pointer off the canvas.
+
+Before 1.12, items landed ten pixels from the original, a raster at its source rectangle, and an image or text centred on the viewport.
+
+`_edit_paste_in_place()` keeps items at their original positions and a raster at its source rectangle; content with no original position (a raster without a source rectangle, a system image) lands at the same anchor as Paste.
 
 ---
 
@@ -321,3 +333,18 @@ Four new test files with 39 tests covering the implementation:
 - RasterCutCommand via command stack: full push/undo/redo cycle.
 - BaseTool contract: default status_hint is empty, cancel is safe to call.
 - SelectionManager: toggle deselects, select_items replaces.
+
+---
+
+## Revision control
+
+| Rev | Date (MM-DD-YY HH:MM) | Author | Change |
+|---|---|---|---|
+| 1.1 | 09-25-26 11:03 | Claude (Claude Code) | Section 7: paste lands at the pointer (PRD 1.12), the anchor rule, and the context menus' right-click point; the revision block added. |
+| 1.0 | — | Claude (Claude Code) | First issue, written at the close of the Navigation & Raster Operations build. |
+
+## Change log
+
+| Date | Section | Type | Detail |
+|---|---|---|---|
+| 09-25-26 11:03 | 7 | Changed | **Changed** the paste routing text: every tier lands at one anchor, the pointer over the viewport, else the viewport centre, or a context menu's right-click point. |

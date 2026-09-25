@@ -1574,9 +1574,9 @@ class SelectTool(BaseTool):
         from snapmock.ui.context_menus import build_canvas_context_menu, build_item_context_menu
 
         if item is not None:
-            menu = build_item_context_menu(parent)  # type: ignore[arg-type]
+            menu = build_item_context_menu(parent, scene_pos)  # type: ignore[arg-type]
         else:
-            menu = build_canvas_context_menu(parent)  # type: ignore[arg-type]
+            menu = build_canvas_context_menu(parent, scene_pos)  # type: ignore[arg-type]
 
         menu.exec(event.globalPos())
         return True

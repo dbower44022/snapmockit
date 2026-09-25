@@ -8,7 +8,7 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import QPoint, QRectF, QSize, Qt, QTimer, QUrl
+from PyQt6.QtCore import QPoint, QPointF, QRectF, QSize, Qt, QTimer, QUrl
 from PyQt6.QtGui import (
     QAction,
     QActionGroup,
@@ -2934,37 +2934,69 @@ class MainWindow(QMainWindow):
             self._scene.command_stack.push(cmd)
         tool.cancel()
 
-    def _edit_paste(self) -> None:
+    def _edit_paste(self, at: QPointF | None = None) -> None:
+        """Paste at the pointer (Raster PRD 5.5.3, 9.3.1, 9.3.3, 9.3.4).
+
+        *at* is an explicit scene point, the right-click point of a context menu.
+        Otherwise the content goes where the pointer is over the canvas, and, when it is
+        elsewhere (the Edit menu, the Welcome card, a shortcut pressed with the pointer
+        off the viewport), at the viewport centre.
+        """
         if not self._require("Paste", (self._clipboard_has_content(), "content on the clipboard")):
             return
+        anchor = self._paste_anchor(at)
         # Smart paste routing: internal items → internal raster → system image → system text
         # 1. Internal vector items
         data = self._clipboard.paste_items()
         if data:
-            self._paste_internal_items(data, offset=True)
+            self._paste_internal_items(data, anchor=anchor)
             return
         # 2. Internal raster data
-        raster, source_rect = self._clipboard.paste_raster()
+        raster, _source_rect = self._clipboard.paste_raster()
         if raster is not None:
-            self._paste_raster_image(raster, source_rect)
+            self._paste_raster_image(raster, anchor)
             return
         # 3. System clipboard image
         sys_image = self._clipboard.paste_image_from_system()
         if sys_image is not None:
-            self._paste_system_image(sys_image)
+            self._paste_system_image(sys_image, anchor)
             return
         # 4. System clipboard text
         clipboard = QApplication.clipboard()
         if clipboard and clipboard.text():
-            self._paste_system_text(clipboard.text())
+            self._paste_system_text(clipboard.text(), anchor)
 
-    def _paste_internal_items(self, data: list[dict], *, offset: bool) -> None:  # type: ignore[type-arg]
+    def _paste_anchor(self, at: QPointF | None = None) -> QPointF:
+        """Where a paste lands: *at*, else the pointer over the viewport, else its centre."""
+        if at is not None:
+            return QPointF(at)
+        view = self._view
+        viewport = view.viewport()
+        pointer = view.pointer_scene_pos
+        if pointer is not None and viewport is not None and viewport.isVisible():
+            return pointer
+        if viewport is None:
+            return QPointF(0, 0)
+        return view.mapToScene(viewport.rect().center())
+
+    def _paste_internal_items(
+        self,
+        data: list[dict],  # type: ignore[type-arg]
+        *,
+        anchor: QPointF | None,
+    ) -> None:
+        """Add the copied items to the active layer and select them (PRD 9.3.1).
+
+        With *anchor*, the top-left corner of the items' joint bounding box goes there and
+        their arrangement is kept; without it (Paste in Place) each keeps its position.
+        """
         from snapmock.commands.add_item import AddItemCommand
         from snapmock.io.project_serializer import ITEM_REGISTRY
 
         layer = self._scene.layer_manager.active_layer
         if layer is None:
             return
+        items: list[SnapGraphicsItem] = []
         for item_data in data:
             item_type = item_data.get("type", "")
             cls = ITEM_REGISTRY.get(item_type)
@@ -2972,13 +3004,25 @@ class MainWindow(QMainWindow):
                 item = cls.deserialize(item_data)
                 # A pasted copy is a new item: the original keeps its id
                 item.renew_ids()
-                if offset:
-                    item.setPos(item.pos().x() + 10, item.pos().y() + 10)
-                self._scene.command_stack.push(AddItemCommand(self._scene, item, layer.layer_id))
+                items.append(item)
+        if not items:
+            return
+        if anchor is not None:
+            bounds = items[0].sceneBoundingRect()
+            for item in items[1:]:
+                bounds = bounds.united(item.sceneBoundingRect())
+            shift = anchor - bounds.topLeft()
+            for item in items:
+                item.setPos(item.pos() + shift)
+        selected: list[QGraphicsItem] = []
+        for item in items:
+            self._scene.command_stack.push(AddItemCommand(self._scene, item, layer.layer_id))
+            selected.append(item)
+        self._tool_manager.activate("select")
+        self._selection_manager.select_items(selected)
 
-    def _paste_raster_image(self, image: object, source_rect: object | None) -> None:
-        """Paste a raster image at its source position."""
-        from PyQt6.QtCore import QRectF
+    def _paste_raster_image(self, image: object, top_left: QPointF) -> None:
+        """Paste a raster image with its top-left corner at *top_left*."""
         from PyQt6.QtGui import QImage, QPixmap
 
         from snapmock.commands.add_item import AddItemCommand
@@ -2988,18 +3032,7 @@ class MainWindow(QMainWindow):
             return
         pixmap = QPixmap.fromImage(image)
         item = RasterRegionItem(pixmap=pixmap)
-        # Place at source position if available, else viewport center
-        if isinstance(source_rect, QRectF) and not source_rect.isEmpty():
-            item.setPos(source_rect.topLeft())
-        else:
-            view = self._view
-            viewport = view.viewport()
-            if viewport is not None:
-                center = view.mapToScene(viewport.rect().center())
-                item.setPos(
-                    center.x() - pixmap.width() / 2,
-                    center.y() - pixmap.height() / 2,
-                )
+        item.setPos(top_left)
         layer = self._scene.layer_manager.active_layer
         if layer is not None:
             self._scene.command_stack.push(AddItemCommand(self._scene, item, layer.layer_id))
@@ -3007,59 +3040,54 @@ class MainWindow(QMainWindow):
             self._tool_manager.activate("select")
             self._selection_manager.select(item)
 
-    def _paste_system_text(self, text: str) -> None:
-        """Paste system clipboard text as a TextItem."""
+    def _paste_system_text(self, text: str, top_left: QPointF) -> None:
+        """Paste system clipboard text as a TextItem with its top-left corner at *top_left*."""
         from snapmock.commands.add_item import AddItemCommand
         from snapmock.items.text_item import TextItem
 
         item = TextItem(text=text)
-        # Place at viewport center
-        view = self._view
-        viewport = view.viewport()
-        if viewport is not None:
-            center = view.mapToScene(viewport.rect().center())
-            item.setPos(center.x() - 100, center.y() - 20)
+        item.setPos(top_left)
         layer = self._scene.layer_manager.active_layer
         if layer is not None:
             self._scene.command_stack.push(AddItemCommand(self._scene, item, layer.layer_id))
             self._tool_manager.activate("select")
             self._selection_manager.select(item)
 
-    def _paste_system_image(self, image: object) -> None:
+    def _paste_system_image(self, image: object, top_left: QPointF) -> None:
         """A system-clipboard image (Navigation PRD 9.3.3; Welcome card of General UI PRD
-        16.1): the background layer on an empty project, else a region at the viewport
-        centre on the active layer."""
-        from PyQt6.QtCore import QPointF
+        16.1): the background layer on an empty project, else a region on the active layer
+        with its top-left corner at *top_left*."""
         from PyQt6.QtGui import QPixmap
 
         from snapmock.io.importer import place_image
 
         pixmap = QPixmap.fromImage(image)  # type: ignore[arg-type]
-        view = self._view
-        viewport = view.viewport()
-        if viewport is None:
-            return
-        center = view.mapToScene(viewport.rect().center())
-        top_left = QPointF(center.x() - pixmap.width() / 2, center.y() - pixmap.height() / 2)
         place_image(self._scene, pixmap, top_left)
 
     def _edit_paste_in_place(self) -> None:
-        """Paste items at their original positions (no offset)."""
+        """Paste items at their original positions (no offset).
+
+        Content with no original position, a raster copied without a source rectangle or
+        a system-clipboard image, lands where Paste would put it (PRD 9.3, Paste in Place).
+        """
         if not self._require(
             "Paste in Place", (self._clipboard_has_content(), "content on the clipboard")
         ):
             return
         data = self._clipboard.paste_items()
         if data:
-            self._paste_internal_items(data, offset=False)
+            self._paste_internal_items(data, anchor=None)
             return
         raster, source_rect = self._clipboard.paste_raster()
         if raster is not None:
-            self._paste_raster_image(raster, source_rect)
+            if source_rect is not None and not source_rect.isEmpty():
+                self._paste_raster_image(raster, source_rect.topLeft())
+            else:
+                self._paste_raster_image(raster, self._paste_anchor())
             return
         sys_image = self._clipboard.paste_image_from_system()
         if sys_image is not None:
-            self._paste_system_image(sys_image)
+            self._paste_system_image(sys_image, self._paste_anchor())
 
     def _edit_delete(self) -> None:
         items = self._require_selection("Delete")
