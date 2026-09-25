@@ -1,3 +1,3 @@
 """Snapmockit — open-source multi-platform screenshot annotation & UI mockup tool."""
 
-__version__ = "1.3.0"
+__version__ = "1.4.0"
