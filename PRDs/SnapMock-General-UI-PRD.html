@@ -15,8 +15,8 @@
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.55</dd>
-    <dt>Last Updated</dt>    <dd>09-24-26 23:29</dd>
+    <dt>Document version</dt><dd>2.56</dd>
+    <dt>Last Updated</dt>    <dd>09-25-26 00:13</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.56</td>
+        <td class="nowrap">09-25-26 00:13</td>
+        <td>Doug Bower</td>
+        <td>Found on Doug's display on 09-25-26, right after 2.55: with a border just added from the Border tool's strip, Ctrl+A and Ctrl+C did nothing on the canvas. The width typed into the strip leaves the keyboard focus in its spin box, and a focused text field claims Ctrl+A as "select the digits" and Ctrl+C as "copy the digits" before the Edit menu's actions see the keys; the clipboard held the text "10". Reproduced headless with the Rectangle tool's Stroke width, so every field in the strip had it. <strong>5.1</strong>: the canvas's clipboard and Select All keys, Ctrl+A, Ctrl+C, Ctrl+Shift+C, Ctrl+X, Ctrl+V and Ctrl+Shift+V, pass a focused field in the Tool Options Bar and act on the canvas; every other key, digits, Enter, Escape, the arrows, Ctrl+Z, still reaches the field. Built as one event filter the bar installs on each spin box, editable combo box and line edit it is given. The cost Doug accepts: the digits in a strip field cannot be selected or copied with those keys; a double-click selects them. Not covered: the Property Panel's fields, which keep the focus in the same way. With this row the whole-document copy of 2.55 and its Select All cover the canvas border when there is one, as the PNG export does (Navigation and Raster Operations PRD 1.11).</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.55</td>
         <td class="nowrap">09-24-26 23:29</td>

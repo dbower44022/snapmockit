@@ -347,3 +347,31 @@ def test_tools_without_options_show_only_their_name(main_window: MainWindow) -> 
         # One control, the tool's name label; the strip and the overflow button are the
         # bar's own furniture and are not the tool's controls.
         assert len(bar.controls) == 1
+
+
+def test_canvas_clipboard_keys_pass_a_focused_strip_field(main_window: MainWindow) -> None:
+    """General UI PRD 2.56: a width typed into the strip leaves the focus in its spin
+    box, and Ctrl+A and Ctrl+C there act on the canvas, not on the digits."""
+    from PyQt6.QtCore import Qt
+    from PyQt6.QtTest import QTest
+    from PyQt6.QtWidgets import QApplication
+
+    main_window.show()
+    QApplication.setActiveWindow(main_window)
+    main_window.tool_manager.activate("rectangle")
+    spin = _bar(main_window).shared_widgets["stroke_width"]
+    assert isinstance(spin, QDoubleSpinBox)
+    spin.setFocus()
+    spin.selectAll()
+    QTest.keyClicks(spin, "7")
+    assert spin.value() == 7  # a digit still reaches the field
+    clipboard = QApplication.clipboard()
+    assert clipboard is not None
+    clipboard.clear()
+    QTest.keyClick(spin, Qt.Key.Key_A, Qt.KeyboardModifier.ControlModifier)
+    assert main_window.tool_manager.active_tool_id == "raster_select"
+    line = spin.lineEdit()
+    assert line is not None and line.selectedText() == ""
+    QTest.keyClick(spin, Qt.Key.Key_C, Qt.KeyboardModifier.ControlModifier)
+    mime = clipboard.mimeData()
+    assert mime is not None and mime.hasImage() and clipboard.text() == ""

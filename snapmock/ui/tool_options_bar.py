@@ -21,13 +21,15 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from PyQt6.QtCore import QPoint, QSize, Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import QEvent, QObject, QPoint, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
     QAction,
     QColor,
     QFont,
     QGuiApplication,
     QIcon,
+    QKeyEvent,
+    QKeySequence,
     QMouseEvent,
     QPainter,
     QPaintEvent,
@@ -35,6 +37,7 @@ from PyQt6.QtGui import (
     QResizeEvent,
 )
 from PyQt6.QtWidgets import (
+    QAbstractSpinBox,
     QApplication,
     QButtonGroup,
     QCheckBox,
@@ -451,11 +454,44 @@ class _Separator(QWidget):
         painter.end()
 
 
+# The canvas's clipboard and Select All keys win over a field in the strip (PRD 5.1,
+# 2.56): a width typed into a spin box leaves the keyboard focus there, and the field
+# would otherwise take Ctrl+A as "select the digits" and Ctrl+C as "copy the digits".
+_CANVAS_SEQUENCES = [
+    QKeySequence("Ctrl+A"),
+    QKeySequence("Ctrl+C"),
+    QKeySequence("Ctrl+Shift+C"),
+    QKeySequence("Ctrl+X"),
+    QKeySequence("Ctrl+V"),
+    QKeySequence("Ctrl+Shift+V"),
+]
+
+
+class _CanvasKeysFilter(QObject):
+    """Refuse a strip field the ShortcutOverride for the canvas's clipboard keys.
+
+    A focused line edit accepts the override for Ctrl+A, Ctrl+C, Ctrl+X and Ctrl+V and
+    so keeps the window's Edit menu actions from firing. Swallowing the override event
+    leaves it unaccepted, and Qt's shortcut map then fires the action as it does when
+    the canvas has the focus. Every other key still reaches the field.
+    """
+
+    def eventFilter(self, watched: QObject | None, event: QEvent | None) -> bool:  # noqa: N802
+        if event is not None and event.type() == QEvent.Type.ShortcutOverride:
+            assert isinstance(event, QKeyEvent)
+            seq = QKeySequence(event.keyCombination())
+            exact = QKeySequence.SequenceMatch.ExactMatch
+            if any(seq.matches(s) == exact for s in _CANVAS_SEQUENCES):
+                return True
+        return super().eventFilter(watched, event)
+
+
 class ToolOptionsBar(QToolBar):
     """Context-sensitive options for the active tool, 36 px tall (PRD 2.2)."""
 
     def __init__(self, tool_manager: ToolManager, parent: QWidget | None = None) -> None:
         super().__init__("Tool Options", parent)
+        self._canvas_keys = _CanvasKeysFilter(self)
         self.setAccessibleName("Tool Options")
         self._tool_manager = tool_manager
         self._tool: BaseTool | None = None
@@ -583,6 +619,7 @@ class ToolOptionsBar(QToolBar):
         """
         if widget is None:
             return None
+        self._yield_canvas_keys(widget)
         self._flow.insertWidget(self._flow.count() - 1, widget)
         self._items.append(widget)
         # Not added to the toolbar itself: a QToolBar builds a button for every action it
@@ -594,6 +631,21 @@ class ToolOptionsBar(QToolBar):
         self._action_widgets[action] = widget
         self._schedule_reflow()
         return action
+
+    def _yield_canvas_keys(self, widget: QWidget) -> None:
+        """Let the canvas's clipboard keys pass a text field in the strip (2.56)."""
+        # The override reaches the widget that holds the focus: a spin box or an editable
+        # combo box, which forwards it to its line edit, so the filter sits on both
+        editors: list[QWidget] = []
+        if isinstance(widget, QAbstractSpinBox | QComboBox):
+            line = widget.lineEdit()
+            editors.append(widget)
+            if line is not None:
+                editors.append(line)
+        elif isinstance(widget, QLineEdit):
+            editors.append(widget)
+        for editor in editors:
+            editor.installEventFilter(self._canvas_keys)
 
     def addSeparator(self) -> QAction | None:  # noqa: N802
         """A group divider, as a widget so it travels with the controls it divides."""
