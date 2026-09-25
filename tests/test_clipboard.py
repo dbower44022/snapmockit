@@ -401,3 +401,12 @@ def test_system_text_pastes_at_the_pointer(main_window: MainWindow) -> None:
     texts = [i for i in main_window.scene.annotation_items() if isinstance(i, TextItem)]
     assert len(texts) == 1 and texts[0].pos() == anchor
     clipboard.clear()
+
+
+def test_edit_menu_paste_action_pastes(main_window: MainWindow) -> None:
+    """The action's triggered signal passes a checked flag; it must not become the anchor."""
+    a, b = _two_rectangles(main_window)
+    main_window.selection_manager.select_items([a])
+    main_window._edit_copy()  # noqa: SLF001
+    main_window._actions["edit.paste"].trigger()  # noqa: SLF001
+    assert len(_pasted(main_window, (a, b))) == 1

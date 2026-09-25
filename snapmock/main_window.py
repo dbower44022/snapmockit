@@ -2934,10 +2934,12 @@ class MainWindow(QMainWindow):
             self._scene.command_stack.push(cmd)
         tool.cancel()
 
-    def _edit_paste(self, at: QPointF | None = None) -> None:
+    def _edit_paste(self, *, at: QPointF | None = None) -> None:
         """Paste at the pointer (Raster PRD 5.5.3, 9.3.1, 9.3.3, 9.3.4).
 
-        *at* is an explicit scene point, the right-click point of a context menu.
+        *at* is an explicit scene point, the right-click point of a context menu. It is
+        keyword-only because the menu action's triggered signal passes its checked flag
+        as the first positional argument.
         Otherwise the content goes where the pointer is over the canvas, and, when it is
         elsewhere (the Edit menu, the Welcome card, a shortcut pressed with the pointer
         off the viewport), at the viewport centre.
