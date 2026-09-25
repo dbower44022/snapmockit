@@ -315,6 +315,23 @@ def test_open_library_file_from_panel_signal(main_window: MainWindow) -> None:
     assert main_window.documents.find_by_path(path) is not None
 
 
+def test_open_from_the_panel_moves_the_focus_to_the_canvas(main_window: MainWindow) -> None:
+    """Library PRD 1.6: the grid keeps Ctrl+A for the files while it has the focus, so a
+    file opened from it would not answer Ctrl+A on its canvas until the canvas was clicked
+    (Doug's display, 09-25-26)."""
+    from PyQt6.QtWidgets import QApplication, QListView
+
+    main_window.show()
+    QApplication.setActiveWindow(main_window)
+    path = main_window.library.create_blank(10, 10)
+    grid = main_window.library_panel.findChildren(QListView)[0]
+    grid.setFocus()
+    assert QApplication.focusWidget() is grid
+    main_window.library_panel.open_requested.emit([path])
+    assert main_window.active_document.file_path == path
+    assert QApplication.focusWidget() is main_window.view
+
+
 def test_deleting_open_library_file_closes_its_tab(main_window: MainWindow) -> None:
     path = main_window.library.create_blank(10, 10)
     main_window._open_project(path)  # noqa: SLF001

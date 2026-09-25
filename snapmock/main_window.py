@@ -2542,8 +2542,13 @@ class MainWindow(QMainWindow):
     # ---- library ----
 
     def _open_library_files(self, paths: list[Path]) -> None:
+        opened = None
         for p in paths:
-            self._open_project(p)
+            opened = self._open_project(p) or opened
+        # The keyboard focus follows the file to its canvas (Library PRD 1.6): the grid
+        # claims Ctrl+A, Ctrl+C and Ctrl+V for the files while it keeps the focus
+        if opened is not None:
+            self._view.setFocus()
 
     def _open_in_new_window(self, path: Path) -> None:
         window = MainWindow(capture_manager=self._capture, primary_capture=False)

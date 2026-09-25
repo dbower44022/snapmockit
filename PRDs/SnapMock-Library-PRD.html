@@ -15,8 +15,8 @@
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Capture Library · Auto-Save · File Management · Tabbed Editing</dd>
-    <dt>Document version</dt><dd>1.5</dd>
-    <dt>Last Updated</dt>    <dd>09-18-26 00:03</dd>
+    <dt>Document version</dt><dd>1.6</dd>
+    <dt>Last Updated</dt>    <dd>09-25-26 00:46</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.6</td>
+        <td class="nowrap">09-25-26 00:46</td>
+        <td>Doug Bower</td>
+        <td>Found on Doug's display on 09-25-26: a file opened from the panel did not answer Ctrl+A on its canvas until the canvas was clicked. The panel's grid and list claim Ctrl+A, Ctrl+C, Ctrl+Shift+C, Ctrl+V and the library undo keys for the files while they hold the keyboard focus (6.x, the key routing of <code>docs/Library-Implementation.md</code>), and opening a file left the focus in the grid. <strong>Opening a file from the panel</strong>, by double-click, Enter, or the context menu, now moves the keyboard focus to the opened file's canvas, so the Edit menu's keys act on the picture at once; the focus stays in the panel only when nothing opened (a file that failed to load). The panel's own keys still work while it has the focus.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.5</td>
         <td class="nowrap">09-18-26 00:03</td>
