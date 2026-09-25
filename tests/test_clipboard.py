@@ -1,6 +1,7 @@
 """Tests for ClipboardManager."""
 
 import pytest
+from PyQt6.QtCore import QRectF
 from PyQt6.QtWidgets import QApplication
 
 from snapmock.commands.add_item import AddItemCommand
@@ -114,3 +115,86 @@ def test_pasted_system_image_becomes_the_background_of_an_empty_project(
     clipboard = QApplication.clipboard()
     assert clipboard is not None
     clipboard.clear()
+
+
+# --- the whole canvas: Copy with nothing selected, Select All on an empty layer, Copy All
+# (General UI PRD 2.55, Raster PRD 1.11; Doug's decision A of 09-24-26) ---
+
+
+def _clipboard_image_size() -> tuple[int, int]:
+    clipboard = QApplication.clipboard()
+    assert clipboard is not None
+    image = clipboard.image()
+    return image.width(), image.height()
+
+
+def _capture(main_window: MainWindow) -> None:
+    """A capture as the app leaves it: the image on a Background layer, an empty layer active."""
+    _system_image(30, 20)
+    main_window._edit_paste()  # noqa: SLF001
+    clipboard = QApplication.clipboard()
+    assert clipboard is not None
+    clipboard.clear()
+    main_window.clipboard.clear()
+    assert main_window.scene.layer_manager.background_layer is not None
+    assert not main_window.selection_manager.items
+
+
+def test_copy_with_nothing_selected_copies_the_whole_canvas(main_window: MainWindow) -> None:
+    _capture(main_window)
+    main_window._edit_copy()  # noqa: SLF001
+    assert _clipboard_image_size() == (30, 20)
+    assert main_window.clipboard.has_raster
+
+
+def test_select_all_on_an_empty_layer_is_a_raster_selection_of_the_canvas(
+    main_window: MainWindow, unmet_messages: list[tuple[str, str]]
+) -> None:
+    from snapmock.tools.raster_select_tool import RasterSelectTool
+
+    _capture(main_window)
+    main_window._edit_select_all()  # noqa: SLF001
+    assert unmet_messages == []
+    tool = main_window.tool_manager.active_tool
+    assert isinstance(tool, RasterSelectTool) and tool.has_active_selection
+    assert tool.selection_rect == main_window.scene.canvas_rect
+    # The Background image itself is still never selected (2.46)
+    assert not main_window.selection_manager.items
+    main_window._edit_copy()  # noqa: SLF001
+    assert _clipboard_image_size() == (30, 20)
+
+
+def test_select_all_still_selects_the_items_of_the_active_layer(main_window: MainWindow) -> None:
+    _capture(main_window)
+    scene = main_window.scene
+    layer = scene.layer_manager.active_layer
+    assert layer is not None
+    item = RectangleItem()
+    scene.command_stack.push(AddItemCommand(scene, item, layer.layer_id))
+    main_window._edit_select_all()  # noqa: SLF001
+    assert main_window.selection_manager.items == [item]
+    assert main_window.tool_manager.active_tool_id != "raster_select"
+
+
+def test_copy_all_copies_the_canvas_whatever_is_selected(main_window: MainWindow) -> None:
+    scene = main_window.scene
+    layer = scene.layer_manager.active_layer
+    assert layer is not None
+    item = RectangleItem(QRectF(0, 0, 10, 10))
+    scene.command_stack.push(AddItemCommand(scene, item, layer.layer_id))
+    main_window.selection_manager.select_items([item])
+    canvas = scene.canvas_size
+    main_window._edit_copy()  # noqa: SLF001
+    assert _clipboard_image_size()[0] < canvas.width()
+    main_window._edit_copy_all()  # noqa: SLF001
+    assert _clipboard_image_size() == (int(canvas.width()), int(canvas.height()))
+    assert main_window.selection_manager.items == [item]
+
+
+def test_copy_all_has_snagits_key_and_crop_to_canvas_moved() -> None:
+    from snapmock.config.shortcuts import SHORTCUTS
+
+    assert SHORTCUTS["edit.copy_all"] == "Ctrl+Shift+C"
+    assert SHORTCUTS["image.crop_to_canvas"] == "Ctrl+Shift+X"
+    keys = [k for k in SHORTCUTS.values() if k]
+    assert len(keys) == len(set(keys))

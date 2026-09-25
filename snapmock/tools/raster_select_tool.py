@@ -81,6 +81,23 @@ class RasterSelectTool(BaseTool):
         self._active_handle = None
         self._hide_size_readout()
 
+    def select_rect(self, rect: QRectF) -> None:
+        """Make *rect*, clipped to the canvas, the active selection without a drag.
+
+        Select All with nothing selectable on the active layer takes the whole canvas
+        this way (General UI PRD 3.2, Doug's decision A of 09-24-26).
+        """
+        if self._scene is None:
+            return
+        clipped = rect.normalized().intersected(self._scene.canvas_rect)
+        if clipped.isEmpty():
+            return
+        overlay = self._ensure_overlay()
+        overlay.set_selection_rect(clipped)
+        overlay.add_to_scene()
+        self._state = _RasterState.ACTIVE
+        self._active_handle = None
+
     def _hide_size_readout(self) -> None:
         """Take the W / H readout down: the selection is drawn or cancelled."""
         view = self._view

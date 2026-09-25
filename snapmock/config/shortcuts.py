@@ -26,6 +26,7 @@ SHORTCUTS: dict[str, str] = {
     "edit.redo": "Ctrl+Shift+Z",
     "edit.cut": "Ctrl+X",
     "edit.copy": "Ctrl+C",
+    "edit.copy_all": "Ctrl+Shift+C",
     "edit.paste": "Ctrl+V",
     "edit.duplicate": "Ctrl+D",
     "edit.delete": "Delete",
@@ -46,7 +47,8 @@ SHORTCUTS: dict[str, str] = {
     "view.next_tab": "Ctrl+Tab",
     "view.previous_tab": "Ctrl+Shift+Tab",
     # Image
-    "image.crop_to_canvas": "Ctrl+Shift+C",
+    # Ctrl+Shift+C went to Copy All on 09-24-26 (Snagit's key); X is the Crop tool's own key
+    "image.crop_to_canvas": "Ctrl+Shift+X",
     # Layers
     "layer.new": "Ctrl+Shift+N",
     "layer.delete": "Ctrl+Shift+Delete",

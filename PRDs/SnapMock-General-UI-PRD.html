@@ -15,8 +15,8 @@
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.54</dd>
-    <dt>Last Updated</dt>    <dd>09-20-26 23:14</dd>
+    <dt>Document version</dt><dd>2.55</dd>
+    <dt>Last Updated</dt>    <dd>09-24-26 23:29</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.55</td>
+        <td class="nowrap">09-24-26 23:29</td>
+        <td>Doug Bower</td>
+        <td>A capture is one key from a document (Doug's decision A of 09-24-26, option A of two). Found on Doug's display: after a capture, Ctrl+C answered "Copy needs at least one item selected" and Ctrl+A "Select All needs at least one item on the active layer", because the image sits on the Background layer, which 2.46 keeps out of every selection, and the layer a capture leaves active is empty. <strong>3.2</strong>: Copy with nothing selected copies the whole canvas, flattened, the capture plus every visible annotation, to the system clipboard as a PNG and to the internal clipboard as a raster; Select All with nothing selectable on the active layer makes a raster selection of the whole canvas (the Raster Selection tool's marching ants, so the tool switches) and Ctrl+C then copies those pixels; a new Copy All (Ctrl+Shift+C, Snagit's key, and the key the Library panel already uses for the same thing) copies the flattened canvas whatever is selected. Neither Copy nor Select All has an unmet requirement left. <strong>3.5</strong>: Crop to Canvas moves from Ctrl+Shift+C to Ctrl+Shift+X, beside the Crop tool's own X. Decision 2.46 stands: the Background image is still never selected as an item, so nothing moves, resizes, or deletes it; the alternative, option B, was to make it selectable and guard each of those separately. The cost Doug accepted: Select All shows marching ants rather than an item's handles, and it changes the active tool. Navigation and Raster Operations PRD 9.1 changes with this row (its 1.11).</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.54</td>
         <td class="nowrap">09-20-26 23:14</td>
@@ -1980,13 +1987,14 @@ unmet.</em></p>
     <tr><th>Redo [action]</th><td>Ctrl+Shift+Z</td><td>Redo the last undone command. Menu text shows the action name.</td><td>Redo stack non-empty</td></tr>
     <tr><th>---</th><td></td><td>Separator</td><td></td></tr>
     <tr><th>Cut</th><td>Ctrl+X</td><td>Cut selected items or raster selection to clipboard.</td><td>Selection exists</td></tr>
-    <tr><th>Copy</th><td>Ctrl+C</td><td>Copy selected items or raster selection to clipboard.</td><td>Selection exists</td></tr>
+    <tr><th>Copy</th><td>Ctrl+C</td><td>Copy selected items or raster selection to clipboard. With nothing selected, copy the whole canvas, flattened (2.55).</td><td>Always</td></tr>
+    <tr><th>Copy All</th><td>Ctrl+Shift+C</td><td>Copy the whole canvas, flattened, whatever is selected (2.55).</td><td>Always</td></tr>
     <tr><th>Paste</th><td>Ctrl+V</td><td>Paste from clipboard onto active layer.</td><td>Clipboard has content</td></tr>
     <tr><th>Paste in Place</th><td>Ctrl+Shift+V</td><td>Paste at the original source position rather than viewport center.</td><td>Clipboard has content</td></tr>
     <tr><th>Duplicate</th><td>Ctrl+D</td><td>Duplicate selected items with a small offset.</td><td>Selection exists</td></tr>
     <tr><th>Delete</th><td>Delete / Backspace</td><td>Remove selected items.</td><td>Selection exists</td></tr>
     <tr><th>---</th><td></td><td>Separator</td><td></td></tr>
-    <tr><th>Select All</th><td>Ctrl+A</td><td>Select all unlocked visible items on the active layer.</td><td>Items exist</td></tr>
+    <tr><th>Select All</th><td>Ctrl+A</td><td>Select all unlocked visible items on the active layer. With none, make a raster selection of the whole canvas (2.55).</td><td>Always</td></tr>
     <tr><th>Select All Layers</th><td>Ctrl+Shift+A</td><td>Select all unlocked visible items across all layers.</td><td>Items exist</td></tr>
     <tr><th>Deselect</th><td>Escape</td><td>Deselect all items and cancel current tool operation.</td><td>Selection exists</td></tr>
     <tr><th>Select All Text</th><td>Ctrl+T</td><td>Select the text content within all text-containing items (text boxes, callouts, numbered steps, stamps) across all visible unlocked layers. Enables batch changes to font, size, color, and other text properties.</td><td>Text-containing items exist</td></tr>
@@ -2065,7 +2073,7 @@ unmet.</em></p>
     <tr><th>Menu Item</th><th>Shortcut</th><th>Action</th><th>Requires</th></tr>
   </thead>
   <tbody>
-    <tr><th>Crop to Canvas</th><td>Ctrl+Shift+C</td><td>Activate the crop tool to resize the canvas.</td><td>Always</td></tr>
+    <tr><th>Crop to Canvas</th><td>Ctrl+Shift+X</td><td>Activate the crop tool to resize the canvas.</td><td>Always</td></tr>
     <tr><th>Resize Canvas...</th><td></td><td>Open a dialog to set canvas dimensions numerically.</td><td>Always</td></tr>
     <tr><th>Resize Image...</th><td></td><td>Open a dialog to scale the entire image (all layers) to new dimensions with interpolation.</td><td>Always</td></tr>
     <tr><th>---</th><td></td><td>Separator</td><td></td></tr>

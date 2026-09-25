@@ -854,6 +854,11 @@ class MainWindow(QMainWindow):
             copy_action.triggered.connect(self._edit_copy)
         self._register("edit.copy", copy_action)
 
+        copy_all_action = edit_menu.addAction("Copy Al&l")
+        if copy_all_action is not None:
+            copy_all_action.setShortcut(QKeySequence(SHORTCUTS["edit.copy_all"]))
+            copy_all_action.triggered.connect(self._edit_copy_all)
+
         paste_action = edit_menu.addAction("&Paste")
         if paste_action is not None:
             paste_action.setShortcut(QKeySequence(SHORTCUTS["edit.paste"]))
@@ -2849,9 +2854,29 @@ class MainWindow(QMainWindow):
         ):
             self._copy_raster_selection(active)
             return
-        items = self._require_selection("Copy")
+        items = self._selected_snap_items()
         if items:
             self._clipboard.copy_items(items)
+            return
+        # Nothing selected: the whole canvas, flattened, so a capture is one key from a
+        # document (Raster PRD 9.1, Doug's decision A of 09-24-26)
+        self._copy_whole_canvas()
+
+    def _edit_copy_all(self) -> None:
+        """Copy the whole canvas, flattened, whatever is selected (Raster PRD 9.1)."""
+        self._copy_whole_canvas()
+
+    def _copy_whole_canvas(self) -> None:
+        """The flattened canvas, the capture plus every visible annotation, to both clipboards."""
+        from snapmock.core.render_engine import RenderEngine
+
+        rect = self._scene.canvas_rect
+        if rect.isEmpty():
+            return
+        image = RenderEngine(self._scene).render_region(
+            rect, background=self._scene.background_color
+        )
+        self._clipboard.copy_raster_region(image, rect)
 
     def _copy_raster_selection(self, tool: RasterSelectTool | LassoSelectTool) -> None:
         """Copy pixels from a raster/lasso selection to the clipboard."""
@@ -3064,8 +3089,23 @@ class MainWindow(QMainWindow):
             and not i.locked
             and not self._scene.is_fixed_in_place(i)
         ]
-        if self._require("Select All", (bool(items), "at least one item on the active layer")):
+        if items:
             self._selection_manager.select_items(items)
+            return
+        # Nothing selectable, a fresh capture above all: the whole canvas as a raster
+        # selection, so Ctrl+C copies it (Doug's decision A of 09-24-26). The Background
+        # image itself stays unselected (2.46).
+        self._select_whole_canvas()
+
+    def _select_whole_canvas(self) -> None:
+        """A raster selection of the whole canvas, marching ants and all."""
+        rect = self._scene.canvas_rect
+        if rect.isEmpty():
+            return
+        self._tool_manager.activate("raster_select")
+        tool = self._tool_manager.active_tool
+        if isinstance(tool, RasterSelectTool):
+            tool.select_rect(rect)
 
     def _edit_select_all_layers(self) -> None:
         """Select every unlocked item on every visible, unlocked layer."""
