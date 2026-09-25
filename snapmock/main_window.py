@@ -113,6 +113,7 @@ from snapmock.library.render import export_file, export_target
 from snapmock.tools.arc_tool import ArcTool
 from snapmock.tools.arrow_tool import ArrowTool
 from snapmock.tools.blur_tool import BlurTool
+from snapmock.tools.border_tool import BorderTool
 from snapmock.tools.callout_tool import CalloutTool
 from snapmock.tools.crop_tool import CropTool
 from snapmock.tools.ellipse_tool import EllipseTool
@@ -661,6 +662,7 @@ class MainWindow(QMainWindow):
         self._tool_manager.register(StampTool())
         self._tool_manager.register(EmojiTool())
         self._tool_manager.register(CropTool())
+        self._tool_manager.register(BorderTool())
         self._tool_manager.register(RasterSelectTool())
         self._tool_manager.register(EyedropperTool())
         self._tool_manager.register(PanTool())
@@ -1308,6 +1310,7 @@ class MainWindow(QMainWindow):
             # Region tools
             [
                 ("tool.crop", "crop"),
+                ("tool.border", "border"),
                 ("tool.raster_select", "raster_select"),
                 ("tool.eyedropper", "eyedropper"),
             ],
@@ -2876,10 +2879,11 @@ class MainWindow(QMainWindow):
         self._copy_whole_canvas()
 
     def _copy_whole_canvas(self) -> None:
-        """The flattened canvas, the capture plus every visible annotation, to both clipboards."""
+        """The flattened document, the capture plus every visible annotation and the
+        canvas border when there is one, to both clipboards, as the PNG export renders it."""
         from snapmock.core.render_engine import RenderEngine
 
-        rect = self._scene.canvas_rect
+        rect = self._scene.output_rect
         if rect.isEmpty():
             return
         image = RenderEngine(self._scene).render_region(
@@ -3115,8 +3119,9 @@ class MainWindow(QMainWindow):
             self._selection_manager.select_items(items)
 
     def _select_whole_canvas(self) -> None:
-        """A raster selection of the whole canvas, marching ants and all."""
-        rect = self._scene.canvas_rect
+        """A raster selection of the whole document, the border included, marching ants
+        and all."""
+        rect = self._scene.output_rect
         if rect.isEmpty():
             return
         self._tool_manager.activate("raster_select")

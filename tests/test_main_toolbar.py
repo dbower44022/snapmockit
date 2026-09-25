@@ -214,7 +214,7 @@ def test_tool_palette_is_a_vertical_left_column(main_window: MainWindow) -> None
     assert not palette.isMovable()
     for tool_id, button in palette._buttons.items():  # noqa: SLF001
         assert button.size().width() == 32 and button.size().height() == 32, tool_id
-    assert len(palette._buttons) == 21  # noqa: SLF001, twenty-one since the Polygon tool
+    assert len(palette._buttons) == 22  # noqa: SLF001, twenty-two since the Border tool
 
 
 def test_tool_palette_toggle_keeps_working(main_window: MainWindow) -> None:

@@ -6,9 +6,11 @@ import base64
 import json
 import logging
 import zipfile
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 from PyQt6.QtCore import QLineF, QPointF, QRectF, Qt
 from PyQt6.QtGui import QColor, QFont, QImage, QPixmap
 
@@ -40,7 +42,17 @@ def load_snagx(path: Path) -> SnapScene:
 
         width = int(page.get("CaptureCanvasWidth", 1920))
         height = int(page.get("CaptureCanvasHeight", 1080))
+
+        # A Snagit border is painted into the background bitmap, with the pre-effect
+        # original kept beside it; recover it as an editable border where we can (10.8).
+        border = _recover_border(zf, page_filename, page)
+        if border is not None:
+            width, height = border.canvas_width, border.canvas_height
+
         scene = SnapScene(width=width, height=height)
+        if border is not None:
+            scene.set_border_width(border.width)
+            scene.set_border_color(border.color)
 
         bg_color_str = page.get("CaptureBackgroundColor", "#00000000")
         bg_color = QColor(bg_color_str)
@@ -56,6 +68,8 @@ def load_snagx(path: Path) -> SnapScene:
         scene.layer_manager.set_layer_type(bg_layer.layer_id, LAYER_TYPE_BACKGROUND)
 
         bg_image_name = page.get("CaptureBackgroundImage", "")
+        if border is not None:
+            bg_image_name = border.backup_png
         if bg_image_name and bg_image_name in zf.namelist():
             png_data = zf.read(bg_image_name)
             img = QImage()
@@ -84,6 +98,9 @@ def load_snagx(path: Path) -> SnapScene:
             ann_layer.item_ids.append(item.item_id)
             item.setZValue(ann_layer.z_base + z_offset)
             z_offset += 1
+            if border is not None:
+                # The page's coordinates include the border; the canvas no longer does
+                item.moveBy(-border.width, -border.width)
             scene.addItem(item)
 
         # Store page-level metadata on the scene for round-trip
@@ -100,6 +117,97 @@ def load_snagx(path: Path) -> SnapScene:
     scene.command_stack.clear()
     scene.command_stack.mark_clean()
     return scene
+
+
+# ---- Snagit's Border effect (Navigation & Raster Operations PRD 10.8) ----
+
+
+@dataclass(frozen=True)
+class _RecoveredBorder:
+    """A Snagit border read back out of a flattened page and its backup pair."""
+
+    width: int
+    color: QColor
+    canvas_width: int
+    canvas_height: int
+    backup_png: str
+
+
+def _recover_border(
+    zf: zipfile.ZipFile, page_filename: str, page: dict[str, Any]
+) -> _RecoveredBorder | None:
+    """The editable border behind a Snagit page, or None to load the page flattened.
+
+    Snagit keeps the pre-effect original beside the result as ``{GUID}.backup.png`` and
+    ``{GUID}.backup.json``. A border is recovered only when the page canvas is larger
+    than the backup canvas by the same positive, even amount in both dimensions and the
+    ring between the two is one uniform colour; anything else — a backup pair left by
+    another effect, a ring that differs from side to side — loads as it always has.
+    """
+    stem = page_filename[: -len(".json")] if page_filename.endswith(".json") else page_filename
+    backup_json = f"{stem}.backup.json"
+    backup_png = f"{stem}.backup.png"
+    names = set(zf.namelist())
+    if backup_json not in names or backup_png not in names:
+        return None
+    page_png = page.get("CaptureBackgroundImage", "")
+    if page_png not in names:
+        return None
+
+    try:
+        backup = json.loads(zf.read(backup_json))
+    except (KeyError, ValueError):  # pragma: no cover - a malformed backup
+        return None
+
+    page_w = int(page.get("CaptureCanvasWidth", 0))
+    page_h = int(page.get("CaptureCanvasHeight", 0))
+    back_w = int(backup.get("CaptureCanvasWidth", 0))
+    back_h = int(backup.get("CaptureCanvasHeight", 0))
+    if min(back_w, back_h) <= 0:
+        return None
+    dw = page_w - back_w
+    dh = page_h - back_h
+    if dw != dh or dw <= 0 or dw % 2 != 0:
+        return None
+    border_width = dw // 2
+
+    image = QImage()
+    image.loadFromData(zf.read(page_png))
+    if image.isNull() or image.width() != page_w or image.height() != page_h:
+        return None
+    color = _uniform_ring_color(image, border_width)
+    if color is None:
+        return None
+    log.info("Recovered a %d px Snagit border from %s", border_width, page_filename)
+    return _RecoveredBorder(border_width, color, back_w, back_h, backup_png)
+
+
+def _uniform_ring_color(image: QImage, width: int) -> QColor | None:
+    """The single colour of the *width* px ring inside *image*'s edges, else None."""
+    if width <= 0 or image.width() <= 2 * width or image.height() <= 2 * width:
+        return None
+    converted = image.convertToFormat(QImage.Format.Format_ARGB32)
+    pointer = converted.bits()
+    if pointer is None:  # pragma: no cover - a null image is caught above
+        return None
+    pointer.setsize(converted.sizeInBytes())
+    height, stride = converted.height(), converted.bytesPerLine()
+    raw = np.frombuffer(pointer.asstring(converted.sizeInBytes()), dtype=np.uint8)
+    pixels = raw.reshape(height, stride)[:, : converted.width() * 4].reshape(
+        height, converted.width(), 4
+    )
+    bands = (
+        pixels[:width, :, :],
+        pixels[-width:, :, :],
+        pixels[width:-width, :width, :],
+        pixels[width:-width, -width:, :],
+    )
+    first = pixels[0, 0]
+    for band in bands:
+        if not np.array_equal(band, np.broadcast_to(first, band.shape)):
+            return None
+    blue, green, red, alpha = (int(v) for v in first)  # ARGB32 is BGRA in memory
+    return QColor(red, green, blue, alpha)
 
 
 # ---- dispatch ----

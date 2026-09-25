@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Navigation &amp; Raster Operations</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.7</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.10</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
-    <dt>Covers</dt>          <dd>Select / Move · Pan · Zoom · Raster selection · Crop · Resize canvas · Copy, cut, paste, duplicate</dd>
-    <dt>Document version</dt><dd>1.7</dd>
-    <dt>Last Updated</dt>    <dd>09-17-26 01:53</dd>
+    <dt>Covers</dt>          <dd>Select / Move · Pan · Zoom · Raster selection · Crop · Resize canvas · Border · Copy, cut, paste, duplicate</dd>
+    <dt>Document version</dt><dd>1.11</dd>
+    <dt>Last Updated</dt>    <dd>09-25-26 00:33</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,34 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.11</td>
+        <td class="nowrap">09-24-26 23:29</td>
+        <td>Doug Bower</td>
+        <td><strong>9.1</strong>, Copy with nothing selected: was a no-op with the menu row grayed out; now the whole canvas, flattened, goes to both clipboards, the system one as a PNG and the internal one as a raster, so a capture is one key from a document. A new Copy All (Ctrl+Shift+C) does the same whatever is selected. Doug's decision A of 09-24-26, recorded in full in General UI PRD 2.55 with the Select All half: Select All is a raster selection of the whole canvas, made through the Raster Selection tool's new <code>select_rect</code> (at first only when the active layer held nothing selectable; always since General UI PRD 2.57, Doug's decision B of 09-25-26), and Crop to Canvas moves to Ctrl+Shift+X. On 09-25-26, with a border on Doug's display: both cover the output rectangle of 10.2, the border and its shadow included, as the PNG export does, so the flattened copy of a bordered capture is what the export would write; the <strong>10.7</strong> row for Copy, Cut and Paste says so. A dragged raster selection still stays inside the canvas.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
+      <tr>
+        <td>1.10</td>
+        <td class="nowrap">09-21-26 16:24</td>
+        <td>Doug Bower</td>
+        <td>Doug's display run of 09-21-26 on Section 10, and the one defect it found: activating the Border tool a second time raised <code>RuntimeError: wrapped C/C++ object of type QSpinBox has been deleted</code>. The Tool Options Bar retires its widgets with <code>deleteLater</code> when it rebuilds, and <code>ToolManager.activate</code> calls the tool's <code>activate</code> before the new widgets exist; the Border tool was the only tool that read its own bar widgets from <code>activate</code>. Fixed in <code>tools/border_tool.py</code>: the references are dropped on <code>deactivate</code> and every read passes through a liveness check, since the scene's border signal can also reach the tool between a clear and a rebuild. Recorded in <code>docs/Border-Tool-Implementation.md</code> Section 5, with a test that fails with the fix backed out. No change to Section 10 itself.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
+      <tr>
+        <td>1.9</td>
+        <td class="nowrap">09-21-26 16:06</td>
+        <td>Doug Bower</td>
+        <td>Section 10 built (<code>docs/Border-Tool-Implementation.md</code>), with one departure. <strong>10.5 and 10.6, departure:</strong> the border's shadow colour, offset and blur are five rows in the Property Panel's Canvas section beside the other border rows, not rows of the shared Shadow section, which is driven by the current selection and has no document-level mode; the Tool Options Bar keeps the Shadow checkbox as written, every edit is one SetCanvasBorderCommand, and the capability is whole. Everything else in Section 10 is met: the border as four scene properties, the ring outside the canvas rectangle, the output rectangle that six render surfaces now ask for, the twenty-second tool at Shift+B with no canvas interaction, the <code>border</code> block in the project manifest with <code>format_version</code> unchanged, the flattening write and the backup-pair read for Snagit files, and Resize Image scaling the width with the content. 34 tests in <code>tests/test_border_tool.py</code>; 237 of the 238 sample Snagit files still load, the one failure being the archive that was already corrupt.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
+      <tr>
+        <td>1.8</td>
+        <td class="nowrap">09-21-26 15:14</td>
+        <td>Doug Bower</td>
+        <td>New Section 10, Border Tool, by Doug's decision of 09-21-26 to build Snagit's border as a tool of its own in this document rather than as a separate product requirements document. The border is a property of the document, not an item: it is painted in a ring outside the canvas rectangle, so the canvas stays the size of the image and every operation in Sections 7 to 9 is unchanged, while the rendered and exported size becomes a new output rectangle that holds the image, the border and the border's shadow. Width, colour, opacity, line type and shadow are edited from a Tool Options Bar that has no canvas interaction, each edit one SetCanvasBorderCommand (new 12.7). Writing a Snagit file flattens the border into the background image and grows the canvas as Snagit itself does; reading one recovers an editable border from the {GUID}.backup.png and {GUID}.backup.json pair Snagit leaves behind, and falls back to today's flattened load when that pair is absent or does not describe a uniform ring. Sections 10 to 13 renumbered to 11 to 14; acceptance criteria 12.8 to 12.10 renumbered to 13.9 to 13.11 to make room for 13.8.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.7</td>
         <td class="nowrap">09-17-26 01:53</td>
@@ -115,6 +143,24 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-21-26 16:24</td>
+        <td>10.1</td>
+        <td>Fixed</td>
+        <td><strong>Fixed</strong> (09-21-26, Doug's display run): the Border tool crashed when it was activated a second time, because it read the Tool Options Bar's widgets from its own <code>activate</code> and the bar had not yet rebuilt them. The behaviour 10.1 and 10.5 describe is unchanged; what changed is that the tool now forgets its widgets on deactivation and checks each one is alive before reading it.</td>
+      </tr>
+      <tr>
+        <td class="nowrap">09-21-26 16:06</td>
+        <td>10.5, 10.6</td>
+        <td>Departure</td>
+        <td><strong>Departure</strong> (09-21-26, recorded at the build): 10.5 and 10.6 put the border shadow's colour, offset and blur in "the Property Panel's Shadow section". That section is built around the current selection, and giving it a document-level mode would have meant a second state machine in the panel for one consumer. The five rows &mdash; Border shadow, Shadow color, Shadow X, Shadow Y, Shadow blur &mdash; sit in the Canvas section instead, beside Border, Border color, Border opacity and Border style, each edit one SetCanvasBorderCommand. The bar's Shadow checkbox of 10.5 is built as written.</td>
+      </tr>
+      <tr>
+        <td class="nowrap">09-21-26 15:14</td>
+        <td>10, 12.7, 13.8</td>
+        <td>Added</td>
+        <td><strong>Added</strong> (09-21-26, Doug's decision): Section 10, Border Tool — tool id <code>border</code>, shortcut Shift+B, no canvas interaction, the whole tool being its Tool Options Bar. The reference for the behaviour is the Snagit file <code>Example Snag Files/Border Tool Example - 2026-09-21_10-21-47.snagx</code>, which carries an 8 px black border as a 2550 x 3300 image grown to 2566 x 3316 with the frame painted into the background bitmap and the original kept beside it as a backup pair. <strong>Added</strong> 12.7, SetCanvasBorderCommand, with the same merging rule SetCanvasPropertyCommand uses. <strong>Added</strong> 13.8, the border's acceptance criteria. <strong>Renumbered</strong> Sections 10 to 13 as 11 to 14 and acceptance subsections 12.8 to 12.10 as 13.9 to 13.11; no other document refers to this one above Section 9, and the change-log and revision rows above keep the section numbers they were written with.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-16-26 00:30</td>
         <td>2.4</td>
@@ -332,39 +378,55 @@
         <li><a href="#s9-8">Status Bar Hints</a></li>
       </ol>
     </li>
-    <li><a href="#s10">Inter-Tool Interactions &amp; Edge Cases</a>
+    <li><a href="#s10">Border Tool</a>
       <ol>
-        <li><a href="#s10-1">Tool Switching During Active Operations</a></li>
-        <li><a href="#s10-2">Layer State Changes During Tool Operations</a></li>
-        <li><a href="#s10-3">Undo/Redo During Tool Operations</a></li>
-        <li><a href="#s10-4">Multi-Monitor &amp; Focus</a></li>
+        <li><a href="#s10-1">Overview</a></li>
+        <li><a href="#s10-2">The Border Model</a></li>
+        <li><a href="#s10-3">Border Properties</a></li>
+        <li><a href="#s10-4">Rendering</a></li>
+        <li><a href="#s10-5">Tool Options Bar Content</a></li>
+        <li><a href="#s10-6">Property Panel</a></li>
+        <li><a href="#s10-7">Interaction with Canvas Operations</a></li>
+        <li><a href="#s10-8">File Formats</a></li>
+        <li><a href="#s10-9">Edge Cases</a></li>
+        <li><a href="#s10-10">Status Bar Hints</a></li>
       </ol>
     </li>
-    <li><a href="#s11">Command Definitions (Undo/Redo)</a>
+    <li><a href="#s11">Inter-Tool Interactions &amp; Edge Cases</a>
       <ol>
-        <li><a href="#s11-1">MoveItemsCommand</a></li>
-        <li><a href="#s11-2">TransformItemCommand</a></li>
-        <li><a href="#s11-3">RasterCutCommand</a></li>
-        <li><a href="#s11-4">CropCanvasCommand</a></li>
-        <li><a href="#s11-5">ResizeCanvasCommand</a></li>
-        <li><a href="#s11-6">ResizeImageCommand</a></li>
+        <li><a href="#s11-1">Tool Switching During Active Operations</a></li>
+        <li><a href="#s11-2">Layer State Changes During Tool Operations</a></li>
+        <li><a href="#s11-3">Undo/Redo During Tool Operations</a></li>
+        <li><a href="#s11-4">Multi-Monitor &amp; Focus</a></li>
       </ol>
     </li>
-    <li><a href="#s12">Acceptance Criteria</a>
+    <li><a href="#s12">Command Definitions (Undo/Redo)</a>
       <ol>
-        <li><a href="#s12-1">Select / Move Tool</a></li>
-        <li><a href="#s12-2">Pan / Hand Tool</a></li>
-        <li><a href="#s12-3">Zoom Tool</a></li>
-        <li><a href="#s12-4">Raster Selection (Rectangle)</a></li>
-        <li><a href="#s12-5">Raster Selection (Freeform / Lasso)</a></li>
-        <li><a href="#s12-6">Crop Canvas</a></li>
-        <li><a href="#s12-7">Resize Canvas / Resize Image</a></li>
-        <li><a href="#s12-8">Copy / Cut / Paste / Duplicate</a></li>
-        <li><a href="#s12-9">Inter-Tool Interactions</a></li>
-        <li><a href="#s12-10">Performance</a></li>
+        <li><a href="#s12-1">MoveItemsCommand</a></li>
+        <li><a href="#s12-2">TransformItemCommand</a></li>
+        <li><a href="#s12-3">RasterCutCommand</a></li>
+        <li><a href="#s12-4">CropCanvasCommand</a></li>
+        <li><a href="#s12-5">ResizeCanvasCommand</a></li>
+        <li><a href="#s12-6">ResizeImageCommand</a></li>
+        <li><a href="#s12-7">SetCanvasBorderCommand</a></li>
       </ol>
     </li>
-    <li><a href="#s13">Open Issues</a></li>
+    <li><a href="#s13">Acceptance Criteria</a>
+      <ol>
+        <li><a href="#s13-1">Select / Move Tool</a></li>
+        <li><a href="#s13-2">Pan / Hand Tool</a></li>
+        <li><a href="#s13-3">Zoom Tool</a></li>
+        <li><a href="#s13-4">Raster Selection (Rectangle)</a></li>
+        <li><a href="#s13-5">Raster Selection (Freeform / Lasso)</a></li>
+        <li><a href="#s13-6">Crop Canvas</a></li>
+        <li><a href="#s13-7">Resize Canvas / Resize Image</a></li>
+        <li><a href="#s13-8">Border Tool</a></li>
+        <li><a href="#s13-9">Copy / Cut / Paste / Duplicate</a></li>
+        <li><a href="#s13-10">Inter-Tool Interactions</a></li>
+        <li><a href="#s13-11">Performance</a></li>
+      </ol>
+    </li>
+    <li><a href="#s14">Open Issues</a></li>
   </ol>
 
 </section>
@@ -1580,7 +1642,17 @@ vector item selection.</p>
 
 <p><strong>When nothing is selected:</strong></p>
 
-<p>Ctrl+C is a no-op. The menu item is grayed out.</p>
+<p>Copy the whole document, flattened: every visible layer over the canvas colour, and
+the canvas border with its shadow when there is one (the output rectangle of 10.2), as
+the PNG export renders it. The image goes to the system clipboard as a PNG and to the internal
+clipboard as a raster whose source rectangle is the canvas, so Paste in Place puts it
+back where it was. No command is pushed. This is the one-key path from a capture to a
+document: the capture sits on the Background layer, which no selection takes (General UI
+PRD 6.2), and the layer a capture leaves active is empty (1.11).</p>
+
+<p><strong>Copy All (Ctrl+Shift+C):</strong> the same flattened copy of the whole document
+whatever is selected, so an annotated capture is copied without deselecting first. The
+selection is kept (1.11).</p>
 
 <h3 id="s9-2">Cut (Ctrl+X)</h3>
 
@@ -1712,9 +1784,224 @@ on the system clipboard to preserve vector data across instances.</p>
   </tbody>
 </table>
 
-<h2 id="s10">Inter-Tool Interactions &amp; Edge Cases</h2>
+<h2 id="s10">Border Tool</h2>
 
-<h3 id="s10-1">Tool Switching During Active Operations</h3>
+<p>The Border tool puts a frame around the image. It is the only tool in the Left Tool
+Palette with no canvas interaction: it draws nothing on press or drag, and its whole
+surface is the Tool Options Bar. What it edits is a property of the document, not an item,
+so there is one border per document, it is never selected, and it survives every canvas
+operation.</p>
+
+<h3 id="s10-1">Overview</h3>
+
+<table>
+  <colgroup><col class="w-medium"><col></colgroup>
+  <thead>
+    <tr><th>Property</th><th>Value</th></tr>
+  </thead>
+  <tbody>
+    <tr><th>Tool ID</th><td>border</td></tr>
+    <tr><th>Display Name</th><td>Border</td></tr>
+    <tr><th>Keyboard Shortcut</th><td>Shift+B (B belongs to Blur / Pixelate)</td></tr>
+    <tr><th>Default Cursor</th><td>Arrow (Qt.ArrowCursor)</td></tr>
+    <tr><th>Canvas Interaction</th><td>None. Press, drag, and release are not consumed; the
+    tool has no preview and no active operation.</td></tr>
+    <tr><th>What it edits</th><td>The border properties of the scene (10.3), through
+    SetCanvasBorderCommand (12.7).</td></tr>
+    <tr><th>Layer requirement</th><td>None. The border is not an item and does not need an
+    unlocked layer.</td></tr>
+  </tbody>
+</table>
+
+<h3 id="s10-2">The Border Model</h3>
+
+<p>The border is painted in a ring <strong>outside</strong> the canvas rectangle. The canvas
+size stays the size of the image, and the border adds to the size of what is rendered and
+exported. An 8 px border on a 2550 x 3300 image exports at 2566 x 3316, which is what
+Snagit produces for the same edit.</p>
+
+<p>Keeping the ring outside the canvas rather than growing the canvas is what makes the
+border survive editing. Crop, Resize Canvas, Rotate, Flip and Auto-Trim go on acting on the
+image exactly as Sections 7 and 8 define them, and the border re-wraps whatever they leave;
+no width change repositions an item; and the Resize Canvas dialog keeps quoting the size of
+the image rather than the size of the image plus its frame.</p>
+
+<p>The cost is that the size of the output is no longer the canvas size. Every surface that
+renders the whole document asks the scene for its <strong>output rectangle</strong> instead:
+the canvas rectangle grown by the border width on each side, and, when the border shadow is
+on, grown further to hold the shadow's offset and blur. With no border the output rectangle
+equals the canvas rectangle, so nothing changes for a document that has none.</p>
+
+<p>The border is a rectangle stroke of <code>border_width</code> whose centre line sits
+<code>border_width / 2</code> outside the canvas rectangle, so the stroke fills the ring
+exactly and the image is never covered and never scaled. The ring is filled with the canvas
+background colour before the stroke is painted, so a dashed or semi-transparent border shows
+the canvas colour through its gaps rather than the pasteboard, and what is on screen is what
+lands in the exported file.</p>
+
+<h3 id="s10-3">Border Properties</h3>
+
+<p>These live on SnapScene beside <code>background_color</code> and <code>canvas_dpi</code>,
+and are changed only through SetCanvasBorderCommand (12.7).</p>
+
+<table>
+  <colgroup><col class="w-medium"><col class="w-short"><col class="w-short"><col></colgroup>
+  <thead>
+    <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><th><code>border_width</code></th><td>int</td><td>0</td><td>Border thickness in
+    pixels on each side. 0 means no border: nothing is painted, no shadow is cast, and the
+    output rectangle equals the canvas rectangle. Range 0 to 200, clamped further so the
+    output rectangle never exceeds the 32000 px limit of 8.3.</td></tr>
+    <tr><th><code>border_color</code></th><td>QColor</td><td>#FF000000</td><td>Border colour,
+    stored in the #AARRGGBB form every other item uses. The alpha channel carries the
+    transparency, shown in the interface as an Opacity control from 0 to 100 percent.</td></tr>
+    <tr><th><code>border_style</code></th><td>str</td><td>solid</td><td>Line type: solid,
+    dashed, dotted, dashdot, dashdotdot. The same enumeration the text box, callout and
+    numbered step already carry.</td></tr>
+    <tr><th><code>border_shadow</code></th><td>dict</td><td>off</td><td>The shared shadow
+    helper's keys (enabled, color, offset_x, offset_y, blur_radius), cast outward from the
+    outer edge of the border. Off by default.</td></tr>
+  </tbody>
+</table>
+
+<h3 id="s10-4">Rendering</h3>
+
+<p>On screen the ring joins the canvas painting that <code>SnapView.drawBackground</code>
+already does, after the pasteboard fill and the canvas drop shadow and before the canvas
+background: the border shadow first, then the ring filled with the canvas background colour,
+then the border stroke. The one-pixel canvas outline and the eight canvas resize handles of
+General UI PRD 2.48 stay on the canvas rectangle, beneath the ring, so a wide border does not
+move the handle that resizes the image.</p>
+
+<p>On export the border is painted into the same pass. PNG, JPEG, SVG and PDF export, the
+clipboard copy, and the Library thumbnail render at the output rectangle, with the canvas
+drawn at its own offset inside it. A JPEG export fills the ring's transparency with the
+export background colour as it already does for the canvas.</p>
+
+<h3 id="s10-5">Tool Options Bar Content</h3>
+
+<p>The bar edits the current document, not creation defaults, as the Crop tool's aspect
+presets and Rule of Thirds checkbox already do; General UI PRD 5.1's rule that the bar edits
+creation defaults does not reach a tool that creates no items. Every control reads the
+document's current value when the tool is activated and when the active document changes,
+and writes one command per edit.</p>
+
+<ul>
+  <li><strong>Width:</strong> spin box, 0 to 200 px. Raising it above 0 creates the border;
+  setting it to 0 removes it. No separate Apply.</li>
+  <li><strong>Color:</strong> colour swatch button.</li>
+  <li><strong>Opacity:</strong> slider with spin box, 0 to 100 percent, stored as the alpha
+  of <code>border_color</code>.</li>
+  <li><strong>Style:</strong> dropdown — Solid, Dashed, Dotted, DashDot, DashDotDot.</li>
+  <li><strong>Shadow:</strong> checkbox, with the shadow's colour, offset and blur edited in
+  the Property Panel's Shadow section as for every other item that carries the helper.</li>
+  <li><strong>Remove Border:</strong> button, equivalent to setting Width to 0, disabled when
+  there is no border.</li>
+</ul>
+
+<h3 id="s10-6">Property Panel</h3>
+
+<p>The Property Panel's Canvas section gains the same Width, Color, Opacity and Style rows,
+and the shared Shadow section shows for the border when the Border tool is active with
+nothing selected. Both surfaces read and write the same scene properties and stay in step
+through the signal the panel and the bar already share, so the border is reachable without
+activating the tool.</p>
+
+<h3 id="s10-7">Interaction with Canvas Operations</h3>
+
+<table>
+  <colgroup><col class="w-medium"><col></colgroup>
+  <thead>
+    <tr><th>Operation</th><th>Effect on the border</th></tr>
+  </thead>
+  <tbody>
+    <tr><th>Crop Canvas (7)</th><td>None. The border re-wraps the cropped image at the same
+    width.</td></tr>
+    <tr><th>Canvas resize handles (General UI PRD 2.48)</th><td>None.</td></tr>
+    <tr><th>Resize Canvas (8.1)</th><td>None. The dialog's width and height are the image,
+    not the image plus the border.</td></tr>
+    <tr><th>Resize Image (8.2)</th><td><code>border_width</code> is scaled by the average
+    scale factor and rounded, to a minimum of 1 px when it was not 0, exactly as 8.2 already
+    scales stroke widths and font sizes.</td></tr>
+    <tr><th>Rotate Canvas, Flip Canvas</th><td>None.</td></tr>
+    <tr><th>Auto-Trim</th><td>None. Auto-Trim reads the canvas content and never sees the
+    border, so it cannot trim the border away.</td></tr>
+    <tr><th>Copy, Cut, Paste (9)</th><td>The border is not an item: it is never cut, pasted or deleted as one,
+    and it never appears in the Layer Panel. The flattened copy of the whole document, Copy
+    with nothing selected and Copy All (9.1), includes it, as the export does (1.11).</td></tr>
+  </tbody>
+</table>
+
+<h3 id="s10-8">File Formats</h3>
+
+<p><strong>Project files (.smk).</strong> The manifest's existing <code>canvas</code> object
+gains a <code>border</code> block holding the four properties of 10.3. An absent block means
+no border, so a file written before the border existed reads correctly and
+<code>format_version</code> stays 1 — the same treatment the <code>guides</code> key
+already gets.</p>
+
+<p><strong>Writing Snagit files (.snagx).</strong> Snagit has no border object; its own
+Border effect is painted into the background bitmap. The writer does the same: it renders
+the border into the background PNG and sets <code>CaptureCanvasWidth</code> and
+<code>CaptureCanvasHeight</code> to the output size. No warning is added to the unsupported
+list, because nothing is lost in the file Snagit will read.</p>
+
+<p><strong>Reading Snagit files (.snagx).</strong> A Snagit border already arrives as pixels
+and will keep doing so; this section adds the case that brings it back as an editable
+border. When Snagit applies a destructive image effect it keeps the original beside the
+result as <code>{GUID}.backup.png</code> and <code>{GUID}.backup.json</code>, the latter
+carrying the pre-effect canvas size. The reader recovers a border when all of the following
+hold: the backup pair is present; the page canvas is larger than the backup canvas by the
+same amount in both dimensions; that amount is even and positive; and the ring between the
+two, in the page PNG, is a single uniform colour. It then takes the background image from
+the backup PNG, the canvas size from the backup JSON, <code>border_width</code> as half the
+difference and <code>border_color</code> as the ring's colour, with style solid and the
+shadow off. If any test fails — a backup pair left by some other effect, a non-uniform ring,
+a ring that is not the same on all four sides — the page loads flattened, as it does
+today.</p>
+
+<h3 id="s10-9">Edge Cases</h3>
+
+<ul>
+  <li>A width of 0 is the absence of a border: no ring, no shadow, and an output rectangle
+  equal to the canvas rectangle.</li>
+  <li>Over a transparent canvas background the ring is transparent wherever the stroke does
+  not cover it, and a PNG export carries that transparency.</li>
+  <li>A border whose colour is fully transparent still occupies its ring, so the exported
+  size grows although nothing is visible. This is deliberate: it is the same thing a zero
+  opacity item does everywhere else in the product.</li>
+  <li>The width is clamped so that the output rectangle stays within the 32000 px limit of
+  8.3 on both axes; the spin box refuses the value rather than silently truncating it.</li>
+  <li>Each bar or panel edit is one undoable step, and consecutive edits of the same property
+  merge into one, as the canvas colour and DPI edits already do.</li>
+  <li>Undo of a Resize Image restores the border width along with everything else it
+  scaled.</li>
+  <li>The border is never a hit target. A click anywhere in the ring reaches the pasteboard,
+  not the border.</li>
+</ul>
+
+<h3 id="s10-10">Status Bar Hints</h3>
+
+<table>
+  <colgroup><col class="w-medium"><col></colgroup>
+  <thead>
+    <tr><th>State</th><th>Status Bar Text</th></tr>
+  </thead>
+  <tbody>
+    <tr><th>Tool active, no border</th><td>Set Width above 0 to put a border around the
+    image.</td></tr>
+    <tr><th>Tool active, border present</th><td>Border: 8 px solid | Width 0 removes
+    it</td></tr>
+    <tr><th>Width at the clamp</th><td>Border limited to N px: the image plus its border may
+    not exceed 32000 px.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s11">Inter-Tool Interactions &amp; Edge Cases</h2>
+
+<h3 id="s11-1">Tool Switching During Active Operations</h3>
 
 <table>
   <colgroup><col class="w-medium"><col class="w-medium"><col></colgroup>
@@ -1734,7 +2021,7 @@ on the system clipboard to preserve vector data across instances.</p>
   </tbody>
 </table>
 
-<h3 id="s10-2">Layer State Changes During Tool Operations</h3>
+<h3 id="s11-2">Layer State Changes During Tool Operations</h3>
 
 <ul>
   <li>If the active layer is locked while the user has items selected on that layer:
@@ -1751,7 +2038,7 @@ on the system clipboard to preserve vector data across instances.</p>
   hidden/locked layer.</li>
 </ul>
 
-<h3 id="s10-3">Undo/Redo During Tool Operations</h3>
+<h3 id="s11-3">Undo/Redo During Tool Operations</h3>
 
 <ul>
   <li>Pressing Ctrl+Z while in the middle of a draw operation (raster selection being drawn,
@@ -1763,7 +2050,7 @@ on the system clipboard to preserve vector data across instances.</p>
   positions). No command is pushed. A second Ctrl+Z undoes the previous command.</li>
 </ul>
 
-<h3 id="s10-4">Multi-Monitor &amp; Focus</h3>
+<h3 id="s11-4">Multi-Monitor &amp; Focus</h3>
 
 <ul>
   <li>If the application loses focus (user switches to another application) while holding
@@ -1774,13 +2061,13 @@ on the system clipboard to preserve vector data across instances.</p>
   <li>Keyboard shortcuts only work when the main window or its child widgets have focus.</li>
 </ul>
 
-<h2 id="s11">Command Definitions (Undo/Redo)</h2>
+<h2 id="s12">Command Definitions (Undo/Redo)</h2>
 
 <p>This section provides detailed specifications for each command type produced by the
 tools in this PRD. All commands implement the interface defined in Technical
 Architecture PRD Section 3.7.2.</p>
 
-<h3 id="s11-1">MoveItemsCommand</h3>
+<h3 id="s12-1">MoveItemsCommand</h3>
 
 <table>
   <colgroup><col class="w-medium"><col class="w-short"><col></colgroup>
@@ -1808,7 +2095,7 @@ Used for keyboard nudge coalescing.</p>
 
 <p><strong><code>description()</code>:</strong> "Move N item(s)"</p>
 
-<h3 id="s11-2">TransformItemCommand</h3>
+<h3 id="s12-2">TransformItemCommand</h3>
 
 <table>
   <colgroup><col class="w-medium"><col class="w-short"><col></colgroup>
@@ -1832,7 +2119,7 @@ Used for keyboard nudge coalescing.</p>
 <p><strong><code>description()</code>:</strong> "Resize N item(s)" / "Rotate N item(s)" /
 "Skew N item(s)"</p>
 
-<h3 id="s11-3">RasterCutCommand</h3>
+<h3 id="s12-3">RasterCutCommand</h3>
 
 <table>
   <colgroup><col class="w-medium"><col class="w-short"><col></colgroup>
@@ -1857,7 +2144,7 @@ layer at <code>selection_rect</code> position.</p>
 
 <p><strong><code>description()</code>:</strong> "Cut raster selection"</p>
 
-<h3 id="s11-4">CropCanvasCommand</h3>
+<h3 id="s12-4">CropCanvasCommand</h3>
 
 <table>
   <colgroup><col class="w-medium"><col class="w-short"><col></colgroup>
@@ -1881,7 +2168,7 @@ original states. Re-add removed items. Restore clipped raster data.</p>
 
 <p><strong><code>description()</code>:</strong> "Crop canvas to W x H"</p>
 
-<h3 id="s11-5">ResizeCanvasCommand</h3>
+<h3 id="s12-5">ResizeCanvasCommand</h3>
 
 <table>
   <colgroup><col class="w-medium"><col class="w-short"><col></colgroup>
@@ -1906,7 +2193,7 @@ pixel data.</p>
 
 <p><strong><code>description()</code>:</strong> "Resize canvas to W x H"</p>
 
-<h3 id="s11-6">ResizeImageCommand</h3>
+<h3 id="s12-6">ResizeImageCommand</h3>
 
 <table>
   <colgroup><col class="w-medium"><col class="w-short"><col></colgroup>
@@ -1933,9 +2220,38 @@ Restore original canvas size.</p>
 
 <p><strong><code>description()</code>:</strong> "Resize image to W x H"</p>
 
-<h2 id="s12">Acceptance Criteria</h2>
+<h3 id="s12-7">SetCanvasBorderCommand</h3>
 
-<h3 id="s12-1">Select / Move Tool</h3>
+<table>
+  <colgroup><col class="w-medium"><col class="w-short"><col></colgroup>
+  <thead>
+    <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><th><code>property_name</code></th><td>str</td><td>One of border_width,
+    border_color, border_style, border_shadow.</td></tr>
+    <tr><th><code>old_value</code></th><td>object</td><td>The property's value before the
+    edit.</td></tr>
+    <tr><th><code>new_value</code></th><td>object</td><td>The property's value after the
+    edit.</td></tr>
+  </tbody>
+</table>
+
+<p><strong><code>redo()</code>:</strong> Set the named border property on the scene to
+<code>new_value</code>.</p>
+
+<p><strong><code>undo()</code>:</strong> Set it back to <code>old_value</code>.</p>
+
+<p><strong><code>description()</code>:</strong> "Change border width", "Change border
+color", "Change border style", or "Change border shadow".</p>
+
+<p><strong>Merging:</strong> consecutive commands carrying the same
+<code>property_name</code> merge into one undo entry, as SetCanvasPropertyCommand already
+does for the canvas colour and DPI.</p>
+
+<h2 id="s13">Acceptance Criteria</h2>
+
+<h3 id="s13-1">Select / Move Tool</h3>
 
 <ol>
   <li>Single-click selects an item. Shift+click adds to selection. Ctrl+click toggles. Click
@@ -1955,7 +2271,7 @@ Restore original canvas size.</p>
   <li>Double-click on empty canvas toggles between fit-to-window zoom and 100% zoom.</li>
 </ol>
 
-<h3 id="s12-2">Pan / Hand Tool</h3>
+<h3 id="s13-2">Pan / Hand Tool</h3>
 
 <ol>
   <li>Clicking and dragging pans the viewport with 1:1 mouse tracking at 60 FPS.</li>
@@ -1972,7 +2288,7 @@ Restore original canvas size.</p>
   stops when the cursor leaves the trigger zone or the drag ends.</li>
 </ol>
 
-<h3 id="s12-3">Zoom Tool</h3>
+<h3 id="s13-3">Zoom Tool</h3>
 
 <ol>
   <li>Ctrl+scroll wheel zooms in/out centered on the cursor position. The scene point under
@@ -1985,7 +2301,7 @@ Restore original canvas size.</p>
   <li>Zoom rectangle (drag with zoom tool) correctly zooms to the drawn area.</li>
 </ol>
 
-<h3 id="s12-4">Raster Selection (Rectangle)</h3>
+<h3 id="s13-4">Raster Selection (Rectangle)</h3>
 
 <ol>
   <li>Click-and-drag draws a rectangular selection with marching-ants animation.</li>
@@ -2003,7 +2319,7 @@ Restore original canvas size.</p>
   <li>Feather and anti-alias options produce correct results on selection edges.</li>
 </ol>
 
-<h3 id="s12-5">Raster Selection (Freeform / Lasso)</h3>
+<h3 id="s13-5">Raster Selection (Freeform / Lasso)</h3>
 
 <ol>
   <li>Freeform mode: click-and-drag draws a freeform path. Release auto-closes the path.</li>
@@ -2013,7 +2329,7 @@ Restore original canvas size.</p>
   <li>The alpha mask is preserved in the resulting RasterRegionItem.</li>
 </ol>
 
-<h3 id="s12-6">Crop Canvas</h3>
+<h3 id="s13-6">Crop Canvas</h3>
 
 <ol>
   <li>Activating the crop tool shows the crop overlay with dim area, handles, and optional
@@ -2027,7 +2343,7 @@ Restore original canvas size.</p>
   <li>Escape cancels the crop with no changes.</li>
 </ol>
 
-<h3 id="s12-7">Resize Canvas / Resize Image</h3>
+<h3 id="s13-7">Resize Canvas / Resize Image</h3>
 
 <ol>
   <li>Resize Canvas dialog correctly expands/shrinks the canvas based on anchor position and
@@ -2039,7 +2355,35 @@ Restore original canvas size.</p>
   <li>Memory warnings appear for operations that would exceed reasonable memory bounds.</li>
 </ol>
 
-<h3 id="s12-8">Copy / Cut / Paste / Duplicate</h3>
+<h3 id="s13-8">Border Tool</h3>
+
+<ol>
+  <li>Shift+B activates the Border tool and the Left Tool Palette shows it. The Tool Options
+  Bar displays Width, Color, Opacity, Style, Shadow and Remove Border, each reading the
+  current document's value.</li>
+  <li>Raising Width above 0 draws a border in a ring outside the image. The image is neither
+  covered nor scaled, and no item moves.</li>
+  <li>Color, Opacity, Style and Shadow each change the border immediately. Each edit is one
+  undoable step and consecutive edits of the same control merge into one.</li>
+  <li>A PNG export of a 2550 x 3300 image with an 8 px border is 2566 x 3316. With the shadow
+  on, the export grows further to hold the shadow's offset and blur.</li>
+  <li>Saving a .smk and reopening it restores the border at the same width, colour, opacity,
+  style and shadow, still editable.</li>
+  <li>Saving a .snagx flattens the border into the background image and grows
+  CaptureCanvasWidth and CaptureCanvasHeight to match; Snagit opens the file with the border
+  showing and reports no error.</li>
+  <li>Opening a Snagit file whose border was applied with Snagit's Border effect restores an
+  editable border of the right width and colour, with the image at its pre-border size.</li>
+  <li>Opening a Snagit file with no backup pair loads exactly as it does today, with the
+  border, if any, in the pixels.</li>
+  <li>Crop, Resize Canvas, Rotate Canvas, Flip Canvas and Auto-Trim leave the border width
+  unchanged and the border re-wraps the result. Resize Image scales the border width with the
+  content, and undo restores it.</li>
+  <li>Setting Width to 0, or pressing Remove Border, removes the border and returns the
+  exported size to the canvas size.</li>
+</ol>
+
+<h3 id="s13-9">Copy / Cut / Paste / Duplicate</h3>
 
 <ol>
   <li>Copy places both internal (JSON) and system (PNG) data on clipboard.</li>
@@ -2055,7 +2399,7 @@ Restore original canvas size.</p>
   system text) is respected.</li>
 </ol>
 
-<h3 id="s12-9">Inter-Tool Interactions</h3>
+<h3 id="s13-10">Inter-Tool Interactions</h3>
 
 <ol>
   <li>Switching tools during active raster selection or crop silently cancels the operation.</li>
@@ -2065,7 +2409,7 @@ Restore original canvas size.</p>
   <li>Layer lock/hide during active selection correctly deselects affected items.</li>
 </ol>
 
-<h3 id="s12-10">Performance</h3>
+<h3 id="s13-11">Performance</h3>
 
 <ol>
   <li>Rubber-band selection renders at 60 FPS even with 100+ items in the scene.</li>
@@ -2075,7 +2419,7 @@ Restore original canvas size.</p>
   <li>Marching ants animation does not cause measurable CPU load when idle.</li>
 </ol>
 
-<h2 id="s13">Open Issues</h2>
+<h2 id="s14">Open Issues</h2>
 
 <p>These items were raised by the conversion from Word. None of them changes a
 requirement; each needs a decision before this document leaves draft.</p>

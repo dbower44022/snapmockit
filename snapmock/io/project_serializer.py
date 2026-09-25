@@ -8,13 +8,14 @@ from pathlib import Path
 from typing import Any
 
 from PyQt6.QtCore import QBuffer, QIODevice, Qt
-from PyQt6.QtGui import QImage, QPixmap
+from PyQt6.QtGui import QColor, QImage, QPixmap
 
 from snapmock.config.constants import (
     APP_VERSION,
     DEFAULT_CANVAS_DPI,
     PROJECT_FORMAT_VERSION,
     THUMBNAIL_MAX_SIZE,
+    BorderStyle,
 )
 from snapmock.core.guides import Guide
 from snapmock.core.layer import Layer, normalize_blend_mode, normalize_layer_type
@@ -107,6 +108,15 @@ def save_project(
             "dpi": scene.canvas_dpi,
         },
     }
+    if scene.has_border:
+        # An absent block means no border, so a file written before the border existed
+        # reads correctly and format_version stays 1 (Navigation PRD 10.8).
+        manifest["canvas"]["border"] = {
+            "width": scene.border_width,
+            "color": scene.border_color.name(QColor.NameFormat.HexArgb),
+            "style": scene.border_style.value,
+            "shadow": dict(scene.border_shadow),
+        }
     if scene.guides:
         manifest["guides"] = [g.to_dict() for g in scene.guides]
     if library_metadata:
@@ -268,6 +278,25 @@ def _mask_references(entries: list[Any]) -> dict[str, str]:
     return found
 
 
+def _apply_border(scene: SnapScene, data: Any) -> None:
+    """Put a manifest ``canvas.border`` block onto *scene* (Navigation PRD 10.8).
+
+    Absent or malformed leaves the scene's default, which is no border.
+    """
+    if not isinstance(data, dict):
+        return
+    scene.set_border_width(int(data.get("width", 0)))
+    if "color" in data:
+        scene.set_border_color(QColor(str(data["color"])))
+    try:
+        scene.set_border_style(BorderStyle(str(data.get("style", "solid"))))
+    except ValueError:
+        scene.set_border_style(BorderStyle.SOLID)
+    shadow = data.get("shadow")
+    if isinstance(shadow, dict):
+        scene.set_border_shadow(shadow)
+
+
 def load_project(path: Path) -> SnapScene:
     """Load a .smk ZIP archive and reconstruct the scene."""
     with zipfile.ZipFile(path, "r") as zf:
@@ -286,6 +315,7 @@ def load_project(path: Path) -> SnapScene:
         height=int(canvas.get("height", 1080)),
     )
     scene.set_canvas_dpi(int(canvas.get("dpi", DEFAULT_CANVAS_DPI)))
+    _apply_border(scene, canvas.get("border"))
     # Remove the default layer
     default_layer = scene.layer_manager.active_layer
     if default_layer is not None:

@@ -82,14 +82,16 @@ class RasterSelectTool(BaseTool):
         self._hide_size_readout()
 
     def select_rect(self, rect: QRectF) -> None:
-        """Make *rect*, clipped to the canvas, the active selection without a drag.
+        """Make *rect*, clipped to the document's output rectangle, the active selection
+        without a drag.
 
-        Select All with nothing selectable on the active layer takes the whole canvas
-        this way (General UI PRD 3.2, Doug's decision A of 09-24-26).
+        Select All with nothing selectable on the active layer takes the whole document
+        this way, the canvas border included (General UI PRD 3.2, Doug's decision A of
+        09-24-26); a dragged selection stays inside the canvas.
         """
         if self._scene is None:
             return
-        clipped = rect.normalized().intersected(self._scene.canvas_rect)
+        clipped = rect.normalized().intersected(self._scene.output_rect)
         if clipped.isEmpty():
             return
         overlay = self._ensure_overlay()

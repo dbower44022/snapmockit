@@ -19,7 +19,7 @@ from PyQt6.QtCore import QBuffer, QIODevice, QMarginsF, QRectF, QSize, QSizeF
 from PyQt6.QtGui import QColor, QImage, QPageLayout, QPageSize, QPaintDevice, QPainter
 
 from snapmock.config.constants import APP_NAME
-from snapmock.core.render_engine import RenderEngine
+from snapmock.core.render_engine import RenderEngine, paint_canvas_border
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -185,6 +185,9 @@ def resolve_region(
 
     A Selection Only or Visible Area Only export with nothing to clip to falls
     back to the whole canvas; the dialog checks the requirement before it gets here.
+    A whole-canvas export covers the scene's output rectangle, which holds the canvas
+    border and its shadow (Navigation PRD 10.2); the other two stay inside the canvas,
+    so a Selection Only export never carries the border.
     """
     canvas = scene.canvas_rect
     chosen: QRectF | None = None
@@ -193,7 +196,7 @@ def resolve_region(
     elif region is ExportRegion.VISIBLE:
         chosen = visible
     if chosen is None or chosen.isEmpty():
-        return QRectF(canvas)
+        return QRectF(scene.output_rect)
     clipped = chosen.intersected(canvas)
     return clipped if not clipped.isEmpty() else QRectF(canvas)
 
@@ -259,6 +262,23 @@ def _paint_canvas_colour(
     painter.fillRect(fill, colour)
 
 
+def _paint_border(painter: QPainter, scene: SnapScene, target: QRectF, region: QRectF) -> None:
+    """Paint the canvas border into *target*, which shows *region* (Navigation PRD 10.4).
+
+    The vector exports paint it here, as they paint the canvas colour here; the raster
+    exports get it from :class:`RenderEngine`.
+    """
+    if not scene.has_border or region.isEmpty():
+        return
+    painter.save()
+    painter.setClipRect(target)
+    painter.translate(target.topLeft())
+    painter.scale(target.width() / region.width(), target.height() / region.height())
+    painter.translate(-region.topLeft())
+    paint_canvas_border(painter, scene)
+    painter.restore()
+
+
 def _write_svg(scene: SnapScene, settings: ExportSettings, region: QRectF, target: object) -> None:
     from PyQt6.QtSvg import QSvgGenerator
 
@@ -280,6 +300,7 @@ def _write_svg(scene: SnapScene, settings: ExportSettings, region: QRectF, targe
         painter = QPainter(generator)
         target = QRectF(0, 0, region.width(), region.height())
         _paint_canvas_colour(painter, scene, target, region)
+        _paint_border(painter, scene, target, region)
         scene.render(painter, target=target, source=region)
         painter.end()
     finally:
@@ -318,6 +339,7 @@ def _write_pdf(scene: SnapScene, settings: ExportSettings, region: QRectF, path:
     page = QRectF(0, 0, device.width(), device.height())  # type: ignore[union-attr]
     target = fit_to_page(QSizeF(region.width(), region.height()), page)
     _paint_canvas_colour(painter, scene, target, region)
+    _paint_border(painter, scene, target, region)
     scene.render(painter, target=target, source=region)
     painter.end()
 
@@ -332,10 +354,11 @@ def export_scene(
 ) -> None:
     """Write *scene* to *path* in ``settings.format``.
 
-    *region* is the scene rectangle to export (the whole canvas when None).
+    *region* is the scene rectangle to export; None means the whole document, which is
+    the scene's output rectangle — the canvas with its border (Navigation PRD 10.2).
     ``ExportFormat.SMK`` copies *source_file* instead of rendering.
     """
-    rect = region if region is not None and not region.isEmpty() else scene.canvas_rect
+    rect = region if region is not None and not region.isEmpty() else scene.output_rect
     fmt = settings.format
     if fmt is ExportFormat.SMK:
         if source_file is None:
@@ -367,7 +390,7 @@ def estimate_export_size(
 
     PDF has to go through a temporary file; SMK is the size of the file copied.
     """
-    rect = region if region is not None and not region.isEmpty() else scene.canvas_rect
+    rect = region if region is not None and not region.isEmpty() else scene.output_rect
     fmt = settings.format
     if fmt is ExportFormat.SMK:
         if source_file is None or not source_file.exists():

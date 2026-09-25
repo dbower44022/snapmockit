@@ -11,8 +11,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from PyQt6.QtCore import QBuffer, QIODevice, Qt
-from PyQt6.QtGui import QColor
+from PyQt6.QtCore import QBuffer, QIODevice, QPointF, Qt
+from PyQt6.QtGui import QColor, QImage, QPainter
 
 from snapmock.config.constants import APP_NAME, APP_VERSION
 from snapmock.core.scene import SnapScene
@@ -50,23 +50,31 @@ def save_snagx(scene: SnapScene, path: Path) -> list[str]:
     page_json_name = f"{page_guid}.json"
     page_png_name = f"{page_guid}.png"
 
-    canvas_w = int(scene.canvas_size.width())
-    canvas_h = int(scene.canvas_size.height())
+    # A canvas border grows what is written, as Snagit's own Border effect does: the
+    # border is painted into the background image and the canvas holds both (PRD 10.8).
+    output = scene.output_rect
+    canvas_w = int(round(output.width()))
+    canvas_h = int(round(output.height()))
+    offset = QPointF(-output.left(), -output.top())
 
     # Separate background raster from annotation items
     bg_item, annotation_items = _split_bg_and_annotations(scene)
 
     # Background PNG bytes
-    bg_png = _pixmap_to_png_bytes(bg_item) if bg_item is not None else b""
+    if scene.has_border:
+        bg_png = _flattened_background_png(scene, bg_item, canvas_w, canvas_h, offset)
+    else:
+        bg_png = _pixmap_to_png_bytes(bg_item) if bg_item is not None else b""
 
-    # Thumbnail
-    thumb_png = _make_thumbnail(bg_item, canvas_w, canvas_h)
+    # Thumbnail — of the page as written, so a border shows in it too
+    thumb_png = _thumbnail_from_png(bg_png) if scene.has_border else _make_thumbnail(bg_item)
 
     # Build CaptureObjects
     capture_objects: list[dict[str, Any]] = []
     for item in annotation_items:
         obj = _item_to_snagit(item, warnings)
         if obj is not None:
+            _offset_object(obj, offset)
             capture_objects.append(obj)
 
     bg_color = scene.background_color.name(QColor.NameFormat.HexArgb)
@@ -501,6 +509,67 @@ def _item_to_image(item: RasterRegionItem) -> dict[str, Any]:
 # ---- helpers ----
 
 
+_POINT_FIELDS = ("PointsArray", "CalloutTails")
+"""The Snagit object fields that hold ``"x,y"`` strings in canvas coordinates."""
+
+
+def _offset_object(obj: dict[str, Any], offset: QPointF) -> None:
+    """Move a CaptureObject's points by *offset*; a no-op at the origin (PRD 10.8).
+
+    A canvas border moves the image away from the page origin, so every annotation moves
+    with it. Only two fields carry coordinates, and the round-trip path rewrites both
+    from the item before this runs.
+    """
+    if offset.isNull():
+        return
+    for field in _POINT_FIELDS:
+        points = obj.get(field)
+        if not isinstance(points, list):
+            continue
+        moved: list[str] = []
+        for point in points:
+            try:
+                x_text, y_text = str(point).split(",")
+                x = float(x_text) + offset.x()
+                y = float(y_text) + offset.y()
+            except ValueError:  # pragma: no cover - a field we did not write
+                moved.append(str(point))
+                continue
+            moved.append(f"{x:.0f},{y:.0f}")
+        obj[field] = moved
+
+
+def _flattened_background_png(
+    scene: SnapScene,
+    bg_item: RasterRegionItem | None,
+    width: int,
+    height: int,
+    offset: QPointF,
+) -> bytes:
+    """The background image with the canvas border painted around it (PRD 10.8).
+
+    Snagit has no border object; its Border effect lives in the background bitmap and the
+    canvas holds both. This writes the same thing, so Snagit opens the file with the
+    border showing and nothing is lost.
+    """
+    from snapmock.core.render_engine import paint_canvas_border
+
+    image = QImage(max(1, width), max(1, height), QImage.Format.Format_ARGB32_Premultiplied)
+    image.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(image)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    painter.translate(offset)
+    paint_canvas_border(painter, scene)
+    if bg_item is not None:
+        painter.drawPixmap(QPointF(0, 0), bg_item._pixmap)  # noqa: SLF001
+    painter.end()
+    buf = QBuffer()
+    buf.open(QIODevice.OpenModeFlag.WriteOnly)
+    image.save(buf, "PNG")
+    data: bytes = buf.data().data()
+    return data
+
+
 def _split_bg_and_annotations(
     scene: SnapScene,
 ) -> tuple[RasterRegionItem | None, list[SnapGraphicsItem]]:
@@ -544,18 +613,34 @@ def _pixmap_to_png_bytes(item: RasterRegionItem) -> bytes:
     return data
 
 
-def _make_thumbnail(bg_item: RasterRegionItem | None, canvas_w: int, canvas_h: int) -> bytes:
+def _make_thumbnail(bg_item: RasterRegionItem | None) -> bytes:
     """Create a thumbnail PNG (max *_THUMB_WIDTH* px wide)."""
     if bg_item is None:
         return b""
 
-    pixmap = bg_item._pixmap
+    pixmap = bg_item._pixmap  # noqa: SLF001
     if pixmap.width() > _THUMB_WIDTH:
         pixmap = pixmap.scaledToWidth(_THUMB_WIDTH, Qt.TransformationMode.SmoothTransformation)
 
     buf = QBuffer()
     buf.open(QIODevice.OpenModeFlag.WriteOnly)
     pixmap.save(buf, "PNG")
+    data: bytes = buf.data().data()
+    return data
+
+
+def _thumbnail_from_png(png: bytes) -> bytes:
+    """A thumbnail of the page image just written, border and all."""
+    if not png:
+        return b""
+    image = QImage()
+    if not image.loadFromData(png, "PNG"):  # pragma: no cover - we just wrote it
+        return b""
+    if image.width() > _THUMB_WIDTH:
+        image = image.scaledToWidth(_THUMB_WIDTH, Qt.TransformationMode.SmoothTransformation)
+    buf = QBuffer()
+    buf.open(QIODevice.OpenModeFlag.WriteOnly)
+    image.save(buf, "PNG")
     data: bytes = buf.data().data()
     return data
 

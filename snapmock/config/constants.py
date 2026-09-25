@@ -366,6 +366,14 @@ GRID_MAJOR_MULTIPLE = 5
 GRID_MINOR_MIN_ZOOM = 200
 GRID_MIN_PIXEL_SPACING = 4
 
+# Canvas border (Navigation & Raster Operations PRD Section 10). The border rides in a
+# ring outside the canvas rectangle, so the canvas stays the size of the image and the
+# rendered size grows instead. A width of 0 is the absence of a border.
+CANVAS_DIMENSION_MAX = 32000  # the limit of Navigation PRD 8.3, which the border shares
+DEFAULT_BORDER_WIDTH = 0
+DEFAULT_BORDER_COLOR = "#FF000000"  # opaque black, as Snagit's own border defaults
+BORDER_WIDTH_MAX = 200
+
 # Empty canvas prompt (General UI PRD 6.2)
 EMPTY_CANVAS_TEXT = (
     "Drag an image here, paste from clipboard (Ctrl+V), or go to File > Import Image"

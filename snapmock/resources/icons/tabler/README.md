@@ -15,3 +15,5 @@ directory and reference `<name>` from `snapmock/ui/icons.py`.
 on 09-11-26 by the Basic Shape remainder work from the `@tabler/icons` npm package of the
 same release (`icons/outline/`), which carries the same paths without the repository's
 leading comment block of tags.
+
+`border-outer.svg` (the Border tool) was added on 09-21-26 by the Border tool work from the same release, verbatim.

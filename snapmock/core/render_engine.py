@@ -1,16 +1,109 @@
-"""RenderEngine — layer compositing for display and export."""
+"""RenderEngine — layer compositing for display and export.
+
+Also the canvas border's painting (Navigation & Raster Operations PRD Section 10), which
+the display and every export share so that what is on screen is what lands in the file.
+"""
 
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from PyQt6.QtCore import QRectF, Qt
-from PyQt6.QtGui import QColor, QImage, QPainter
+from PyQt6.QtCore import QPointF, QRectF, Qt
+from PyQt6.QtGui import QColor, QImage, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import QGraphicsItem
 
 if TYPE_CHECKING:
     from snapmock.core.scene import SnapScene
+
+
+_MAX_BORDER_SHADOW_IMAGE = 4096
+"""Longest side of the border shadow's image, as the item shadow's own cap."""
+
+
+# --- the canvas border (Navigation PRD 10.2, 10.4) -------------------------
+
+
+def border_ring_path(scene: SnapScene) -> QPainterPath:
+    """The ring between the canvas and the border's outer edge, in scene coordinates.
+
+    Empty when there is no border. This is what the canvas background colour fills before
+    the border stroke is painted over it (10.2), so a dashed or semi-transparent border
+    shows the canvas colour through its gaps rather than the pasteboard.
+    """
+    path = QPainterPath()
+    if not scene.has_border:
+        return path
+    outer = QPainterPath()
+    outer.addRect(scene.border_rect)
+    inner = QPainterPath()
+    inner.addRect(scene.canvas_rect)
+    return outer.subtracted(inner)
+
+
+def paint_canvas_border(painter: QPainter, scene: SnapScene) -> None:
+    """Paint the border's shadow, ring fill, and stroke in scene coordinates (10.4).
+
+    A no-op when there is no border. The caller has already put *painter* into scene
+    coordinates; nothing here reads the canvas size except through *scene*.
+    """
+    if not scene.has_border:
+        return
+
+    width = float(scene.border_width)
+    outer = scene.border_rect
+
+    shadow = scene.border_shadow
+    if bool(shadow.get("shadow_enabled", False)):
+        _paint_border_shadow(painter, outer, shadow)
+
+    ring = border_ring_path(scene)
+    background = scene.background_color
+    if background.alpha() > 0:
+        painter.fillPath(ring, background)
+
+    color = scene.border_color
+    if color.alpha() == 0:
+        return
+    from snapmock.items.vector_item import STROKE_STYLE_MAP
+
+    pen = QPen(color, width, STROKE_STYLE_MAP.get(scene.border_style, Qt.PenStyle.SolidLine))
+    pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
+    painter.save()
+    painter.setPen(pen)
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    # The stroke's centre line sits half a width outside the canvas, so the stroke fills
+    # the ring exactly and never covers the image (10.2).
+    painter.drawRect(scene.canvas_rect.adjusted(-width / 2, -width / 2, width / 2, width / 2))
+    painter.restore()
+
+
+def _paint_border_shadow(painter: QPainter, outer: QRectF, shadow: dict[str, Any]) -> None:
+    """Cast the border's drop shadow outward from *outer*, using the shared blur."""
+    from snapmock.items.shadow import blur_image
+
+    color = QColor(str(shadow.get("shadow_color", "#66000000")))
+    if color.alpha() == 0:
+        return
+    blur = max(0.0, float(shadow.get("shadow_blur", 0.0)))
+    offset_x = float(shadow.get("shadow_offset_x", 0.0))
+    offset_y = float(shadow.get("shadow_offset_y", 0.0))
+    spread = blur * 2.0
+    local = outer.adjusted(-spread, -spread, spread, spread)
+    transform = painter.worldTransform()
+    scale = math.sqrt(abs(transform.determinant())) or 1.0
+    width = min(_MAX_BORDER_SHADOW_IMAGE, max(1, math.ceil(local.width() * scale)))
+    height = min(_MAX_BORDER_SHADOW_IMAGE, max(1, math.ceil(local.height() * scale)))
+    image = QImage(width, height, QImage.Format.Format_ARGB32_Premultiplied)
+    image.fill(Qt.GlobalColor.transparent)
+    image_painter = QPainter(image)
+    image_painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+    image_painter.scale(width / local.width(), height / local.height())
+    image_painter.translate(-local.topLeft())
+    image_painter.fillRect(outer, color)
+    image_painter.end()
+    blurred = blur_image(image, blur * scale)
+    painter.drawImage(local.translated(QPointF(offset_x, offset_y)), blurred)
 
 
 class RenderEngine:
@@ -31,11 +124,13 @@ class RenderEngine:
     ) -> QImage:
         """Render the full scene to a QImage.
 
-        If *width*/*height* are not specified, uses the canvas size.
+        If *width*/*height* are not specified, uses the scene's output rectangle: the
+        canvas grown by the canvas border and its shadow (Navigation PRD 10.2). With no
+        border that is the canvas size, so a document without one is unchanged.
         """
-        canvas = self._scene.canvas_size
-        w = width if width is not None else int(canvas.width())
-        h = height if height is not None else int(canvas.height())
+        source = self._scene.output_rect
+        w = width if width is not None else int(round(source.width()))
+        h = height if height is not None else int(round(source.height()))
 
         image = QImage(w, h, QImage.Format.Format_ARGB32_Premultiplied)
         if background is not None:
@@ -45,13 +140,26 @@ class RenderEngine:
 
         painter = QPainter(image)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        self._scene.render(
-            painter,
-            target=QRectF(0, 0, w, h),
-            source=QRectF(0, 0, canvas.width(), canvas.height()),
-        )
+        self._paint_border(painter, QRectF(0, 0, w, h), source)
+        self._scene.render(painter, target=QRectF(0, 0, w, h), source=source)
         painter.end()
         return image
+
+    def _paint_border(self, painter: QPainter, target: QRectF, source: QRectF) -> None:
+        """Paint the canvas border into *target*, which shows *source* of the scene.
+
+        A no-op without a border, and harmless when *source* lies inside the canvas: the
+        border falls outside the clip and nothing is drawn.
+        """
+        if not self._scene.has_border or source.isEmpty():
+            return
+        painter.save()
+        painter.setClipRect(target)
+        painter.translate(target.topLeft())
+        painter.scale(target.width() / source.width(), target.height() / source.height())
+        painter.translate(-source.topLeft())
+        paint_canvas_border(painter, self._scene)
+        painter.restore()
 
     def render_region(
         self,
@@ -75,6 +183,7 @@ class RenderEngine:
 
         painter = QPainter(image)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self._paint_border(painter, QRectF(0, 0, w, h), rect)
         self._scene.render(
             painter,
             target=QRectF(0, 0, w, h),

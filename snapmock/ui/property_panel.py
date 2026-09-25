@@ -30,7 +30,10 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from snapmock.commands.canvas_property_commands import SetCanvasPropertyCommand
+from snapmock.commands.canvas_property_commands import (
+    SetCanvasBorderCommand,
+    SetCanvasPropertyCommand,
+)
 from snapmock.commands.macro_command import MacroCommand
 from snapmock.commands.modify_property import ModifyPropertiesCommand, ModifyPropertyCommand
 from snapmock.commands.move_item_layer import MoveItemToLayerCommand
@@ -46,10 +49,13 @@ from snapmock.config.constants import (
     BLUR_PIXEL_SIZE_MIN,
     BLUR_RADIUS_MAX,
     BLUR_RADIUS_MIN,
+    BORDER_WIDTH_MAX,
     CORNER_KEYS,
     CORNER_RADIUS_MAX,
     DEFAULT_BLUR_BRUSH_SIZE,
+    DEFAULT_BORDER_COLOR,
     DEFAULT_LINE_SPACING,
+    DEFAULT_SHADOW_COLOR,
     DEFAULT_STRAIGHTEN_THRESHOLD,
     HEAD_SIZE_CUSTOM_MAX,
     LINE_SPACING_MAX,
@@ -1204,9 +1210,57 @@ class PropertyPanel(QDockWidget):
         self._dpi_spin.setRange(*CANVAS_DPI_RANGE)
         self._dpi_spin.setKeyboardTracking(False)
         self._dpi_spin.setAccessibleName("Canvas DPI")
+        # The canvas border (Navigation PRD 10.6): the same values the Border tool's bar
+        # edits, reachable without activating the tool.
+        self._border_w_spin = QSpinBox()
+        self._border_w_spin.setRange(0, BORDER_WIDTH_MAX)
+        self._border_w_spin.setSuffix(" px")
+        self._border_w_spin.setKeyboardTracking(False)
+        self._border_w_spin.setAccessibleName("Canvas border width")
+        self._border_color_picker = ColorPicker(QColor(DEFAULT_BORDER_COLOR))
+        self._border_color_picker.setAccessibleName("Canvas border color")
+        self._border_opacity_spin = QSpinBox()
+        self._border_opacity_spin.setRange(0, 100)
+        self._border_opacity_spin.setSuffix("%")
+        self._border_opacity_spin.setKeyboardTracking(False)
+        self._border_opacity_spin.setAccessibleName("Canvas border opacity")
+        self._border_style_combo = QComboBox()
+        self._border_style_combo.setAccessibleName("Canvas border style")
+        for style in BorderStyle:
+            self._border_style_combo.addItem(
+                style.value.replace("dashdot", "dash-dot").title(), style
+            )
         self._canvas_section.add_row("Width:", self._canvas_w_spin)
         self._canvas_section.add_row("Height:", self._canvas_h_spin)
         self._canvas_section.add_row("Canvas color:", self._bg_color_picker)
+        self._canvas_section.add_row("Border:", self._border_w_spin)
+        self._canvas_section.add_row("Border color:", self._border_color_picker)
+        self._canvas_section.add_row("Border opacity:", self._border_opacity_spin)
+        self._canvas_section.add_row("Border style:", self._border_style_combo)
+        self._border_shadow_check = QCheckBox("Border shadow")
+        self._border_shadow_check.setAccessibleName("Canvas border shadow")
+        self._border_shadow_color = ColorPicker(QColor(DEFAULT_SHADOW_COLOR))
+        self._border_shadow_color.setAccessibleName("Canvas border shadow color")
+        self._border_shadow_dx = QDoubleSpinBox()
+        self._border_shadow_dx.setRange(-100.0, 100.0)
+        self._border_shadow_dx.setSuffix(" px")
+        self._border_shadow_dx.setKeyboardTracking(False)
+        self._border_shadow_dx.setAccessibleName("Canvas border shadow offset X")
+        self._border_shadow_dy = QDoubleSpinBox()
+        self._border_shadow_dy.setRange(-100.0, 100.0)
+        self._border_shadow_dy.setSuffix(" px")
+        self._border_shadow_dy.setKeyboardTracking(False)
+        self._border_shadow_dy.setAccessibleName("Canvas border shadow offset Y")
+        self._border_shadow_blur = QDoubleSpinBox()
+        self._border_shadow_blur.setRange(0.0, 100.0)
+        self._border_shadow_blur.setSuffix(" px")
+        self._border_shadow_blur.setKeyboardTracking(False)
+        self._border_shadow_blur.setAccessibleName("Canvas border shadow blur")
+        self._canvas_section.add_row("", self._border_shadow_check)
+        self._canvas_section.add_row("Shadow color:", self._border_shadow_color)
+        self._canvas_section.add_row("Shadow X:", self._border_shadow_dx)
+        self._canvas_section.add_row("Shadow Y:", self._border_shadow_dy)
+        self._canvas_section.add_row("Shadow blur:", self._border_shadow_blur)
         self._canvas_section.add_row("Pasteboard:", self._pasteboard_picker)
         self._canvas_section.add_row("Grid size:", self._grid_size_spin)
         self._canvas_section.add_row("", self._snap_check)
@@ -1247,6 +1301,15 @@ class PropertyPanel(QDockWidget):
         self._canvas_w_spin.valueChanged.connect(self._on_canvas_size_changed)
         self._canvas_h_spin.valueChanged.connect(self._on_canvas_size_changed)
         self._bg_color_picker.color_changed.connect(self._on_bg_color_changed)
+        self._border_w_spin.valueChanged.connect(self._on_border_width_changed)
+        self._border_color_picker.color_changed.connect(self._on_border_color_changed)
+        self._border_opacity_spin.valueChanged.connect(self._on_border_opacity_changed)
+        self._border_style_combo.currentIndexChanged.connect(self._on_border_style_changed)
+        self._border_shadow_check.toggled.connect(self._on_border_shadow_changed)
+        self._border_shadow_color.color_changed.connect(self._on_border_shadow_changed)
+        self._border_shadow_dx.valueChanged.connect(self._on_border_shadow_changed)
+        self._border_shadow_dy.valueChanged.connect(self._on_border_shadow_changed)
+        self._border_shadow_blur.valueChanged.connect(self._on_border_shadow_changed)
         self._pasteboard_picker.color_changed.connect(self._on_pasteboard_color_changed)
         self._grid_size_spin.valueChanged.connect(self._on_grid_size_changed)
         self._snap_check.toggled.connect(self._on_snap_toggled)
@@ -1406,6 +1469,7 @@ class PropertyPanel(QDockWidget):
             (self._scene.canvas_size_changed, self._refresh_from_selection),
             (self._scene.background_changed, self._refresh_from_selection),
             (self._scene.canvas_dpi_changed, self._refresh_from_selection),
+            (self._scene.border_changed, self._refresh_from_selection),
             (lm.layer_added, self._rebuild_layer_combo),
             (lm.layer_removed, self._rebuild_layer_combo),
             (lm.layer_renamed, self._rebuild_layer_combo),
@@ -1852,6 +1916,20 @@ class PropertyPanel(QDockWidget):
         self._canvas_w_spin.setValue(int(cs.width()))
         self._canvas_h_spin.setValue(int(cs.height()))
         self._bg_color_picker.color = self._scene.background_color
+        self._border_w_spin.setRange(0, max(1, self._scene.max_border_width()))
+        self._border_w_spin.setValue(self._scene.border_width)
+        border_color = self._scene.border_color
+        self._border_color_picker.color = border_color
+        self._border_opacity_spin.setValue(round(border_color.alpha() / 255 * 100))
+        index = self._border_style_combo.findData(self._scene.border_style)
+        if index >= 0:
+            self._border_style_combo.setCurrentIndex(index)
+        shadow = self._scene.border_shadow
+        self._border_shadow_check.setChecked(bool(shadow.get("shadow_enabled", False)))
+        self._border_shadow_color.color = QColor(str(shadow.get("shadow_color", "#66000000")))
+        self._border_shadow_dx.setValue(float(shadow.get("shadow_offset_x", 0.0)))
+        self._border_shadow_dy.setValue(float(shadow.get("shadow_offset_y", 0.0)))
+        self._border_shadow_blur.setValue(float(shadow.get("shadow_blur", 0.0)))
         pasteboard = self._settings.pasteboard_color()
         self._pasteboard_picker.color = (
             pasteboard if pasteboard is not None else current_theme().pasteboard
@@ -2258,6 +2336,68 @@ class PropertyPanel(QDockWidget):
                 self._scene, "background_color", self._scene.background_color, QColor(color)
             )
         )
+
+    def _on_border_width_changed(self, value: int) -> None:
+        if self._updating or value == self._scene.border_width:
+            return
+        self._push(
+            SetCanvasBorderCommand(
+                self._scene, "border_width", self._scene.border_width, int(value)
+            )
+        )
+
+    def _on_border_color_changed(self, color: QColor) -> None:
+        if self._updating:
+            return
+        # The swatch carries no alpha of its own; the Border opacity row owns it (10.5)
+        new_color = QColor(color)
+        new_color.setAlpha(self._scene.border_color.alpha())
+        if new_color == self._scene.border_color:
+            return
+        self._push(
+            SetCanvasBorderCommand(
+                self._scene, "border_color", self._scene.border_color, new_color
+            )
+        )
+
+    def _on_border_opacity_changed(self, percent: int) -> None:
+        if self._updating:
+            return
+        new_color = QColor(self._scene.border_color)
+        new_color.setAlpha(round(max(0, min(100, percent)) / 100 * 255))
+        if new_color == self._scene.border_color:
+            return
+        self._push(
+            SetCanvasBorderCommand(
+                self._scene, "border_color", self._scene.border_color, new_color
+            )
+        )
+
+    def _on_border_style_changed(self, _index: int) -> None:
+        if self._updating:
+            return
+        value = self._border_style_combo.currentData()
+        if not isinstance(value, BorderStyle) or value == self._scene.border_style:
+            return
+        self._push(
+            SetCanvasBorderCommand(self._scene, "border_style", self._scene.border_style, value)
+        )
+
+    def _on_border_shadow_changed(self, _value: object = None) -> None:
+        """The border's five shadow keys, written as one command (Navigation PRD 10.6)."""
+        if self._updating:
+            return
+        old = self._scene.border_shadow
+        new = {
+            "shadow_enabled": self._border_shadow_check.isChecked(),
+            "shadow_color": self._border_shadow_color.color.name(QColor.NameFormat.HexArgb),
+            "shadow_offset_x": self._border_shadow_dx.value(),
+            "shadow_offset_y": self._border_shadow_dy.value(),
+            "shadow_blur": self._border_shadow_blur.value(),
+        }
+        if new == old:
+            return
+        self._push(SetCanvasBorderCommand(self._scene, "border_shadow", old, new))
 
     def _on_pasteboard_color_changed(self, color: QColor) -> None:
         if not self._updating:

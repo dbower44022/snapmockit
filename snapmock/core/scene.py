@@ -2,17 +2,25 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from PyQt6.QtCore import QRectF, QSizeF, pyqtSignal
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsScene
 
 from snapmock.config.constants import (
+    BORDER_WIDTH_MAX,
+    CANVAS_DIMENSION_MAX,
+    DEFAULT_BORDER_COLOR,
+    DEFAULT_BORDER_WIDTH,
     DEFAULT_CANVAS_DPI,
     DEFAULT_CANVAS_HEIGHT,
     DEFAULT_CANVAS_WIDTH,
+    DEFAULT_SHADOW_BLUR,
+    DEFAULT_SHADOW_COLOR,
+    DEFAULT_SHADOW_OFFSET,
     PASTEBOARD_MARGIN,
+    BorderStyle,
 )
 from snapmock.core.command_stack import CommandStack
 from snapmock.core.guides import Guide
@@ -31,12 +39,15 @@ class SnapScene(QGraphicsScene):
         Emitted when the logical canvas size changes.
     guides_changed()
         Emitted after the guide list changes (General UI PRD 6.5).
+    border_changed()
+        Emitted after any canvas border property changes (Navigation PRD 10.3).
     """
 
     canvas_size_changed = pyqtSignal(QSizeF)
     background_changed = pyqtSignal()
     canvas_dpi_changed = pyqtSignal(int)
     guides_changed = pyqtSignal()
+    border_changed = pyqtSignal()
 
     def __init__(
         self,
@@ -49,6 +60,17 @@ class SnapScene(QGraphicsScene):
         self._background_color: QColor = QColor("white")
         self._canvas_dpi: int = DEFAULT_CANVAS_DPI
         self._guides: list[Guide] = []
+        # The canvas border (Navigation PRD 10.3); width 0 is the absence of one
+        self._border_width: int = DEFAULT_BORDER_WIDTH
+        self._border_color: QColor = QColor(DEFAULT_BORDER_COLOR)
+        self._border_style: BorderStyle = BorderStyle.SOLID
+        self._border_shadow: dict[str, Any] = {
+            "shadow_enabled": False,
+            "shadow_color": DEFAULT_SHADOW_COLOR,
+            "shadow_offset_x": DEFAULT_SHADOW_OFFSET,
+            "shadow_offset_y": DEFAULT_SHADOW_OFFSET,
+            "shadow_blur": DEFAULT_SHADOW_BLUR,
+        }
         self._update_scene_rect()
 
         self._layer_manager = LayerManager(self)
@@ -70,6 +92,7 @@ class SnapScene(QGraphicsScene):
         ):
             signal.connect(self.bump_content_revision)
         self.background_changed.connect(self.bump_content_revision)
+        self.border_changed.connect(self.bump_content_revision)
 
         # Create default layer
         self._layer_manager.add_layer("Layer 1")
@@ -107,6 +130,11 @@ class SnapScene(QGraphicsScene):
         """Resize the logical canvas."""
         self._canvas_size = QSizeF(size)
         self._update_scene_rect()
+        # A canvas that grew may leave no room for the border it carries (10.9)
+        room = self.max_border_width()
+        if self._border_width > room:
+            self._border_width = room
+            self.border_changed.emit()
         self.canvas_size_changed.emit(self._canvas_size)
 
     @property
@@ -123,6 +151,97 @@ class SnapScene(QGraphicsScene):
         if dpi != self._canvas_dpi:
             self._canvas_dpi = dpi
             self.canvas_dpi_changed.emit(dpi)
+
+    # --- the canvas border (Navigation PRD Section 10) ---
+    # Change these through ``commands/canvas_property_commands.py``.
+
+    @property
+    def border_width(self) -> int:
+        """Border thickness in pixels on each side; 0 is the absence of a border (10.3)."""
+        return self._border_width
+
+    def set_border_width(self, width: int) -> None:
+        """Set the border thickness, clamped to 10.3's range and to the canvas limit."""
+        width = max(0, min(int(width), self.max_border_width()))
+        if width != self._border_width:
+            self._border_width = width
+            self._border_did_change()
+
+    def max_border_width(self) -> int:
+        """The widest border this canvas takes before the output exceeds 10.9's limit."""
+        room = min(
+            CANVAS_DIMENSION_MAX - self._canvas_size.width(),
+            CANVAS_DIMENSION_MAX - self._canvas_size.height(),
+        )
+        return max(0, min(BORDER_WIDTH_MAX, int(room // 2)))
+
+    @property
+    def border_color(self) -> QColor:
+        """Border colour; its alpha carries the border's transparency (10.3)."""
+        return QColor(self._border_color)
+
+    def set_border_color(self, color: QColor) -> None:
+        if QColor(color) != self._border_color:
+            self._border_color = QColor(color)
+            self._border_did_change()
+
+    @property
+    def border_style(self) -> BorderStyle:
+        """Solid, Dashed, Dotted, DashDot, or DashDotDot (10.3)."""
+        return self._border_style
+
+    def set_border_style(self, style: BorderStyle) -> None:
+        style = BorderStyle(style)
+        if style != self._border_style:
+            self._border_style = style
+            self._border_did_change()
+
+    @property
+    def border_shadow(self) -> dict[str, Any]:
+        """The shared shadow helper's five keys for the border (10.3)."""
+        return dict(self._border_shadow)
+
+    def set_border_shadow(self, shadow: dict[str, Any]) -> None:
+        merged = dict(self._border_shadow)
+        merged.update(shadow)
+        if merged != self._border_shadow:
+            self._border_shadow = merged
+            self._border_did_change()
+
+    @property
+    def has_border(self) -> bool:
+        """Whether anything is painted outside the canvas rectangle."""
+        return self._border_width > 0
+
+    @property
+    def border_rect(self) -> QRectF:
+        """The canvas grown by the border width: the border's outer edge (10.2)."""
+        width = float(self._border_width)
+        return self.canvas_rect.adjusted(-width, -width, width, width)
+
+    @property
+    def output_rect(self) -> QRectF:
+        """What a render of the whole document covers (10.2).
+
+        The canvas rectangle grown by the border and, when the border's shadow is on, by
+        that shadow's offset and blur. With no border this is the canvas rectangle, so a
+        document without one renders exactly as it did before the border existed.
+        """
+        if not self.has_border:
+            return self.canvas_rect
+        outer = self.border_rect
+        shadow = self._border_shadow
+        if not bool(shadow.get("shadow_enabled", False)):
+            return outer
+        spread = max(0.0, float(shadow.get("shadow_blur", 0.0))) * 2.0
+        offset_x = float(shadow.get("shadow_offset_x", 0.0))
+        offset_y = float(shadow.get("shadow_offset_y", 0.0))
+        cast = outer.translated(offset_x, offset_y).adjusted(-spread, -spread, spread, spread)
+        return outer.united(cast)
+
+    def _border_did_change(self) -> None:
+        self.border_changed.emit()
+        self.update()
 
     # --- the content revision (Blur PRD 2.7) ---
 

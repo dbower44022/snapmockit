@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.68</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.71</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.70</dd>
-    <dt>Last Updated</dt>    <dd>09-20-26 23:34</dd>
+    <dt>Document version</dt><dd>1.71</dd>
+    <dt>Last Updated</dt>    <dd>09-21-26 15:14</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.71</td>
+        <td class="nowrap">09-21-26 15:14</td>
+        <td>Doug Bower</td>
+        <td>The Border tool of <strong>Navigation &amp; Raster Operations PRD Section 10</strong>, amended here in the same version as that document requires. <strong>3.3.3</strong>'s registry gains <code>border</code> (Border, Canvas), the twenty-second tool and the second in the Canvas category. <strong>4.1</strong>'s project model gains <code>border_width</code>, <code>border_color</code>, <code>border_style</code> and <code>border_shadow</code>, which the project file carries as a <code>border</code> block inside the manifest's existing <code>canvas</code> object; an absent block means no border, so <code>format_version</code> stays 1. <strong>3.9.2</strong>'s export rendering no longer sizes its image from the canvas: it sizes it from the scene's output rectangle, the canvas grown by the border and by the border's shadow when that shadow is on, and paints the shadow, the ring and the stroke before the canvas. <strong>Section 10</strong> gains <code>tools/border_tool.py</code>; no new package and no new top-level module, the command living in the existing <code>commands/canvas_property_commands.py</code>. The document identifier in the header read 1.68 while the version read 1.70; both now read 1.71.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.70</td>
         <td class="nowrap">09-20-26 23:34</td>
@@ -616,6 +623,7 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr><td class="nowrap">09-21-26 15:14</td><td>3.3.3, 3.9.2, 4.1, 10</td><td>Added / Changed</td><td><strong>Added</strong> (09-21-26, Doug's decision to build the border as a tool): the <code>border</code> entry in the 3.3.3 registry, the four border fields in the 4.1 project model, and <code>tools/border_tool.py</code> in Section 10. <strong>Changed</strong> 3.9.2: export rendering sizes its image from the scene's output rectangle rather than the canvas size, and paints the border's shadow, ring and stroke before the canvas. The behaviour these serve is Navigation &amp; Raster Operations PRD Section 10, at that document's version 1.8.</td></tr>
       <tr><td class="nowrap">09-20-26 13:31</td><td>7.3</td><td>Released</td><td><strong>Released</strong> (09-19-26; <code>docs/Packaging-PyPI-Implementation.md</code>, Sections 7.5 and 8): version 1.2.0, tagged <code>v1.2.0</code> on 9b307a7 and published by run 35421164271 as an ordinary GitHub release with both Linux forms attached, then uploaded to the Python Package Index at 18:49 UTC once Doug approved the <code>pypi</code> environment. On the index: <code>snapmockit-1.2.0-py3-none-any.whl</code> (761,230 bytes) and <code>snapmockit-1.2.0.tar.gz</code> (872,796 bytes), each with an attestation naming GitHub, <code>dbower44022/snapmockit</code>, <code>ci.yml</code>, and the environment <code>pypi</code>; the page carries the README, the five project addresses, and thirteen classifiers. Installed here with <code>pipx install snapmockit</code>: the command answers <code>Snapmockit 1.2.0</code>, the main window builds, the form reads as the index's with pipx as its installer, and the shortcut command is <code>snapmockit --capture region</code>. <strong>7.3 stands as follows:</strong> the Linux AppImage (primary), the Linux Flatpak (secondary), and the Python Package Index are done; the Windows installer and portable archive and the macOS bundle remain, each waiting for its machine. The release process, with the upload as a step, is <code>docs/Release-Engineering.md</code> Section 5.</td></tr>
       <tr>
         <td class="nowrap">09-18-26 16:45</td>
@@ -1724,6 +1732,7 @@ per-tool PRDs) includes:</p>
     <tr><th><code>raster_select</code></th><td>Raster Selection (Rectangle)</td><td>Selection</td></tr>
     <tr><th><code>freeform_select</code></th><td>Raster Selection (Freeform / Lasso)</td><td>Selection</td></tr>
     <tr><th>crop</th><td>Crop Canvas</td><td>Canvas</td></tr>
+    <tr><th>border</th><td>Border</td><td>Canvas</td></tr>
     <tr><th>arrow</th><td>Arrow</td><td>Annotation</td></tr>
     <tr><th>line</th><td>Line</td><td>Annotation</td></tr>
     <tr><th>rectangle</th><td>Rectangle</td><td>Annotation</td></tr>
@@ -2095,7 +2104,13 @@ SnapMock augments this with:</p>
 <p>Functional requirements:</p>
 
 <ol>
-  <li>Create a QImage at the target DPI and canvas size.</li>
+  <li>Create a QImage at the target DPI and the scene's output rectangle: the canvas
+  rectangle grown by the canvas border and, when the border's shadow is on, by that
+  shadow's offset and blur (Navigation &amp; Raster Operations PRD 10.2). With no border
+  the output rectangle is the canvas rectangle.</li>
+  <li>Paint the border's shadow, then fill the border ring with the canvas background
+  colour, then paint the border stroke, before the canvas itself is drawn at its own
+  offset inside the output rectangle.</li>
   <li>For each visible layer in bottom-to-top order: if the layer has Normal blend mode,
   render all its items directly onto the QImage using QPainter. If the layer has a
   non-Normal blend mode, render the layer to a temporary QImage, then composite it using
@@ -2121,6 +2136,10 @@ SnapMock augments this with:</p>
     <tr><th><code>canvas_height</code></th><td>int</td><td>Canvas height in pixels.</td></tr>
     <tr><th><code>canvas_dpi</code></th><td>int</td><td>Canvas resolution (default: 72).</td></tr>
     <tr><th><code>background_color</code></th><td>QColor</td><td>Canvas background color (default: white). Transparent is supported for PNG export.</td></tr>
+    <tr><th><code>border_width</code></th><td>int</td><td>Canvas border thickness in pixels on each side, 0 for none (Navigation &amp; Raster Operations PRD 10.3).</td></tr>
+    <tr><th><code>border_color</code></th><td>QColor</td><td>Canvas border colour; its alpha carries the border's transparency.</td></tr>
+    <tr><th><code>border_style</code></th><td>str</td><td>Canvas border line type: solid, dashed, dotted, dashdot, dashdotdot.</td></tr>
+    <tr><th><code>border_shadow</code></th><td>dict</td><td>The shared shadow helper's keys for the canvas border (enabled, color, offset_x, offset_y, blur_radius).</td></tr>
     <tr><th><code>format_version</code></th><td>str</td><td>Project file format version (semver, e.g., "1.0.0").</td></tr>
     <tr><th><code>created_at</code></th><td>datetime</td><td>Creation timestamp (ISO 8601).</td></tr>
     <tr><th><code>modified_at</code></th><td>datetime</td><td>Last modification timestamp.</td></tr>
@@ -2560,6 +2579,7 @@ docstring.</p>
         base_tool.py              # abstract base class for all interactive tools
         blur_edit.py              # brush-editing mode of the Select tool (Blur PRD 2.8)
         blur_tool.py              # click-and-drag to create blur regions
+        border_tool.py            # the canvas border: no canvas interaction, all bar
         callout_tool.py           # drag to place tail tip then position bubble, or click for…
         crop_tool.py              # interactive crop with overlay, handles, and state machine
         ellipse_tool.py           # click-and-drag to create ellipses

@@ -219,6 +219,7 @@ class ResizeImageCommand(BaseCommand):
         self._item_snapshots: list[tuple[SnapGraphicsItem, QPointF, dict[str, Any]]] = [
             (gitem, QPointF(gitem.pos()), gitem.serialize()) for gitem in scene.annotation_items()
         ]
+        self._old_border_width = scene.border_width
 
     def redo(self) -> None:
         sx = self._new_size.width() / max(self._old_size.width(), 1)
@@ -227,9 +228,15 @@ class ResizeImageCommand(BaseCommand):
             gitem.setPos(orig_pos.x() * sx, orig_pos.y() * sy)
             gitem.scale_geometry(sx, sy)
         self._scene.set_canvas_size(self._new_size)
+        # The canvas border scales with the content, as the stroke widths and font sizes
+        # already do (Navigation PRD 10.7); a border that existed never scales away.
+        if self._old_border_width > 0:
+            scaled = round(self._old_border_width * (sx + sy) / 2.0)
+            self._scene.set_border_width(max(1, scaled))
 
     def undo(self) -> None:
         self._scene.set_canvas_size(self._old_size)
+        self._scene.set_border_width(self._old_border_width)
         from snapmock.io.project_serializer import ITEM_REGISTRY
 
         for gitem, orig_pos, snapshot in self._item_snapshots:

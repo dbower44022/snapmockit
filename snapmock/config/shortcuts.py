@@ -83,6 +83,7 @@ SHORTCUTS: dict[str, str] = {
     "tool.stamp": "S",
     "tool.emoji": "Shift+E",
     "tool.crop": "X",
+    "tool.border": "Shift+B",
     "tool.raster_select": "M",
     "tool.eyedropper": "I",
     "tool.pan": "",

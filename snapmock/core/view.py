@@ -59,6 +59,7 @@ from snapmock.config.constants import (
     ZOOM_STEPS,
 )
 from snapmock.core.guides import Guide, GuideOrientation, snap_rect_delta, snap_value
+from snapmock.core.render_engine import paint_canvas_border
 from snapmock.core.scene import SnapScene
 from snapmock.core.theme_manager import current_theme
 
@@ -839,11 +840,17 @@ class SnapView(QGraphicsView):
         # 1. Pasteboard fill
         painter.fillRect(rect, self.pasteboard_color)
 
-        # 2. Drop shadow behind canvas
-        shadow_rect = canvas.translated(CANVAS_SHADOW_OFFSET, CANVAS_SHADOW_OFFSET)
+        # 2. Drop shadow behind the canvas — behind its border when it has one
+        edge = snap.border_rect if snap.has_border else canvas
+        shadow_rect = edge.translated(CANVAS_SHADOW_OFFSET, CANVAS_SHADOW_OFFSET)
         painter.fillRect(shadow_rect, theme.canvas_shadow)
 
-        # 3. Canvas background: checkerboard shows through any transparency (PRD 6.2)
+        # 3. The canvas border, in the ring outside the canvas (Navigation PRD 10.4).
+        # Painted through the routine every export shares, so the display and the file
+        # agree; an item dragged onto the pasteboard paints over it, as it does in a file.
+        paint_canvas_border(painter, snap)
+
+        # 4. Canvas background: checkerboard shows through any transparency (PRD 6.2)
         background = snap.background_color
         if background.alpha() < 255:
             painter.save()
@@ -852,11 +859,11 @@ class SnapView(QGraphicsView):
             painter.restore()
         painter.fillRect(canvas, background)
 
-        # 4. Canvas border (1px)
+        # 5. Canvas edge (1px)
         painter.setPen(QPen(theme.canvas_border, 0))
         painter.drawRect(canvas)
 
-        # 5. Empty canvas prompt
+        # 6. Empty canvas prompt
         if self._scene_has_no_user_items(snap):
             painter.setPen(QPen(theme.empty_canvas_text))
             font = QFont()

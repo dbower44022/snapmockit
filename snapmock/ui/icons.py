@@ -66,6 +66,7 @@ TOOL_ICONS: dict[str, str] = {
     "stamp": "rubber-stamp",
     "emoji": "mood-smile",
     "crop": "crop",
+    "border": "border-outer",
     "raster_select": "marquee-2",
     "eyedropper": "color-picker",
     "pan": "hand-move",

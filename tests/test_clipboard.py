@@ -211,3 +211,20 @@ def test_copy_all_has_snagits_key_and_crop_to_canvas_moved() -> None:
     assert SHORTCUTS["image.crop_to_canvas"] == "Ctrl+Shift+X"
     keys = [k for k in SHORTCUTS.values() if k]
     assert len(keys) == len(set(keys))
+
+
+def test_whole_canvas_copy_and_select_all_include_the_border(main_window: MainWindow) -> None:
+    """Raster PRD 1.11: the flattened copy covers the output rectangle, as the export does."""
+    from snapmock.tools.raster_select_tool import RasterSelectTool
+
+    _capture(main_window)
+    scene = main_window.scene
+    scene.set_border_width(5)
+    assert scene.output_rect.width() == 40 and scene.output_rect.height() == 30
+    main_window._edit_copy()  # noqa: SLF001
+    assert _clipboard_image_size() == (40, 30)
+    main_window._edit_select_all()  # noqa: SLF001
+    tool = main_window.tool_manager.active_tool
+    assert isinstance(tool, RasterSelectTool) and tool.selection_rect == scene.output_rect
+    main_window._edit_copy()  # noqa: SLF001
+    assert _clipboard_image_size() == (40, 30)

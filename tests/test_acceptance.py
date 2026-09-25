@@ -536,13 +536,14 @@ def test_17_2_view_toggles_reflect_the_state(main_window: MainWindow) -> None:
 
 
 def test_17_3_palette_shows_every_registered_tool_with_icons(main_window: MainWindow) -> None:
-    """Row 12: one button per registered tool, twenty-one since the Arc and Polygon tools
-    of the Basic Shape remainder work (decision 3; General UI PRD 2.12 counted nineteen),
-    each with an icon and a "Name (Shortcut)" tooltip."""
+    """Row 12: one button per registered tool, twenty-two since the Border tool
+    (Navigation PRD Section 10; twenty-one after the Arc and Polygon tools of the Basic
+    Shape remainder work, nineteen when General UI PRD 2.12 counted them), each with an
+    icon and a "Name (Shortcut)" tooltip."""
     palette = main_window._toolbar  # noqa: SLF001
     buttons = palette._buttons  # noqa: SLF001
-    assert len(buttons) == 21
-    assert {"emoji", "arc", "polygon"} <= set(buttons)
+    assert len(buttons) == 22
+    assert {"emoji", "arc", "polygon", "border"} <= set(buttons)
     assert list(buttons) == list(main_window.tool_manager.tool_ids)
     for tool_id, button in buttons.items():
         tool = main_window.tool_manager.tool(tool_id)
