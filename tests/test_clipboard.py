@@ -147,7 +147,7 @@ def test_copy_with_nothing_selected_copies_the_whole_canvas(main_window: MainWin
     assert main_window.clipboard.has_raster
 
 
-def test_select_all_on_an_empty_layer_is_a_raster_selection_of_the_canvas(
+def test_select_all_is_a_raster_selection_of_the_whole_document(
     main_window: MainWindow, unmet_messages: list[tuple[str, str]]
 ) -> None:
     from snapmock.tools.raster_select_tool import RasterSelectTool
@@ -164,16 +164,29 @@ def test_select_all_on_an_empty_layer_is_a_raster_selection_of_the_canvas(
     assert _clipboard_image_size() == (30, 20)
 
 
-def test_select_all_still_selects_the_items_of_the_active_layer(main_window: MainWindow) -> None:
+def test_select_all_takes_the_whole_document_over_an_annotated_layer(
+    main_window: MainWindow,
+) -> None:
+    """Decision B of 09-25-26: an annotated capture's Ctrl+A, Ctrl+C is the whole picture,
+    not the annotations' region; Select All on Layer keeps the item selection."""
+    from snapmock.tools.raster_select_tool import RasterSelectTool
+
     _capture(main_window)
     scene = main_window.scene
     layer = scene.layer_manager.active_layer
     assert layer is not None
-    item = RectangleItem()
+    item = RectangleItem(QRectF(0, 0, 10, 10))
     scene.command_stack.push(AddItemCommand(scene, item, layer.layer_id))
+    main_window.selection_manager.select_items([item])
     main_window._edit_select_all()  # noqa: SLF001
+    assert main_window.selection_manager.items == []
+    tool = main_window.tool_manager.active_tool
+    assert isinstance(tool, RasterSelectTool) and tool.has_active_selection
+    main_window._edit_copy()  # noqa: SLF001
+    assert _clipboard_image_size() == (30, 20)
+    main_window.tool_manager.activate("select")
+    main_window._edit_select_all_on_layer()  # noqa: SLF001
     assert main_window.selection_manager.items == [item]
-    assert main_window.tool_manager.active_tool_id != "raster_select"
 
 
 def test_copy_all_copies_the_canvas_whatever_is_selected(main_window: MainWindow) -> None:

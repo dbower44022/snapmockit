@@ -204,6 +204,7 @@ SECTION_3_ROWS: dict[str, list[str]] = {
         "Duplicate",
         "Delete",
         "Select All",
+        "Select All on Layer",
         "Select All Layers",
         "Deselect",
         "Select All Text",

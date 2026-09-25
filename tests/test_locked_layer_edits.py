@@ -127,11 +127,14 @@ def test_no_route_selects_the_background_image(
     lm.set_active(background.layer_id)
     window._edit_select_all()  # noqa: SLF001
     assert window.selection_manager.is_empty
-    # Since 09-24-26 (General UI PRD 2.55) Select All takes the whole canvas as a raster
-    # selection instead of refusing; the image is still not selected as an item
+    # Since 09-24-26 (General UI PRD 2.55, 2.57) Select All takes the whole document as a
+    # raster selection instead of refusing; the image is still not selected as an item
     assert unmet_messages == []
     assert window.tool_manager.active_tool_id == "raster_select"
     window.tool_manager.activate("select")
+    window._edit_select_all_on_layer()  # noqa: SLF001
+    assert window.selection_manager.is_empty
+    assert unmet_messages
     window._edit_select_all_layers()  # noqa: SLF001
     assert window.selection_manager.is_empty
     assert unmet_messages

@@ -458,7 +458,7 @@ def test_select_all_and_select_all_layers_pick_the_group_not_its_members(
     loose = _rect(400, 400)
     _add(main_window.scene, loose)
     main_window.selection_manager.deselect_all()
-    main_window._edit_select_all()  # noqa: SLF001
+    main_window._edit_select_all_on_layer()  # noqa: SLF001
     assert set(main_window.selection_manager.items) == {group, loose}
     main_window.selection_manager.deselect_all()
     main_window._edit_select_all_layers()  # noqa: SLF001

@@ -15,8 +15,8 @@
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.56</dd>
-    <dt>Last Updated</dt>    <dd>09-25-26 00:13</dd>
+    <dt>Document version</dt><dd>2.57</dd>
+    <dt>Last Updated</dt>    <dd>09-25-26 00:33</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.57</td>
+        <td class="nowrap">09-25-26 00:33</td>
+        <td>Doug Bower</td>
+        <td>Doug's decision B of 09-25-26, option B of three, closing the gap 2.55 left. On his display an old capture with four annotations on its active layer answered Ctrl+A with those four items and Ctrl+C with the region under them, 1320 by 1017 pixels of a 2683 by 2004 document (verified by replaying the keys on a copy of the file). <strong>3.2</strong>: Select All (Ctrl+A) is always the whole-document raster selection, Snagit's meaning of the key, whether or not the active layer holds items; the items are deselected first, and Ctrl+C then copies the whole picture. Selecting every unlocked item on the active layer, which Ctrl+A did until this row, stays in the Edit menu as Select All on Layer, without a key, with 2.46's exclusion of the Background image and 3.2's group rule unchanged; Select All Layers keeps Ctrl+Shift+A. The canvas context menu's Select All (10.1) is the same action. Options declined: A, leaving Ctrl+A on the items, whose cost was the fragment above on every annotated capture; D, Copy putting the flattened document on the system clipboard while the internal clipboard kept the items, a hidden difference between the two pastes. The cost Doug accepted: no single key selects a layer's annotations to move or delete them together.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.56</td>
         <td class="nowrap">09-25-26 00:13</td>
@@ -2001,7 +2008,8 @@ unmet.</em></p>
     <tr><th>Duplicate</th><td>Ctrl+D</td><td>Duplicate selected items with a small offset.</td><td>Selection exists</td></tr>
     <tr><th>Delete</th><td>Delete / Backspace</td><td>Remove selected items.</td><td>Selection exists</td></tr>
     <tr><th>---</th><td></td><td>Separator</td><td></td></tr>
-    <tr><th>Select All</th><td>Ctrl+A</td><td>Select all unlocked visible items on the active layer. With none, make a raster selection of the whole canvas (2.55).</td><td>Always</td></tr>
+    <tr><th>Select All</th><td>Ctrl+A</td><td>Make a raster selection of the whole document, the border included, deselecting any items first; Ctrl+C then copies the whole picture (2.55, 2.57).</td><td>Always</td></tr>
+    <tr><th>Select All on Layer</th><td></td><td>Select all unlocked visible items on the active layer (2.57; Ctrl+A until then).</td><td>Items exist</td></tr>
     <tr><th>Select All Layers</th><td>Ctrl+Shift+A</td><td>Select all unlocked visible items across all layers.</td><td>Items exist</td></tr>
     <tr><th>Deselect</th><td>Escape</td><td>Deselect all items and cancel current tool operation.</td><td>Selection exists</td></tr>
     <tr><th>Select All Text</th><td>Ctrl+T</td><td>Select the text content within all text-containing items (text boxes, callouts, numbered steps, stamps) across all visible unlocked layers. Enables batch changes to font, size, color, and other text properties.</td><td>Text-containing items exist</td></tr>

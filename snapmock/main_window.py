@@ -891,7 +891,11 @@ class MainWindow(QMainWindow):
             select_all_action.setShortcut(QKeySequence(SHORTCUTS["edit.select_all"]))
             select_all_action.triggered.connect(self._edit_select_all)
 
-        select_all_layers_action = edit_menu.addAction("Select All La&yers")
+        select_on_layer_action = edit_menu.addAction("Select All on La&yer")
+        if select_on_layer_action is not None:
+            select_on_layer_action.triggered.connect(self._edit_select_all_on_layer)
+
+        select_all_layers_action = edit_menu.addAction("Select All Laye&rs")
         if select_all_layers_action is not None:
             select_all_layers_action.setShortcut(QKeySequence(SHORTCUTS["edit.select_all_layers"]))
             select_all_layers_action.triggered.connect(self._edit_select_all_layers)
@@ -3077,7 +3081,18 @@ class MainWindow(QMainWindow):
         self._selection_manager.select_items(clones)
 
     def _edit_select_all(self) -> None:
-        """Select every unlocked item on the active layer (PRD 3.2)."""
+        """Select the whole document as a raster selection (PRD 3.2, 2.57).
+
+        Ctrl+A means one thing, the picture to take away, whether or not the active layer
+        holds items (Doug's decision B of 09-25-26); Ctrl+C then copies it. The items are
+        deselected first so no handles sit under the marching ants. Selecting a layer's
+        items is Select All on Layer, without a key.
+        """
+        self._selection_manager.deselect_all()
+        self._select_whole_canvas()
+
+    def _edit_select_all_on_layer(self) -> None:
+        """Select every unlocked item on the active layer (PRD 3.2; Ctrl+A until 2.57)."""
         lm = self._scene.layer_manager
         active = lm.active_layer
         # Top-level items: a group is selected as one, never its members
@@ -3089,13 +3104,10 @@ class MainWindow(QMainWindow):
             and not i.locked
             and not self._scene.is_fixed_in_place(i)
         ]
-        if items:
+        if self._require(
+            "Select All on Layer", (bool(items), "at least one item on the active layer")
+        ):
             self._selection_manager.select_items(items)
-            return
-        # Nothing selectable, a fresh capture above all: the whole canvas as a raster
-        # selection, so Ctrl+C copies it (Doug's decision A of 09-24-26). The Background
-        # image itself stays unselected (2.46).
-        self._select_whole_canvas()
 
     def _select_whole_canvas(self) -> None:
         """A raster selection of the whole canvas, marching ants and all."""
