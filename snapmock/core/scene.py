@@ -71,6 +71,9 @@ class SnapScene(QGraphicsScene):
             "shadow_offset_y": DEFAULT_SHADOW_OFFSET,
             "shadow_blur": DEFAULT_SHADOW_BLUR,
         }
+        # The item most recently added by an AddItemCommand: what Escape selects when it
+        # leaves a tool for the Select tool (General UI PRD 2.58)
+        self._last_added_item: QGraphicsItem | None = None
         self._update_scene_rect()
 
         self._layer_manager = LayerManager(self)
@@ -290,6 +293,19 @@ class SnapScene(QGraphicsScene):
         from snapmock.items.base_item import SnapGraphicsItem
 
         return [i for i in self.items() if isinstance(i, SnapGraphicsItem)]
+
+    @property
+    def last_added_item(self) -> QGraphicsItem | None:
+        """The item an AddItemCommand most recently put on the scene, while it is still
+        there and not undone; None otherwise (General UI PRD 2.58)."""
+        item = self._last_added_item
+        if item is None or item.scene() is not self:
+            return None
+        return item
+
+    @last_added_item.setter
+    def last_added_item(self, item: QGraphicsItem | None) -> None:
+        self._last_added_item = item
 
     def is_fixed_in_place(self, item: QGraphicsItem) -> bool:
         """Whether *item* is an image on a Background layer, which never moves.

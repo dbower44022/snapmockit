@@ -257,6 +257,14 @@ class RasterSelectTool(BaseTool):
 
     # --- key events ---
 
+    def handle_escape(self) -> bool:
+        """Escape drops the selection in progress or the marquee (Navigation PRD Section 5);
+        with none it leaves the tool to the window's ladder (General UI PRD 2.58)."""
+        if self._state == _RasterState.IDLE:
+            return False
+        self.cancel()
+        return True
+
     def key_press(self, event: QKeyEvent) -> bool:
         if event.key() == Qt.Key.Key_Escape:
             if self._state != _RasterState.IDLE:

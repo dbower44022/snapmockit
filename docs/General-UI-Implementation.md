@@ -1,6 +1,6 @@
 # General UI Implementation Notes
 
-Last Updated: 09-14-26 15:15 · Revision 1.46
+Last Updated: 09-25-26 12:20 · Revision 1.47
 
 Implements the SnapMock General User Interface PRD (version 2.4, `PRDs/SnapMock-General-UI-PRD.html`) in the eight phases defined by `docs/General-UI-Implementation-Kickoff-Prompt.md`. A session pasting that prompt starts at the first phase not marked done in Section 1.
 
@@ -714,10 +714,17 @@ The rule reached one existing test: the Layer menu module's pinning test duplica
 
 The full suite at the commit (3636f52), run from a scratch worktree between 10:14 and 11:55 while targeted runs and measurements shared the machine: **1635 passed, 1 failed, 13 skipped, 1 deselected, in 1 hour 42 minutes**, the longest run yet. The failure, `tests/test_capture/test_main_window.py::test_command_line_capture_as_first_action`, is a 3 second wait for the capture manager's completed signal that timed out; it passes alone and with its module (18 passed in 34 seconds), and nothing in it reads a layer. The rerun at the same commit with the machine to itself failed the same test, so it was not the load. Found by running the suite's files up to the capture module at this commit and at the one before, then with the test's wait raised and the capture path stamped, and finally with every main window's construction profiled: the capture path itself takes 0.12 seconds; the time was in `MainWindow.__init__`, 9 of 9.3 seconds inside `QApplication.setStyleSheet`, which the theme manager called on every window's construction and which Qt answers by re-polishing every live widget in the process. Earlier tests' widgets accumulate, so a window cost 6 to 7 seconds before this change and up to 13 by the capture module after it, the activation's panel refreshes having added to the load; the 3 second wait then expired. The theme manager now sets the sheet only when it differs from the one in force (86a4dbc; General UI PRD 2.38), and a window builds in a fraction of a second: the five modules that build the most windows ran in 30 seconds where they had taken minutes. The full suite at that commit (86a4dbc), run alone from a scratch worktree between 14:59 and 15:15 on 09-14-26: **1637 passed, 0 failed, 13 skipped, 1 deselected, in 15 minutes 32 seconds**, against 1 hour 34 to 1 hour 43 minutes for every run before the guard. The capture test that timed out passes with the rest, the New Layer rule stands, and the suite is six times faster for every run to come.
 
+## 28. Escape's Three Rungs
+
+Doug's decision C of 09-25-26 (General UI PRD 2.58; Basic Shape PRD 1.29; Technical Architecture PRD 1.72): after drawing a shape, one Escape puts it under the Select tool's handles. The Deselect slot in `snapmock/main_window.py` is a ladder. First the active tool's `handle_escape` ends its own operation; the Raster Selection, Lasso and Crop tools gained overrides for it, since their Escape lived in `key_press`, which the window's shortcut reaches before the view's key handler does. Else any tool but the Select tool is left for the Select tool, and the scene's `last_added_item` is selected when it is still on the scene, on a visible unlocked layer, and not the Background image. Else Escape deselects all, as before. `AddItemCommand` sets `last_added_item` on redo and clears it on undo, so the item is per document and never stale after Undo.
+
+Not built: option B, the shape staying selected with the shape tool moving it, which would have overturned Basic Shape PRD 2.5 and put the Select tool's press logic in front of every tool's. Tests: `tests/test_escape_ladder.py`, eight tests, one per rung and edge.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.47 | 09-25-26 12:20 | Claude (Claude Code) | Section 28: Escape's three rungs (General UI PRD 2.58). |
 | 1.46 | 09-14-26 15:15 | Claude (Claude Code) | Section 27: the full suite at the guard commit, 1637 passed, whole, in 15 minutes 32 seconds. |
 | 1.45 | 09-14-26 15:00 | Claude (Claude Code) | Section 27: the capture timeout traced to the theme manager re-applying the application style sheet on every window, and fixed (86a4dbc); the suite pending. General UI PRD 2.38. |
 | 1.44 | 09-14-26 11:57 | Claude (Claude Code) | Section 27: the pinning test and the fixture gap the rule reached, and the full suite at 3636f52, 1635 passed with one capture timeout that passes alone; the rerun pending. |

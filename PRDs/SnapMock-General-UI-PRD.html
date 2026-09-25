@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.52</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.58</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.57</dd>
-    <dt>Last Updated</dt>    <dd>09-25-26 00:33</dd>
+    <dt>Document version</dt><dd>2.58</dd>
+    <dt>Last Updated</dt>    <dd>09-25-26 12:20</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.58</td>
+        <td class="nowrap">09-25-26 12:20</td>
+        <td>Doug Bower</td>
+        <td>Doug's decision C of 09-25-26, option C of three: Escape is a ladder of three rungs, so a shape just drawn is under the Select tool's handles one key after the draw. First, the active tool's own operation ends: point editing leaves keeping the selection, an arc or polygon in progress is cancelled, a raster or lasso selection is dropped, a crop region that differs from the whole canvas goes back to it, text editing finishes. Else, with any tool but the Select tool active, the Select tool is activated and the item most recently added to the document is selected, if it is still there, on a visible unlocked layer, and not the Background image. Else Escape deselects all, as before. The Basic Shape PRD's 2.5 stands: a new shape is not selected until asked. Option A was Escape switching to the Select tool alone, leaving the click; option B was Snagit's way, the shape staying selected and the shape tool moving it, at the cost of 2.5 and every tool's press handling. The <strong>3.x</strong> Deselect row rewritten; Basic Shape PRD 1.29 and Technical Architecture PRD 1.72 carry the same.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.57</td>
         <td class="nowrap">09-25-26 00:33</td>
@@ -2011,7 +2018,7 @@ unmet.</em></p>
     <tr><th>Select All</th><td>Ctrl+A</td><td>Make a raster selection of the whole document, the border included, deselecting any items first; Ctrl+C then copies the whole picture (2.55, 2.57).</td><td>Always</td></tr>
     <tr><th>Select All on Layer</th><td></td><td>Select all unlocked visible items on the active layer (2.57; Ctrl+A until then).</td><td>Items exist</td></tr>
     <tr><th>Select All Layers</th><td>Ctrl+Shift+A</td><td>Select all unlocked visible items across all layers.</td><td>Items exist</td></tr>
-    <tr><th>Deselect</th><td>Escape</td><td>Deselect all items and cancel current tool operation.</td><td>Selection exists</td></tr>
+    <tr><th>Deselect</th><td>Escape</td><td>A ladder of three rungs (2.58): end the active tool's operation in progress; else leave any tool but the Select tool for the Select tool with the item most recently added to the document selected; else deselect all items.</td><td>Always; the message names a selection when the third rung finds none</td></tr>
     <tr><th>Select All Text</th><td>Ctrl+T</td><td>Select the text content within all text-containing items (text boxes, callouts, numbered steps, stamps) across all visible unlocked layers. Enables batch changes to font, size, color, and other text properties.</td><td>Text-containing items exist</td></tr>
     <tr><th>---</th><td></td><td>Separator</td><td></td></tr>
     <tr><th>Find/Replace Color...</th><td></td><td>Open a dialog to find and replace a color across all items.</td><td>Items exist</td></tr>

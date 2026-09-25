@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.71</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.72</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.71</dd>
-    <dt>Last Updated</dt>    <dd>09-21-26 15:14</dd>
+    <dt>Document version</dt><dd>1.72</dd>
+    <dt>Last Updated</dt>    <dd>09-25-26 12:20</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.72</td>
+        <td class="nowrap">09-25-26 12:20</td>
+        <td>Doug Bower</td>
+        <td>General UI PRD 2.58, Escape's three rungs: the SelectionManager row on Deselect names the ladder; <code>SnapScene</code> gains <code>last_added_item</code>, which <code>AddItemCommand</code> sets on redo and clears on undo, read by the main window's Deselect slot; the Raster Selection, Lasso and Crop tools gain <code>handle_escape</code> overrides for the first rung.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.71</td>
         <td class="nowrap">09-21-26 15:14</td>
@@ -1770,8 +1777,10 @@ on the selection set.</p>
   the rubber band rectangle.</li>
   <li>Select all: Ctrl+A selects all unlocked, visible items on the active layer. Ctrl+Shift+A
   selects all unlocked, visible items across all layers.</li>
-  <li>Deselect: Escape or clicking empty canvas deselects all. Emit
-  <code>selectionCleared()</code> signal.</li>
+  <li>Deselect: clicking empty canvas deselects all. Escape is a ladder (General UI PRD
+  2.58; 1.72): the active tool's <code>handle_escape</code> first; else any tool but the
+  Select tool yields to it with the scene's <code>last_added_item</code> selected; else
+  deselect all. Emit <code>selectionCleared()</code> signal.</li>
   <li>Selection filtering: only items on unlocked, visible layers can be selected.</li>
   <li>Selection info: provide methods to query the selection: <code>count()</code>,
   <code>items()</code>, <code>boundingRect()</code>, containsType(type).</li>

@@ -2823,14 +2823,36 @@ class MainWindow(QMainWindow):
             stack.redo()
 
     def _edit_deselect(self) -> None:
-        # Escape ends the active tool's own operation first: point-editing mode leaves and
-        # keeps the selection (Basic Shape PRD 3.5); an arc or a polygon in progress is
-        # cancelled (7.2, 8.2)
+        """Escape, a ladder of three rungs (General UI PRD 2.58; Doug's decision C of
+        09-25-26): end the active tool's own operation, else leave any other tool for the
+        Select tool with the item last added to the document selected, else deselect all.
+
+        The first rung is the tool's: point-editing mode leaves and keeps the selection
+        (Basic Shape PRD 3.5); an arc or a polygon in progress is cancelled (7.2, 8.2); a
+        raster selection or a crop is dropped. The second gets a shape just drawn under
+        the pointer's handles one key after the draw, while the Basic Shape PRD's 2.5
+        still leaves it unselected until asked.
+        """
         active = self._tool_manager.active_tool
         if active is not None and active.handle_escape():
             return
+        if active is not None and active.tool_id != "select":
+            self._tool_manager.activate("select")
+            item = self._scene.last_added_item
+            if item is not None and self._selectable(item):
+                self._selection_manager.select(item)
+            return
         if self._require_selection("Deselect"):
             self._selection_manager.deselect_all()
+
+    def _selectable(self, item: QGraphicsItem) -> bool:
+        """Whether a selection may take *item*: on a visible, unlocked layer and not the
+        Background image (General UI PRD 6.2)."""
+        if self._scene.is_fixed_in_place(item):
+            return False
+        layer_id = getattr(item, "layer_id", None)
+        layer = self._scene.layer_manager.layer_by_id(layer_id) if layer_id else None
+        return layer is not None and layer.visible and not layer.locked
 
     def _edit_cut(self) -> None:
         active = self._tool_manager.active_tool

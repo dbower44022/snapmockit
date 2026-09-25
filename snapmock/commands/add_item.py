@@ -25,12 +25,15 @@ class AddItemCommand(BaseCommand):
         layer = self._scene.layer_manager.layer_by_id(self._layer_id)
         if layer is not None and self._item.item_id not in layer.item_ids:
             layer.item_ids.append(self._item.item_id)
+        self._scene.last_added_item = self._item
 
     def undo(self) -> None:
         layer = self._scene.layer_manager.layer_by_id(self._layer_id)
         if layer is not None and self._item.item_id in layer.item_ids:
             layer.item_ids.remove(self._item.item_id)
         self._scene.removeItem(self._item)
+        if self._scene.last_added_item is self._item:
+            self._scene.last_added_item = None
 
     @property
     def description(self) -> str:

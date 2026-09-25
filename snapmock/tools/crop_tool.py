@@ -215,20 +215,42 @@ class CropTool(BaseTool):
 
     # --- key events ---
 
+    def _full_canvas(self) -> QRectF:
+        if self._scene is None:
+            return QRectF()
+        return QRectF(QPointF(0, 0), self._scene.canvas_size)
+
+    def _reset_to_full_canvas(self) -> None:
+        """Escape's cancel (Navigation PRD Section 7): the crop region back to the whole
+        canvas."""
+        self.cancel()
+        if self._scene is not None:
+            self._overlay = CropOverlay(self._scene)
+            self._overlay.update_crop_rect(self._full_canvas())
+            self._overlay.add_to_scene()
+            self._state = _CropState.ADJUSTING
+
+    def handle_escape(self) -> bool:
+        """Escape puts a crop region that differs from the whole canvas back to it; one
+        already the whole canvas leaves the tool to the window's ladder (General UI PRD
+        2.58)."""
+        overlay = self._overlay
+        if (
+            overlay is None
+            or self._state == _CropState.IDLE
+            or overlay.crop_rect == self._full_canvas()
+        ):
+            return False
+        self._reset_to_full_canvas()
+        return True
+
     def key_press(self, event: QKeyEvent) -> bool:
         if event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
             if self._state == _CropState.ADJUSTING:
                 self._commit_crop()
                 return True
         if event.key() == Qt.Key.Key_Escape:
-            self.cancel()
-            # Re-enter with full canvas if scene is still set
-            if self._scene is not None:
-                self._overlay = CropOverlay(self._scene)
-                canvas_rect = QRectF(QPointF(0, 0), self._scene.canvas_size)
-                self._overlay.update_crop_rect(canvas_rect)
-                self._overlay.add_to_scene()
-                self._state = _CropState.ADJUSTING
+            self._reset_to_full_canvas()
             return True
         return False
 
