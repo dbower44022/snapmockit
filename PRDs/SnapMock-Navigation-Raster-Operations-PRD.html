@@ -32,17 +32,17 @@
     </thead>
     <tbody>
       <tr>
-        <td>1.12</td>
-        <td class="nowrap">09-25-26 11:03</td>
-        <td>Doug Bower</td>
-        <td><strong>5.5.3, 9.3.1, 9.3.3, 9.3.4</strong> built as written, by Doug's request of 09-25-26: Paste puts the content where the pointer is. Until now items landed ten pixels from the original, a raster at its source rectangle, and an image or text at the viewport centre. The cursor position is the pointer's last position over the canvas viewport; the top-left corner of the pasted content (the joint bounding box of several items, their arrangement kept) lands there. Two cases the sections leave open, decided here: when the pointer is not over the canvas (Edit &gt; Paste, the Welcome card, a shortcut pressed with the pointer elsewhere) the top-left corner goes to the viewport centre; a Paste chosen from a canvas or item context menu lands at the right-click point, since by then the pointer is over the menu. <strong>9.4</strong>, Paste in Place, unchanged for items and for a raster with a source rectangle; content with no original position lands where Paste would put it. Pasted items are now selected under the Select tool, as 9.3.1 says. The AddItemCommand per item stands in for the MacroCommand of 9.3.1, as before.</td>
-        <td><span class="status open">Pending</span></td>
-      </tr>
-      <tr>
         <td>1.13</td>
         <td class="nowrap">09-25-26 12:07</td>
         <td>Doug Bower</td>
         <td>Defect in the 11:03 build, found by Doug at once: Edit &gt; Paste raised <code>TypeError</code>, because the action's <code>triggered</code> signal passes its checked flag as the first positional argument and the handler took the anchor point there. The anchor is keyword-only now, and a test triggers the menu action. No change to the sections.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
+      <tr>
+        <td>1.12</td>
+        <td class="nowrap">09-25-26 11:03</td>
+        <td>Doug Bower</td>
+        <td><strong>5.5.3, 9.3.1, 9.3.3, 9.3.4</strong> built as written, by Doug's request of 09-25-26: Paste puts the content where the pointer is. Until now items landed ten pixels from the original, a raster at its source rectangle, and an image or text at the viewport centre. The cursor position is the pointer's last position over the canvas viewport; the top-left corner of the pasted content (the joint bounding box of several items, their arrangement kept) lands there. Two cases the sections leave open, decided here: when the pointer is not over the canvas (Edit &gt; Paste, the Welcome card, a shortcut pressed with the pointer elsewhere) the top-left corner goes to the viewport centre; a Paste chosen from a canvas or item context menu lands at the right-click point, since by then the pointer is over the menu. <strong>9.4</strong>, Paste in Place, unchanged for items and for a raster with a source rectangle; content with no original position lands where Paste would put it. Pasted items are now selected under the Select tool, as 9.3.1 says. The AddItemCommand per item stands in for the MacroCommand of 9.3.1, as before.</td>
         <td><span class="status open">Pending</span></td>
       </tr>
       <tr>
