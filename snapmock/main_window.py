@@ -3145,6 +3145,11 @@ class MainWindow(QMainWindow):
             self._paste_system_image(sys_image, self._paste_anchor())
 
     def _edit_delete(self) -> None:
+        # A selected guide goes first: the Delete key is this action's shortcut, which
+        # the window takes before the view's key handler sees it (General UI PRD 2.64;
+        # Doug's display, 09-26-26)
+        if self._view.delete_selected_guide():
+            return
         items = self._require_selection("Delete")
         if not items:
             return

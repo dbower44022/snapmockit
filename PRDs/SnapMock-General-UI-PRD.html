@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.64</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.65</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.64</dd>
-    <dt>Last Updated</dt>    <dd>09-26-26 01:29</dd>
+    <dt>Document version</dt><dd>2.65</dd>
+    <dt>Last Updated</dt>    <dd>09-26-26 01:44</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.65</td>
+        <td class="nowrap">09-26-26 01:44</td>
+        <td>Doug Bower</td>
+        <td>Found on Doug's display on 09-26-26: Delete did nothing on a selected guide. The Delete and Backspace keys are Edit &gt; Delete's shortcuts (<strong>3.2</strong>), which the window takes before the canvas view's key handler sees them, so the 2.64 route in the view was never reached from the keyboard. Edit &gt; Delete now removes the selected guide first, and asks for an item selection only when no guide is selected. The arrows reach the view as before. The test sends both keys through the window.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.64</td>
         <td class="nowrap">09-26-26 01:29</td>

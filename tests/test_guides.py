@@ -561,3 +561,33 @@ def test_escape_lets_a_selected_guide_go_without_a_message(
     assert view.selected_guide is None
     assert unmet_messages == []
     scene.command_stack.mark_clean()
+
+
+def test_the_delete_key_and_the_arrows_reach_a_selected_guide_through_the_window(
+    main_window: MainWindow, unmet_messages: list[tuple[str, str]]
+) -> None:
+    """Doug's display, 09-26-26: Delete did nothing on a selected guide, since the key is
+    Edit > Delete's shortcut and the window takes it before the view's key handler."""
+    from PyQt6.QtTest import QTest
+
+    scene = main_window.scene
+    view = main_window._view  # noqa: SLF001
+    main_window.show()
+    scene.set_guides([Guide(H, 200.0)])
+    main_window.tool_manager.activate("select")
+    view.setFocus()
+    view.select_guide(Guide(H, 200.0))
+    handle = main_window.windowHandle()
+    assert handle is not None
+    QTest.keyClick(handle, Qt.Key.Key_Down)
+    assert scene.guides == [Guide(H, 201.0)]
+    QTest.keyClick(handle, Qt.Key.Key_Delete)
+    assert scene.guides == []
+    assert view.selected_guide is None
+    assert unmet_messages == []
+    scene.command_stack.undo()
+    assert scene.guides == [Guide(H, 201.0)]
+    QTest.keyClick(handle, Qt.Key.Key_Delete)  # nothing selected: the usual message
+    assert scene.guides == [Guide(H, 201.0)]
+    assert unmet_messages == [("Delete", "Delete needs at least one item selected.")]
+    scene.command_stack.mark_clean()
