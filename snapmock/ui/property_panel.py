@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
-from PyQt6.QtCore import QEvent, QObject, QPoint, QPointF, QSizeF, Qt, pyqtSignal
+from PyQt6.QtCore import QEvent, QObject, QPoint, QPointF, QSizeF, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
     QColor,
     QCursor,
@@ -1532,20 +1532,27 @@ class PropertyPanel(QDockWidget):
             return items
         editable = [i for i in items if not self._scene.is_locked(i)]
         if not editable and not self._refusing:
-            # One message per gesture: a slider drag fires this on every move, and the
-            # modal message swallows the release the slider waits for, so without the
-            # guard and the synthetic release every later move showed it again (Doug's
-            # display, 09-25-26)
+            # One message per gesture, shown once the press or move that asked has
+            # finished. A slider fires this on every move of a drag, and the modal
+            # message swallows the release the slider waits for, so every later move
+            # showed it again; and a press that jumps the handle fires it from inside
+            # the press handler, which arms the drag after this returns, so a release
+            # sent here and now was undone and a second message followed (Doug's
+            # display, 09-25-26, twice)
             self._refusing = True
-            try:
-                self._end_pointer_gesture(self.sender())
-                check_requirements(
-                    self, self._edit_action_name(), [(False, "an unlocked item selected")]
-                )
-                self._refresh_from_selection()
-            finally:
-                self._refusing = False
+            sender = self.sender()
+            action = self._edit_action_name()
+            QTimer.singleShot(0, lambda: self._show_refusal(sender, action))
         return editable
+
+    def _show_refusal(self, sender: QObject | None, action: str) -> None:
+        """End the gesture, show the message, and put the item's value back."""
+        try:
+            self._end_pointer_gesture(sender)
+            check_requirements(self, action, [(False, "an unlocked item selected")])
+            self._refresh_from_selection()
+        finally:
+            self._refusing = False
 
     @staticmethod
     def _end_pointer_gesture(sender: QObject | None) -> None:

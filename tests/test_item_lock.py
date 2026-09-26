@@ -294,9 +294,11 @@ def test_the_property_panel_rows_refuse_a_locked_item_and_the_checkbox_frees_it(
     x = locked.pos().x()
     panel._x_spin.setValue(300)  # noqa: SLF001
     assert locked.pos().x() == x
+    qtbot.waitUntil(lambda: bool(unmet_messages))  # the message follows the event
     assert panel._x_spin.value() == x  # noqa: SLF001
-    assert unmet_messages and unmet_messages[-1][1].endswith("needs an unlocked item selected.")
+    assert unmet_messages[-1][1].endswith("needs an unlocked item selected.")
     panel._stroke_w_spin.setValue(9)  # noqa: SLF001
+    qtbot.waitUntil(lambda: len(unmet_messages) == 2)
     assert locked.stroke_width != 9
     # A mixed selection: the edit reaches the free item only, without a message
     unmet_messages.clear()
@@ -359,15 +361,39 @@ def test_a_slider_drag_on_a_locked_item_is_refused_once_and_released(
         )
         QApplication.sendEvent(slider, event)
 
-    _send(QEvent.Type.MouseButtonPress, grip, Qt.MouseButton.LeftButton)
-    for dx in (0, 8, 16):
+    def _move(dx: int) -> None:
         _send(
             QEvent.Type.MouseMove,
             QPoint(slider.width() // 2 + dx, grip.y()),
             Qt.MouseButton.NoButton,
         )
+
+    _send(QEvent.Type.MouseButtonPress, grip, Qt.MouseButton.LeftButton)
+    for dx in (0, 8, 16):
+        _move(dx)
+    assert unmet_messages == []  # nothing until the move that asked has finished
+    qtbot.waitUntil(lambda: bool(unmet_messages))
+    assert not slider.isSliderDown()
+    for dx in (24, 32):
+        _move(dx)  # the drag is over: no change, no second message
+    qtbot.wait(20)
     assert unmet_messages == [
         ("Stroke width slider", "Stroke width slider needs an unlocked item selected.")
     ]
-    assert not slider.isSliderDown()
+    assert item.stroke_width == width and slider.value() == int(width)
+    # A press on the groove asks from inside the press handler, which arms the slider
+    # after the handler returns; the deferred release still ends it, so a drag that
+    # follows shows nothing more (Doug's second report: two messages)
+    _send(QEvent.Type.MouseButtonRelease, grip, Qt.MouseButton.LeftButton)
+    unmet_messages.clear()
+    _send(
+        QEvent.Type.MouseButtonPress,
+        QPoint(slider.width() - 4, grip.y()),
+        Qt.MouseButton.LeftButton,
+    )
+    qtbot.waitUntil(lambda: bool(unmet_messages))
+    for dx in (0, 8, 16):
+        _move(dx)
+    qtbot.wait(20)
+    assert len(unmet_messages) == 1
     assert item.stroke_width == width and slider.value() == int(width)
