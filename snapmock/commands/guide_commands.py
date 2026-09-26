@@ -70,6 +70,26 @@ class MoveGuideCommand(BaseCommand):
         return False
 
 
+class ChangeGuideCommand(BaseCommand):
+    """Replace one guide with a changed copy: its colour, style, or lock (2.66)."""
+
+    def __init__(self, scene: SnapScene, old: Guide, new: Guide, description: str) -> None:
+        self._scene = scene
+        self._old = old
+        self._new = new
+        self._description = description
+
+    def redo(self) -> None:
+        self._scene.replace_guide(self._old, self._new)
+
+    def undo(self) -> None:
+        self._scene.replace_guide(self._new, self._old)
+
+    @property
+    def description(self) -> str:
+        return self._description
+
+
 class ClearGuidesCommand(BaseCommand):
     def __init__(self, scene: SnapScene) -> None:
         self._scene = scene

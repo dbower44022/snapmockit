@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 from PyQt6.QtCore import QEvent, QPoint, QPointF, QRectF, Qt
-from PyQt6.QtGui import QImage, QMouseEvent, QPainter
+from PyQt6.QtGui import QColor, QImage, QMouseEvent, QPainter
 from PyQt6.QtWidgets import QApplication, QMessageBox
 from pytestqt.qtbot import QtBot
 
@@ -590,4 +590,117 @@ def test_the_delete_key_and_the_arrows_reach_a_selected_guide_through_the_window
     QTest.keyClick(handle, Qt.Key.Key_Delete)  # nothing selected: the usual message
     assert scene.guides == [Guide(H, 201.0)]
     assert unmet_messages == [("Delete", "Delete needs at least one item selected.")]
+    scene.command_stack.mark_clean()
+
+
+# --- a guide's own colour, line style, and lock (General UI PRD 2.66, decision A) ---
+
+
+def test_a_guide_carries_colour_style_and_lock_through_the_manifest() -> None:
+    from snapmock.core.guides import GuideStyle
+
+    plain = Guide(H, 120.5)
+    assert plain.to_dict() == {"orientation": "horizontal", "position": 120.5}  # as before
+    dressed = Guide(V, 40.0, "#ffff0000", GuideStyle.DASHED, True)
+    data = dressed.to_dict()
+    assert data == {
+        "orientation": "vertical",
+        "position": 40.0,
+        "color": "#ffff0000",
+        "style": "dashed",
+        "locked": True,
+    }
+    assert Guide.from_dict(data) == dressed
+    assert Guide.from_dict({"orientation": "vertical", "position": 1, "style": "wavy"}) == Guide(
+        V, 1.0
+    )
+    assert dressed.moved_to(50.0) == Guide(V, 50.0, "#ffff0000", GuideStyle.DASHED, True)
+    assert dressed.with_changes(locked=False).locked is False
+    assert GuideStyle.DOTTED.pen_style == Qt.PenStyle.DotLine
+
+
+def test_a_guide_draws_in_its_own_colour_and_style_and_a_locked_one_refuses_the_mouse(
+    qtbot: QtBot,
+) -> None:
+    from snapmock.commands.guide_commands import ChangeGuideCommand
+    from snapmock.core.guides import GuideStyle
+
+    scene, view, _tm = _view(qtbot)
+    red = Guide(H, 200.0, "#ffff0000", GuideStyle.DASHED)
+    scene.set_guides([red, Guide(V, 300.0)])
+    assert view.guide_pen_for(red).color() == QColor("#ffff0000")
+    assert view.guide_pen_for(red).style() == Qt.PenStyle.DashLine
+    assert view.guide_pen_for(Guide(V, 300.0)).color() == view.guide_pen.color()
+    assert view.guide_pen_for(Guide(V, 300.0)).style() == Qt.PenStyle.SolidLine
+    # Locked: the click selects it, the cursor forbids the drag, the drag and the keys
+    # and Delete do nothing, and the lock is undoable
+    scene.command_stack.push(ChangeGuideCommand(scene, red, red.with_changes(locked=True), "Lock"))
+    locked = scene.guides[0]
+    assert locked.locked
+    _hover(view, QPointF(100, 200))
+    vp = view.viewport()
+    assert vp is not None
+    assert vp.cursor().shape() == Qt.CursorShape.ForbiddenCursor
+    _press(view, QPointF(100, 200))
+    assert view.selected_guide == locked
+    assert view.dragging_guide is None
+    _drag(view, QPointF(100, 250))
+    _release(view, QPointF(100, 250))
+    _key(view, Qt.Key.Key_Down)
+    _key(view, Qt.Key.Key_Delete)
+    assert scene.guides[0] == locked
+    scene.command_stack.undo()
+    assert not scene.guides[0].locked
+    assert view.selected_guide == scene.guides[0]  # the selection follows the undo
+
+
+def test_the_property_panel_shows_the_selected_guide_and_edits_it(
+    main_window: MainWindow, qtbot: QtBot, unmet_messages: list[tuple[str, str]]
+) -> None:
+    from snapmock.core.guides import GuideStyle
+
+    scene = main_window.scene
+    view = main_window._view  # noqa: SLF001
+    panel = main_window._property_panel  # noqa: SLF001
+    main_window.show()
+    main_window.tool_manager.activate("select")
+    scene.set_guides([Guide(H, 200.0)])
+    assert not panel._guide_section.isVisible()  # noqa: SLF001
+    view.select_guide(Guide(H, 200.0))
+    assert panel._guide_section.isVisible()  # noqa: SLF001
+    assert not panel._canvas_section.isVisible()  # noqa: SLF001
+    assert panel._guide_type_label.text() == "Horizontal guide"  # noqa: SLF001
+    assert panel._guide_pos_spin.value() == 200.0  # noqa: SLF001
+    assert not panel._guide_locked_check.isChecked()  # noqa: SLF001
+    # Every row is one undoable command, and the panel follows the changed guide
+    panel._guide_pos_spin.setValue(250.0)  # noqa: SLF001
+    assert scene.guides == [Guide(H, 250.0)]
+    assert view.selected_guide == Guide(H, 250.0)
+    panel._guide_color_picker.color = QColor("#ff00ff00")  # noqa: SLF001
+    panel._guide_color_picker.color_changed.emit(QColor("#ff00ff00"))  # noqa: SLF001
+    assert scene.guides[0].color == "#ff00ff00"
+    index = panel._guide_style_combo.findData(GuideStyle.DOTTED)  # noqa: SLF001
+    panel._guide_style_combo.setCurrentIndex(index)  # noqa: SLF001
+    assert scene.guides[0].style is GuideStyle.DOTTED
+    panel._guide_locked_check.setChecked(True)  # noqa: SLF001
+    assert scene.guides[0].locked
+    assert scene.command_stack.undo_text.endswith("Lock Guide")
+    # Locked: the other rows refuse with the 1.3 message and show the value again
+    panel._guide_pos_spin.setValue(300.0)  # noqa: SLF001
+    qtbot.waitUntil(lambda: bool(unmet_messages))
+    assert unmet_messages[-1] == (
+        "Guide position",
+        "Guide position needs an unlocked guide selected.",
+    )
+    assert scene.guides[0].position == 250.0
+    assert panel._guide_pos_spin.value() == 250.0  # noqa: SLF001
+    panel._guide_locked_check.setChecked(False)  # noqa: SLF001
+    assert not scene.guides[0].locked
+    for _ in range(4):
+        scene.command_stack.undo()
+    assert scene.guides == [Guide(H, 250.0)]
+    # Deselecting the guide brings the usual sections back
+    view.select_guide(None)
+    assert not panel._guide_section.isVisible()  # noqa: SLF001
+    assert panel._canvas_section.isVisible()  # noqa: SLF001
     scene.command_stack.mark_clean()

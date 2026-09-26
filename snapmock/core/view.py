@@ -92,6 +92,9 @@ class SnapView(QGraphicsView):
     zoom_changed = pyqtSignal(int)
     cursor_moved = pyqtSignal(float, float)
     library_files_dropped = pyqtSignal(list)
+    selected_guide_changed = pyqtSignal(object)
+    """The selected guide, or None, after every change to it (General UI PRD 2.64, 2.66):
+    the Property Panel shows the Guide section for it."""
 
     def __init__(self, scene: SnapScene) -> None:
         super().__init__(scene)
@@ -533,6 +536,7 @@ class SnapView(QGraphicsView):
         if guide is not None and self._tool_manager is not None:
             self._tool_manager.selection_manager.deselect_all()
         self._repaint()
+        self.selected_guide_changed.emit(guide)
 
     def _on_items_selected(self, items: list[object]) -> None:
         if items:
@@ -549,6 +553,7 @@ class SnapView(QGraphicsView):
         if old == self._selected_guide and isinstance(new, Guide):
             self._selected_guide = new
             self._repaint()
+            self.selected_guide_changed.emit(new)
 
     def nudge_selected_guide(self, key: Qt.Key, shift: bool) -> bool:
         """Move the selected guide by an arrow key under the nudge rules of General UI PRD
@@ -568,8 +573,8 @@ class SnapView(QGraphicsView):
         if key not in along:
             return False
         orientation, direction = along[key]
-        if orientation is not guide.orientation:
-            return True
+        if orientation is not guide.orientation or guide.locked:
+            return True  # the wrong axis, or a locked guide: consumed, nothing moves
         if shift:
             target = next_grid_line(guide.position, float(self._grid_size), direction)
         else:
@@ -587,6 +592,8 @@ class SnapView(QGraphicsView):
         snap = self._snap_scene
         if guide is None or snap is None or not self._guides_interactive():
             return False
+        if guide.locked:
+            return True  # skipped silently, as Delete skips a locked item
         from snapmock.commands.guide_commands import RemoveGuideCommand
 
         snap.command_stack.push(RemoveGuideCommand(snap, guide))
@@ -595,9 +602,23 @@ class SnapView(QGraphicsView):
     # Moving and deleting with the mouse
 
     def _start_guide_drag(self, guide: Guide) -> None:
+        self.select_guide(guide)
+        if guide.locked:
+            return  # selected, and that is all a locked guide gives the mouse
         self._guide_drag = guide
         self._guide_drag_pos = guide.position
-        self.select_guide(guide)
+
+    def guide_pen_for(self, guide: Guide) -> QPen:
+        """The pen a guide draws with: its own colour, or the Preferences colour at the
+        Preferences opacity; its own line style; the selection colour when selected."""
+        if guide == self._selected_guide:
+            pen = QPen(current_theme().selection_handle, 0)
+        elif guide.color is not None:
+            pen = QPen(QColor(guide.color), 0)
+        else:
+            pen = QPen(self.guide_pen)
+        pen.setStyle(guide.style.pen_style)
+        return pen
 
     def _move_guide_drag(self, event: QMouseEvent) -> None:
         if self._guide_drag is None:
@@ -641,11 +662,7 @@ class SnapView(QGraphicsView):
         if self._guide_preview is not None and self._guide_preview_inside:
             lines.append((self._guide_preview, None))
         for guide, original in lines:
-            # The selected guide draws in the theme's selection colour, opaque
-            if original is not None and original == self._selected_guide:
-                painter.setPen(QPen(current_theme().selection_handle, 0))
-            else:
-                painter.setPen(self.guide_pen)
+            painter.setPen(self.guide_pen_for(original if original is not None else guide))
             if guide.orientation is GuideOrientation.HORIZONTAL:
                 y = guide.position
                 painter.drawLine(QPointF(rect.left(), y), QPointF(rect.right(), y))
@@ -1354,9 +1371,13 @@ class SnapView(QGraphicsView):
                 vp = self.viewport()
                 if vp is not None:
                     vertical = guide.orientation is GuideOrientation.VERTICAL
-                    vp.setCursor(
-                        Qt.CursorShape.SizeHorCursor if vertical else Qt.CursorShape.SizeVerCursor
-                    )
+                    if guide.locked:
+                        cursor = Qt.CursorShape.ForbiddenCursor  # cannot be dragged (6.6)
+                    elif vertical:
+                        cursor = Qt.CursorShape.SizeHorCursor
+                    else:
+                        cursor = Qt.CursorShape.SizeVerCursor
+                    vp.setCursor(cursor)
                 self._guide_hover = True
                 event.accept()
                 return

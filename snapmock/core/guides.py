@@ -9,11 +9,11 @@ A guide is an orientation and a scene coordinate. The list lives on the
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Any
 
-from PyQt6.QtCore import QPointF, QRectF
+from PyQt6.QtCore import QPointF, QRectF, Qt
 
 
 class GuideOrientation(Enum):
@@ -21,22 +21,64 @@ class GuideOrientation(Enum):
     VERTICAL = "vertical"
 
 
+class GuideStyle(Enum):
+    """A guide's line style (General UI PRD 2.66, Doug's decision A of 09-26-26)."""
+
+    SOLID = "solid"
+    DASHED = "dashed"
+    DOTTED = "dotted"
+
+    @property
+    def pen_style(self) -> Qt.PenStyle:
+        return _PEN_STYLES[self]
+
+
+_PEN_STYLES = {
+    GuideStyle.SOLID: Qt.PenStyle.SolidLine,
+    GuideStyle.DASHED: Qt.PenStyle.DashLine,
+    GuideStyle.DOTTED: Qt.PenStyle.DotLine,
+}
+
+
 @dataclass(frozen=True)
 class Guide:
-    """One guide: a horizontal line at ``y = position`` or a vertical one at ``x``."""
+    """One guide: a horizontal line at ``y = position`` or a vertical one at ``x``.
+
+    Since 2.66 a guide also carries its own colour (an ``#AARRGGBB`` string, or None for
+    the Preferences colour at the Preferences opacity), its line style, and its lock. A
+    locked guide is selected as any guide is and refuses the drag, the arrows, and
+    Delete until it is unlocked in the Property Panel, the shape of the item lock.
+    """
 
     orientation: GuideOrientation
     position: float
+    color: str | None = None
+    style: GuideStyle = GuideStyle.SOLID
+    locked: bool = False
 
     def moved_to(self, position: float) -> Guide:
-        return Guide(self.orientation, position)
+        return replace(self, position=position)
+
+    def with_changes(self, **changes: Any) -> Guide:
+        """A copy with *changes* applied (``color``, ``style``, ``locked``, ``position``)."""
+        return replace(self, **changes)
 
     def to_dict(self) -> dict[str, Any]:
-        return {"orientation": self.orientation.value, "position": self.position}
+        """The manifest entry; the 2.66 keys are written only when they differ from the
+        defaults, so a project without them reads exactly as before."""
+        data: dict[str, Any] = {"orientation": self.orientation.value, "position": self.position}
+        if self.color is not None:
+            data["color"] = self.color
+        if self.style is not GuideStyle.SOLID:
+            data["style"] = self.style.value
+        if self.locked:
+            data["locked"] = True
+        return data
 
     @classmethod
     def from_dict(cls, data: object) -> Guide | None:
-        """A guide from a manifest entry, or None when the entry is malformed."""
+        """A guide from a manifest entry, or None when the entry is malformed. A missing
+        or unreadable optional key reads as its default."""
         if not isinstance(data, dict):
             return None
         try:
@@ -44,7 +86,13 @@ class Guide:
             position = float(data["position"])
         except (KeyError, TypeError, ValueError):
             return None
-        return cls(orientation, position)
+        color = data.get("color")
+        color = color if isinstance(color, str) and color else None
+        try:
+            style = GuideStyle(str(data.get("style", "solid")))
+        except ValueError:
+            style = GuideStyle.SOLID
+        return cls(orientation, position, color, style, bool(data.get("locked", False)))
 
 
 def next_grid_line(value: float, grid: float, direction: float) -> float:

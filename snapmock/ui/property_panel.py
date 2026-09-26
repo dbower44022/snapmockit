@@ -69,6 +69,7 @@ from snapmock.config.constants import (
     DEFAULT_LINE_SPACING,
     DEFAULT_SHADOW_COLOR,
     DEFAULT_STRAIGHTEN_THRESHOLD,
+    GUIDE_COLOR_DEFAULT,
     HEAD_SIZE_CUSTOM_MAX,
     LINE_SPACING_MAX,
     LINE_SPACING_MIN,
@@ -93,6 +94,7 @@ from snapmock.config.constants import (
 from snapmock.config.settings import AppSettings
 from snapmock.core.command_stack import BaseCommand
 from snapmock.core.emoji_data import EMOJI_SIZE_MAX, EMOJI_SIZE_MIN, SkinTone
+from snapmock.core.guides import Guide, GuideOrientation, GuideStyle
 from snapmock.core.layer import ITEM_BLEND_MODES
 from snapmock.core.stamp_library import STAMP_SIZE_MAX, STAMP_SIZE_MIN
 from snapmock.core.theme_manager import current_theme, theme_manager
@@ -125,6 +127,7 @@ from snapmock.ui.unmet_requirements import check_requirements
 if TYPE_CHECKING:
     from snapmock.core.scene import SnapScene
     from snapmock.core.selection_manager import SelectionManager
+    from snapmock.core.view import SnapView
     from snapmock.tools.tool_manager import ToolManager
 
 
@@ -278,6 +281,7 @@ class PropertyPanel(QDockWidget):
         self._build_text_section()
         self._build_text_box_section()
         self._build_info_section()
+        self._build_guide_section()
         self._build_canvas_section()
         self._sections = (
             self._transform_section,
@@ -1198,6 +1202,33 @@ class PropertyPanel(QDockWidget):
         self._info_section.add_row("", self._locked_check)
         self._main_layout.addWidget(self._info_section)
 
+    def _build_guide_section(self) -> None:
+        """The Guide section (General UI PRD 2.66): shown alone while a guide is selected
+        on the canvas, with the guide's position, colour, line style, and lock."""
+        self._guide_section = CollapsibleSection("Guide")
+        self._guide_type_label = QLabel("")
+        self._guide_pos_spin = self._make_double_spin(
+            -99999.0, 99999.0, 1, " px", "Guide position"
+        )
+        self._guide_color_picker = ColorPicker(
+            QColor(GUIDE_COLOR_DEFAULT), allow_transparent=False
+        )
+        self._guide_color_picker.setAccessibleName("Guide color")
+        self._guide_style_combo = QComboBox()
+        for style in GuideStyle:
+            self._guide_style_combo.addItem(style.value.title(), style)
+        self._guide_style_combo.setAccessibleName("Guide line style")
+        self._guide_locked_check = QCheckBox("Locked")
+        self._guide_locked_check.setAccessibleName("Guide lock")
+        self._guide_section.add_row("Type:", self._guide_type_label)
+        self._guide_section.add_row("Position:", self._guide_pos_spin)
+        self._guide_section.add_row("Color:", self._guide_color_picker)
+        self._guide_section.add_row("Style:", self._guide_style_combo)
+        self._guide_section.add_row("", self._guide_locked_check)
+        self._main_layout.addWidget(self._guide_section)
+        self._selected_guide: Guide | None = None
+        self._view: SnapView | None = None
+
     def _build_canvas_section(self) -> None:
         self._canvas_section = CollapsibleSection("Canvas")
         self._canvas_w_spin = QSpinBox()
@@ -1316,6 +1347,10 @@ class PropertyPanel(QDockWidget):
         self._canvas_w_spin.valueChanged.connect(self._on_canvas_size_changed)
         self._canvas_h_spin.valueChanged.connect(self._on_canvas_size_changed)
         self._bg_color_picker.color_changed.connect(self._on_bg_color_changed)
+        self._guide_pos_spin.valueChanged.connect(self._on_guide_position_changed)
+        self._guide_color_picker.color_changed.connect(self._on_guide_color_changed)
+        self._guide_style_combo.currentIndexChanged.connect(self._on_guide_style_changed)
+        self._guide_locked_check.toggled.connect(self._on_guide_locked_changed)
         self._border_w_spin.valueChanged.connect(self._on_border_width_changed)
         self._border_color_picker.color_changed.connect(self._on_border_color_changed)
         self._border_opacity_spin.valueChanged.connect(self._on_border_opacity_changed)
@@ -1682,6 +1717,17 @@ class PropertyPanel(QDockWidget):
             in_tool_defaults = not has_selection and self._active_tool_id in ("text", "callout")
             in_vector_defaults = not has_selection and self._active_tool_id in _VECTOR_TOOL_IDS
 
+            # A selected guide has the panel to itself (2.66); a guide and the items are
+            # never selected together
+            guide = self._selected_guide
+            self._guide_section.setVisible(guide is not None)
+            if guide is not None:
+                for section in self._sections:
+                    if section is not self._guide_section:
+                        section.setVisible(False)
+                self._populate_guide(guide)
+                return
+
             # Section visibility (PRD 8.3 to 8.6)
             self._transform_section.setVisible(has_selection)
             self._appearance_section.setVisible(all_vector or in_vector_defaults)
@@ -1980,6 +2026,16 @@ class PropertyPanel(QDockWidget):
         self._type_label.setText(text)
         self._rebuild_layer_combo()
         self._set_check(self._locked_check, [i.locked for i in items])
+
+    def _populate_guide(self, guide: Guide) -> None:
+        horizontal = guide.orientation is GuideOrientation.HORIZONTAL
+        self._guide_type_label.setText("Horizontal guide" if horizontal else "Vertical guide")
+        self._guide_pos_spin.setPrefix("Y = " if horizontal else "X = ")
+        self._guide_pos_spin.setValue(guide.position)
+        own = QColor(guide.color) if guide.color is not None else self._settings.guide_color()
+        self._guide_color_picker.color = own
+        self._set_combo_data(self._guide_style_combo, [guide.style])
+        self._guide_locked_check.setChecked(guide.locked)
 
     def _populate_canvas(self) -> None:
         cs = self._scene.canvas_size
@@ -2393,6 +2449,95 @@ class PropertyPanel(QDockWidget):
         self._locked_check.setTristate(False)
         # The one row that acts on a locked item: it is the way out (decision B)
         self._push_property(self._selected_items(), "locked", checked, unlocked_only=False)
+
+    # --- the selected guide (PRD 2.66) ---
+
+    def set_view(self, view: SnapView | None) -> None:
+        """Follow *view*'s selected guide; the main window calls this for the active
+        document's canvas."""
+        if self._view is not None:
+            try:
+                self._view.selected_guide_changed.disconnect(self.set_selected_guide)
+            except (TypeError, RuntimeError):
+                pass
+        self._view = view
+        if view is not None:
+            view.selected_guide_changed.connect(self.set_selected_guide)
+            self.set_selected_guide(view.selected_guide)
+        else:
+            self.set_selected_guide(None)
+
+    def set_selected_guide(self, guide: object) -> None:
+        self._selected_guide = guide if isinstance(guide, Guide) else None
+        self._refresh_from_selection()
+
+    def _change_guide(self, description: str, **changes: Any) -> None:
+        guide = self._selected_guide
+        if guide is None:
+            return
+        new = guide.with_changes(**changes)
+        if new == guide:
+            return
+        from snapmock.commands.guide_commands import ChangeGuideCommand
+
+        self._push(ChangeGuideCommand(self._scene, guide, new, description))
+
+    def _on_guide_position_changed(self, value: float) -> None:
+        guide = self._selected_guide
+        if self._updating or guide is None:
+            return
+        if guide.locked:
+            self._refuse_locked_guide()
+            return
+        if value != guide.position:
+            from snapmock.commands.guide_commands import MoveGuideCommand
+
+            self._push(MoveGuideCommand(self._scene, guide, value))
+
+    def _on_guide_color_changed(self, color: QColor) -> None:
+        guide = self._selected_guide
+        if self._updating or guide is None:
+            return
+        if guide.locked:
+            self._refuse_locked_guide()
+            return
+        self._change_guide("Change Guide Color", color=color.name(QColor.NameFormat.HexArgb))
+
+    def _on_guide_style_changed(self, index: int) -> None:
+        guide = self._selected_guide
+        if self._updating or index < 0 or guide is None:
+            return
+        style = self._guide_style_combo.itemData(index)
+        if not isinstance(style, GuideStyle):
+            return
+        if guide.locked:
+            self._refuse_locked_guide()
+            return
+        self._change_guide("Change Guide Style", style=style)
+
+    def _on_guide_locked_changed(self, checked: bool) -> None:
+        if self._updating or self._selected_guide is None:
+            return
+        self._change_guide("Unlock Guide" if not checked else "Lock Guide", locked=checked)
+
+    def _refuse_locked_guide(self) -> None:
+        """A locked guide's rows answer as a locked item's do (1.3): one message after the
+        event that asked, then the guide's value again; the Locked checkbox is the way out."""
+        if self._refusing:
+            return
+        self._refusing = True
+        sender = self.sender()
+        action = self._edit_action_name()
+
+        def _show() -> None:
+            try:
+                self._end_pointer_gesture(sender)
+                check_requirements(self, action, [(False, "an unlocked guide selected")])
+                self._refresh_from_selection()
+            finally:
+                self._refusing = False
+
+        QTimer.singleShot(0, _show)
 
     # --- canvas handlers (PRD 8.5) ---
 

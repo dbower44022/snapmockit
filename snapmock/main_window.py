@@ -322,6 +322,7 @@ class MainWindow(QMainWindow):
         self._property_panel = PropertyPanel(self._selection_manager, self._scene, self)
         self._property_panel.setObjectName("PropertyPanel")
         self._property_panel.set_tool_manager(self._tool_manager)
+        self._property_panel.set_view(self._view)
         self._load_tool_session()
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self._property_panel)
 
@@ -4568,6 +4569,7 @@ class MainWindow(QMainWindow):
         if hasattr(self, "_property_panel"):
             self._property_panel.set_scene(doc.scene)
             self._property_panel.set_selection(doc.selection_manager)
+            self._property_panel.set_view(doc.view)
         if hasattr(self, "_status_bar"):
             self._status_bar.set_document(doc)
         if hasattr(self, "_main_toolbar"):

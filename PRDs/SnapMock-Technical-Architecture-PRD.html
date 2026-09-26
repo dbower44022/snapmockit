@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.73</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.74</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.73</dd>
-    <dt>Last Updated</dt>    <dd>09-25-26 20:59</dd>
+    <dt>Document version</dt><dd>1.74</dd>
+    <dt>Last Updated</dt>    <dd>09-26-26 02:09</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.74</td>
+        <td class="nowrap">09-26-26 02:09</td>
+        <td>Doug Bower</td>
+        <td>General UI PRD 2.66, the guide's own colour, line style, and lock (Doug's decision A of 09-26-26). <strong>6.1</strong>: each entry of the manifest's optional <code>guides</code> list may carry <code>color</code> (an <code>#AARRGGBB</code> string), <code>style</code> (<code>solid</code>, <code>dashed</code>, <code>dotted</code>), and <code>locked</code>; a key is written only when it differs from the default and an absent or unreadable key reads as the default, so <code>format_version</code> stays 1. <code>SnapScene</code> gains <code>guide_replaced(old, new)</code> beside <code>guides_changed</code>, and <code>commands/guide_commands.py</code> gains <code>ChangeGuideCommand</code>; the grid-line arithmetic of the Select tool's Shift+Arrow nudge moved to <code>core/guides.py</code> as <code>next_grid_line</code> for the view to share (2.64). No new module.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.73</td>
         <td class="nowrap">09-25-26 20:59</td>
@@ -638,6 +645,7 @@
     </thead>
     <tbody>
       <tr><td class="nowrap">09-25-26 20:59</td><td>3.1.4, 3.2, 6.1</td><td>Changed / Decision</td><td><strong>Changed</strong> (09-25-26, the item lock, Doug's decision B; notes Section 30): the <code>locked</code> row of the item base class table reads "cannot be moved or edited" and names <code>SnapScene.is_locked</code>; <code>items.json</code> entries carry <code>locked</code>, absent reading as unlocked. <strong>Decision</strong> 3.2: a layer's lock toggle does not write the items' flags; <code>is_locked</code> reads the layer live, so the item's own lock is its own (kickoff silence 1). The behaviour these serve is General UI PRD Section 8 and 10.2 and Navigation &amp; Raster Operations PRD Section 2, at those documents' versions 2.61 and 1.14.</td></tr>
+      <tr><td class="nowrap">09-26-26 02:09</td><td>6.1, 3.1, 10</td><td>Changed</td><td><strong>Changed</strong> (09-26-26, General UI PRD 2.64 and 2.66): the manifest's <code>guides</code> entries gain optional <code>color</code>, <code>style</code>, and <code>locked</code> keys; <code>SnapScene.guide_replaced</code>; <code>ChangeGuideCommand</code> in the existing guide commands module; <code>next_grid_line</code> in <code>core/guides.py</code>. The detail is the 1.74 revision row.</td></tr>
       <tr><td class="nowrap">09-21-26 15:14</td><td>3.3.3, 3.9.2, 4.1, 10</td><td>Added / Changed</td><td><strong>Added</strong> (09-21-26, Doug's decision to build the border as a tool): the <code>border</code> entry in the 3.3.3 registry, the four border fields in the 4.1 project model, and <code>tools/border_tool.py</code> in Section 10. <strong>Changed</strong> 3.9.2: export rendering sizes its image from the scene's output rectangle rather than the canvas size, and paints the border's shadow, ring and stroke before the canvas. The behaviour these serve is Navigation &amp; Raster Operations PRD Section 10, at that document's version 1.8.</td></tr>
       <tr><td class="nowrap">09-20-26 13:31</td><td>7.3</td><td>Released</td><td><strong>Released</strong> (09-19-26; <code>docs/Packaging-PyPI-Implementation.md</code>, Sections 7.5 and 8): version 1.2.0, tagged <code>v1.2.0</code> on 9b307a7 and published by run 35421164271 as an ordinary GitHub release with both Linux forms attached, then uploaded to the Python Package Index at 18:49 UTC once Doug approved the <code>pypi</code> environment. On the index: <code>snapmockit-1.2.0-py3-none-any.whl</code> (761,230 bytes) and <code>snapmockit-1.2.0.tar.gz</code> (872,796 bytes), each with an attestation naming GitHub, <code>dbower44022/snapmockit</code>, <code>ci.yml</code>, and the environment <code>pypi</code>; the page carries the README, the five project addresses, and thirteen classifiers. Installed here with <code>pipx install snapmockit</code>: the command answers <code>Snapmockit 1.2.0</code>, the main window builds, the form reads as the index's with pipx as its installer, and the shortcut command is <code>snapmockit --capture region</code>. <strong>7.3 stands as follows:</strong> the Linux AppImage (primary), the Linux Flatpak (secondary), and the Python Package Index are done; the Windows installer and portable archive and the macOS bundle remain, each waiting for its machine. The release process, with the upload as a step, is <code>docs/Release-Engineering.md</code> Section 5.</td></tr>
       <tr>
