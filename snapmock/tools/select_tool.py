@@ -1590,13 +1590,9 @@ class SelectTool(BaseTool):
             return
         from snapmock.commands.remove_item import RemoveItemCommand
 
-        # Skip items on locked layers
-        deletable = []
-        for item in items:
-            layer = self._scene.layer_manager.layer_by_id(item.layer_id)
-            if layer is not None and layer.locked:
-                continue
-            deletable.append(item)
+        # Skip locked items, silently (Navigation PRD 2.7; the item's own lock and its
+        # group's are causes beside the layer's since 09-25-26)
+        deletable = self._movable(items)
 
         for item in deletable:
             self._scene.command_stack.push(RemoveItemCommand(self._scene, item))

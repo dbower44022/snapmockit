@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import QPointF
+from PyQt6.QtCore import QPointF, QRectF
 
 from snapmock.core.command_stack import BaseCommand
 from snapmock.items.base_item import SnapGraphicsItem
@@ -121,13 +121,22 @@ class AlignItemsCommand(BaseCommand):
         One of "left", "center_h", "right", "top", "middle_v", "bottom".
     """
 
-    def __init__(self, items: list[SnapGraphicsItem], alignment: str) -> None:
+    def __init__(
+        self,
+        items: list[SnapGraphicsItem],
+        alignment: str,
+        *,
+        movable: list[SnapGraphicsItem] | None = None,
+    ) -> None:
         self._items = list(items)
         self._alignment = alignment
+        # The items that move; the others (locked ones, the item lock of 09-25-26) still
+        # count towards the edge or centre aligned to
+        self._movable = list(items) if movable is None else list(movable)
         self._old_positions: list[QPointF] = []
 
     def redo(self) -> None:
-        self._old_positions = [QPointF(item.pos()) for item in self._items]
+        self._old_positions = [QPointF(item.pos()) for item in self._movable]
         if len(self._items) < 2:
             return
 
@@ -135,35 +144,38 @@ class AlignItemsCommand(BaseCommand):
 
         if self._alignment == "left":
             ref = min(r.left() for r in rects)
-            for item, rect in zip(self._items, rects):
+            for item, rect in self._moving(rects):
                 item.setPos(item.pos().x() + ref - rect.left(), item.pos().y())
         elif self._alignment == "center_h":
             union_left = min(r.left() for r in rects)
             union_right = max(r.right() for r in rects)
             center_x = (union_left + union_right) / 2
-            for item, rect in zip(self._items, rects):
+            for item, rect in self._moving(rects):
                 item.setPos(item.pos().x() + center_x - rect.center().x(), item.pos().y())
         elif self._alignment == "right":
             ref = max(r.right() for r in rects)
-            for item, rect in zip(self._items, rects):
+            for item, rect in self._moving(rects):
                 item.setPos(item.pos().x() + ref - rect.right(), item.pos().y())
         elif self._alignment == "top":
             ref = min(r.top() for r in rects)
-            for item, rect in zip(self._items, rects):
+            for item, rect in self._moving(rects):
                 item.setPos(item.pos().x(), item.pos().y() + ref - rect.top())
         elif self._alignment == "middle_v":
             union_top = min(r.top() for r in rects)
             union_bottom = max(r.bottom() for r in rects)
             center_y = (union_top + union_bottom) / 2
-            for item, rect in zip(self._items, rects):
+            for item, rect in self._moving(rects):
                 item.setPos(item.pos().x(), item.pos().y() + center_y - rect.center().y())
         elif self._alignment == "bottom":
             ref = max(r.bottom() for r in rects)
-            for item, rect in zip(self._items, rects):
+            for item, rect in self._moving(rects):
                 item.setPos(item.pos().x(), item.pos().y() + ref - rect.bottom())
 
+    def _moving(self, rects: list[QRectF]) -> list[tuple[SnapGraphicsItem, QRectF]]:
+        return [(i, r) for i, r in zip(self._items, rects) if i in self._movable]
+
     def undo(self) -> None:
-        for item, pos in zip(self._items, self._old_positions):
+        for item, pos in zip(self._movable, self._old_positions):
             item.setPos(pos)
 
     @property

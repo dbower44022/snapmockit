@@ -1973,6 +1973,28 @@ class MainWindow(QMainWindow):
             return []
         return items
 
+    def _unlocked(
+        self, action: str, items: list[SnapGraphicsItem], minimum: int = 1
+    ) -> list[SnapGraphicsItem]:
+        """The items of *items* an edit reaches (the item lock, Doug's decision B of
+        09-25-26): a locked one is skipped, and when fewer than *minimum* remain the
+        message of General UI PRD 1.3 says so and the list is empty."""
+        editable = [i for i in items if not self._scene.is_locked(i)]
+        words = {
+            1: "an unlocked item selected",
+            2: "at least two unlocked items selected",
+            3: "at least three unlocked items selected",
+        }
+        need = words.get(minimum, f"at least {minimum} unlocked items selected")
+        if not self._require(action, (len(editable) >= minimum, need)):
+            return []
+        return editable
+
+    def _editable_selection(self, action: str, minimum: int = 1) -> list[SnapGraphicsItem]:
+        """The selected items an edit reaches, or an empty list after the message."""
+        items = self._require_selection(action, minimum)
+        return self._unlocked(action, items, minimum) if items else []
+
     def _require_active_layer(self, action: str) -> Layer | None:
         active = self._scene.layer_manager.active_layer
         if not self._require(action, (active is not None, "an active layer")):
@@ -2876,10 +2898,15 @@ class MainWindow(QMainWindow):
             self._copy_raster_selection(active)
             self._cut_raster_selection(active, source.layer_id)
             return
-        if not self._require_selection("Cut"):
+        items = self._require_selection("Cut")
+        if not items:
             return
-        self._edit_copy()
-        self._edit_delete()
+        # A locked item is skipped silently, as Delete skips one (Navigation PRD 2.7)
+        items = [i for i in items if not self._scene.is_locked(i)]
+        if not items:
+            return
+        self._clipboard.copy_items(items)
+        self._delete_items(items)
 
     def _edit_copy(self) -> None:
         active = self._tool_manager.active_tool
@@ -3119,11 +3146,21 @@ class MainWindow(QMainWindow):
         items = self._require_selection("Delete")
         if not items:
             return
+        self._delete_items(items)
+
+    def _delete_items(self, items: list[SnapGraphicsItem]) -> None:
+        """Remove *items* but the locked ones, which are skipped silently (Navigation PRD
+        2.7 for a locked layer's item; the item's own lock a second cause since 09-25-26)."""
         from snapmock.commands.remove_item import RemoveItemCommand
 
+        removed = False
         for item in items:
+            if self._scene.is_locked(item):
+                continue
             self._scene.command_stack.push(RemoveItemCommand(self._scene, item))
-        self._selection_manager.deselect_all()
+            removed = True
+        if removed:
+            self._selection_manager.deselect_all()
 
     def _edit_duplicate(self) -> None:
         """Clone selected items with +10,+10 offset."""
@@ -3164,7 +3201,7 @@ class MainWindow(QMainWindow):
             for i in self._scene.annotation_items()
             if active is not None
             and i.layer_id == active.layer_id
-            and not i.locked
+            and not self._scene.is_locked(i)
             and not self._scene.is_fixed_in_place(i)
         ]
         if self._require(
@@ -3190,7 +3227,9 @@ class MainWindow(QMainWindow):
         items: list[QGraphicsItem] = [
             i
             for i in self._scene.annotation_items()
-            if i.layer_id in usable and not i.locked and not self._scene.is_fixed_in_place(i)
+            if i.layer_id in usable
+            and not self._scene.is_locked(i)
+            and not self._scene.is_fixed_in_place(i)
         ]
         if self._require("Select All Layers", (bool(items), "at least one item on the canvas")):
             self._selection_manager.select_items(items)
@@ -3211,7 +3250,9 @@ class MainWindow(QMainWindow):
         items: list[QGraphicsItem] = [
             i
             for i in self._scene.all_annotation_items()
-            if isinstance(i, (TextItem, CalloutItem)) and i.layer_id in usable and not i.locked
+            if isinstance(i, (TextItem, CalloutItem))
+            and i.layer_id in usable
+            and not self._scene.is_locked(i)
         ]
         if self._require("Select All Text", (bool(items), "at least one text-containing item")):
             self._tool_manager.activate("select")
@@ -3220,8 +3261,10 @@ class MainWindow(QMainWindow):
     def _edit_find_replace_color(self) -> None:
         from snapmock.ui.find_replace_color_dialog import FindReplaceColorDialog
 
-        has_items = bool(self._scene.annotation_items())
-        if not self._require("Find/Replace Color", (has_items, "at least one item on the canvas")):
+        has_items = any(not self._scene.is_locked(i) for i in self._scene.annotation_items())
+        if not self._require(
+            "Find/Replace Color", (has_items, "at least one unlocked item on the canvas")
+        ):
             return
         dlg = FindReplaceColorDialog(self._scene, self)
         dlg.exec()
@@ -3502,6 +3545,12 @@ class MainWindow(QMainWindow):
         if not items:
             return
         item = items[0]
+        # The dialog edits the item, so a locked one is refused; the Property Panel's
+        # Locked checkbox and the context menu's Unlock Item row are the way out
+        if not self._require(
+            "Properties", (not self._scene.is_locked(item), "an unlocked item selected")
+        ):
+            return
 
         from snapmock.ui.item_properties_dialog import ItemPropertiesDialog
 
@@ -3603,8 +3652,9 @@ class MainWindow(QMainWindow):
     # ---- context menu helpers ----
 
     def _move_items_to_layer(self, target_layer_id: str) -> None:
-        """Move selected items to the specified layer."""
-        items = self._selected_snap_items()
+        """Move the selected items to the specified layer; a locked item stays, and a
+        selection locked through and through answers with the 1.3 message."""
+        items = self._editable_selection("Move to Layer")
         if not items:
             return
         from snapmock.commands.move_item_layer import MoveItemToLayerCommand
@@ -3719,7 +3769,7 @@ class MainWindow(QMainWindow):
         return [i for i in self._selection_manager.items if isinstance(i, SnapGraphicsItem)]
 
     def _arrange_bring_to_front(self) -> None:
-        items = self._require_selection("Bring to Front")
+        items = self._editable_selection("Bring to Front")
         if not items:
             return
         from snapmock.commands.arrange_commands import ChangeZOrderCommand
@@ -3728,7 +3778,7 @@ class MainWindow(QMainWindow):
         self._scene.command_stack.push(cmd)
 
     def _arrange_bring_forward(self) -> None:
-        items = self._require_selection("Bring Forward")
+        items = self._editable_selection("Bring Forward")
         if not items:
             return
         from snapmock.commands.arrange_commands import ChangeZOrderCommand
@@ -3737,7 +3787,7 @@ class MainWindow(QMainWindow):
         self._scene.command_stack.push(cmd)
 
     def _arrange_send_backward(self) -> None:
-        items = self._require_selection("Send Backward")
+        items = self._editable_selection("Send Backward")
         if not items:
             return
         from snapmock.commands.arrange_commands import ChangeZOrderCommand
@@ -3746,7 +3796,7 @@ class MainWindow(QMainWindow):
         self._scene.command_stack.push(cmd)
 
     def _arrange_send_to_back(self) -> None:
-        items = self._require_selection("Send to Back")
+        items = self._editable_selection("Send to Back")
         if not items:
             return
         from snapmock.commands.arrange_commands import ChangeZOrderCommand
@@ -3755,7 +3805,7 @@ class MainWindow(QMainWindow):
         self._scene.command_stack.push(cmd)
 
     def _arrange_flip_horizontal(self) -> None:
-        items = self._require_selection("Flip Horizontal")
+        items = self._editable_selection("Flip Horizontal")
         if not items:
             return
         from snapmock.commands.macro_command import MacroCommand
@@ -3779,6 +3829,8 @@ class MainWindow(QMainWindow):
         from snapmock.items.numbered_step_item import NumberedStepItem
 
         self.close_marker_editor()
+        if not self._require("Edit", (not self._scene.is_locked(item), "an unlocked item")):
+            return False
         if isinstance(item, EmojiItem):
             emoji_tool = self._tool_manager.tool("emoji")
             if not isinstance(emoji_tool, EmojiTool):
@@ -3878,7 +3930,11 @@ class MainWindow(QMainWindow):
         from snapmock.core.emoji_data import DEFAULT_EMOJI_SIZE
 
         emoji = self._selected_marker(EmojiItem)
-        if not self._require("Reset Size", (emoji is not None, "one emoji")):
+        if not self._require(
+            "Reset Size",
+            (emoji is not None, "one emoji"),
+            (emoji is None or not self._scene.is_locked(emoji), "an unlocked emoji"),
+        ):
             return
         assert isinstance(emoji, EmojiItem)
         if emoji.emoji_size != DEFAULT_EMOJI_SIZE:
@@ -3905,7 +3961,11 @@ class MainWindow(QMainWindow):
         from snapmock.commands.modify_property import ModifyPropertyCommand
 
         stamp = self._selected_marker(StampItem)
-        if not self._require("Reset Size", (stamp is not None, "one stamp")):
+        if not self._require(
+            "Reset Size",
+            (stamp is not None, "one stamp"),
+            (stamp is None or not self._scene.is_locked(stamp), "an unlocked stamp"),
+        ):
             return
         assert isinstance(stamp, StampItem)
         if stamp.stamp_size != stamp.default_size:
@@ -3941,7 +4001,11 @@ class MainWindow(QMainWindow):
         from snapmock.config.constants import DisplayMode
 
         step = self._selected_step()
-        if not self._require("Convert Display Mode", (step is not None, "one numbered step")):
+        if not self._require(
+            "Convert Display Mode",
+            (step is not None, "one numbered step"),
+            (step is None or not self._scene.is_locked(step), "an unlocked numbered step"),
+        ):
             return
         assert step is not None
         new_mode = (
@@ -3968,7 +4032,7 @@ class MainWindow(QMainWindow):
             tool.set_next_number(start + command.count)
 
     def _arrange_flip_vertical(self) -> None:
-        items = self._require_selection("Flip Vertical")
+        items = self._editable_selection("Flip Vertical")
         if not items:
             return
         from snapmock.commands.macro_command import MacroCommand
@@ -3993,7 +4057,12 @@ class MainWindow(QMainWindow):
         if not items:
             return
         on_one_layer = len({item.layer_id for item in items}) == 1
-        if not self._require("Group", (on_one_layer, "the selected items on one layer")):
+        none_locked = not any(self._scene.is_locked(item) for item in items)
+        if not self._require(
+            "Group",
+            (on_one_layer, "the selected items on one layer"),
+            (none_locked, "every selected item unlocked"),
+        ):
             return
         from snapmock.commands.group_commands import GroupItemsCommand
 
@@ -4006,8 +4075,14 @@ class MainWindow(QMainWindow):
         from snapmock.items.group_item import GroupItem
 
         groups = [item for item in self._selected_snap_items() if isinstance(item, GroupItem)]
-        if not self._require("Ungroup", (bool(groups), "a group selected")):
+        unlocked = [group for group in groups if not self._scene.is_locked(group)]
+        if not self._require(
+            "Ungroup",
+            (bool(groups), "a group selected"),
+            (bool(unlocked) or not groups, "an unlocked group selected"),
+        ):
             return
+        groups = unlocked
         from snapmock.commands.group_commands import UngroupItemsCommand
 
         self._scene.command_stack.push(
@@ -4018,13 +4093,20 @@ class MainWindow(QMainWindow):
         items = self._require_selection("Align", 2)
         if not items:
             return
+        # A locked item is part of the edge or centre the others align to, and stays
+        movable = self._unlocked("Align", items)
+        if not movable:
+            return
         from snapmock.commands.arrange_commands import AlignItemsCommand
 
-        cmd = AlignItemsCommand(items, alignment)
+        cmd = AlignItemsCommand(items, alignment, movable=movable)
         self._scene.command_stack.push(cmd)
 
     def _arrange_distribute(self, direction: str) -> None:
         items = self._require_selection("Distribute", 3)
+        if not items:
+            return
+        items = self._unlocked("Distribute", items, 3)
         if not items:
             return
         from snapmock.commands.arrange_commands import DistributeItemsCommand
@@ -4033,7 +4115,7 @@ class MainWindow(QMainWindow):
         self._scene.command_stack.push(cmd)
 
     def _arrange_align_canvas_center(self) -> None:
-        items = self._require_selection("Align to Canvas Center")
+        items = self._editable_selection("Align to Canvas Center")
         if not items:
             return
         from snapmock.commands.arrange_commands import AlignToCanvasCommand

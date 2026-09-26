@@ -8,7 +8,7 @@ differ across the selection shows a mixed indicator until it is changed.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from PyQt6.QtCore import QPoint, QSizeF, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QTextBlockFormat, QTextCharFormat, QTextCursor
@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
     QDockWidget,
     QDoubleSpinBox,
     QFontComboBox,
+    QGraphicsItem,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -108,6 +109,7 @@ from snapmock.items.vector_item import VectorItem
 from snapmock.ui.collapsible_section import CollapsibleSection
 from snapmock.ui.color_picker import ColorPicker
 from snapmock.ui.panel_modes import STRIP_PANEL_WIDTH, PanelMode
+from snapmock.ui.unmet_requirements import check_requirements
 
 if TYPE_CHECKING:
     from snapmock.core.scene import SnapScene
@@ -131,6 +133,7 @@ FONT_STYLES: tuple[tuple[str, bool], ...] = (("Normal", False), ("Italic", True)
 
 CANVAS_DPI_RANGE = (1, 2400)
 
+_ItemT = TypeVar("_ItemT", bound=QGraphicsItem)
 _TextLike = TextItem | CalloutItem
 
 
@@ -1508,6 +1511,27 @@ class PropertyPanel(QDockWidget):
     def _selected_items(self) -> list[SnapGraphicsItem]:
         return [i for i in self._selection_manager.items if isinstance(i, SnapGraphicsItem)]
 
+    def _editable(self, items: list[_ItemT]) -> list[_ItemT]:
+        """The items of *items* a row's edit reaches (the item lock, Doug's decision B
+        of 09-25-26): a locked one is skipped, and when every one is locked the row
+        answers with the message of General UI PRD 1.3 and shows the item's value again.
+        The Locked checkbox does not come through here, since it is the way out."""
+        if not items:
+            return items
+        editable = [i for i in items if not self._scene.is_locked(i)]
+        if not editable:
+            check_requirements(
+                self, self._edit_action_name(), [(False, "an unlocked item selected")]
+            )
+            self._refresh_from_selection()
+        return editable
+
+    def _edit_action_name(self) -> str:
+        """The row a refused edit came from, by its control's accessible name."""
+        sender = self.sender()
+        name = sender.accessibleName() if isinstance(sender, QWidget) else ""
+        return name or "Property edit"
+
     def _first_selected_item(self) -> SnapGraphicsItem | None:
         items = self._selected_items()
         return items[0] if items else None
@@ -2099,8 +2123,13 @@ class PropertyPanel(QDockWidget):
     def _push(self, command: BaseCommand) -> None:
         self._scene.command_stack.push(command)
 
-    def _push_property(self, items: list[Any], prop: str, value: Any) -> None:
-        """One undoable command that sets *prop* on every item (PRD 8.6)."""
+    def _push_property(
+        self, items: list[Any], prop: str, value: Any, *, unlocked_only: bool = True
+    ) -> None:
+        """One undoable command that sets *prop* on every item (PRD 8.6) that is not
+        locked; the Locked checkbox passes ``unlocked_only=False`` to reach a locked one."""
+        if unlocked_only:
+            items = self._editable(items)
         if not items:
             return
         if len(items) == 1:
@@ -2110,6 +2139,7 @@ class PropertyPanel(QDockWidget):
             self._push(ModifyPropertiesCommand(items, prop, value))
 
     def _push_scale(self, items: list[SnapGraphicsItem], sx: float, sy: float) -> None:
+        items = self._editable(items)
         commands: list[BaseCommand] = [ScaleGeometryCommand(i, sx, sy) for i in items]
         if len(commands) == 1:
             self._push(commands[0])
@@ -2118,7 +2148,7 @@ class PropertyPanel(QDockWidget):
 
     def _push_font(self, items: list[_TextLike], mutate: Callable[[QFont], None]) -> None:
         commands: list[BaseCommand] = []
-        for item in items:
+        for item in self._editable(items):
             new_font = QFont(item.font)
             mutate(new_font)
             commands.append(ModifyPropertyCommand(item, "font", item.font, new_font))
@@ -2153,7 +2183,7 @@ class PropertyPanel(QDockWidget):
         if self._updating or value <= 0:
             return
         commands: list[BaseCommand] = []
-        for item in self._selected_items():
+        for item in self._editable(self._selected_items()):
             old_w = item.boundingRect().width()
             if old_w <= 0:
                 continue
@@ -2165,7 +2195,7 @@ class PropertyPanel(QDockWidget):
         if self._updating or value <= 0:
             return
         commands: list[BaseCommand] = []
-        for item in self._selected_items():
+        for item in self._editable(self._selected_items()):
             old_h = item.boundingRect().height()
             if old_h <= 0:
                 continue
@@ -2300,7 +2330,7 @@ class PropertyPanel(QDockWidget):
         target_layer_id = self._layer_combo.itemData(index)
         if not isinstance(target_layer_id, str):
             return
-        moving = [i for i in items if i.layer_id != target_layer_id]
+        moving = self._editable([i for i in items if i.layer_id != target_layer_id])
         if moving:
             self._push(MoveItemToLayerCommand(self._scene, moving, target_layer_id))
 
@@ -2315,7 +2345,8 @@ class PropertyPanel(QDockWidget):
         if self._updating:
             return
         self._locked_check.setTristate(False)
-        self._push_property(self._selected_items(), "locked", checked)
+        # The one row that acts on a locked item: it is the way out (decision B)
+        self._push_property(self._selected_items(), "locked", checked, unlocked_only=False)
 
     # --- canvas handlers (PRD 8.5) ---
 
@@ -2717,7 +2748,7 @@ class PropertyPanel(QDockWidget):
             editor.textCursor().mergeBlockFormat(fmt)  # type: ignore[attr-defined]
             return
         commands: list[BaseCommand] = []
-        for item in self._selected_text_items():
+        for item in self._editable(self._selected_text_items()):
             old = item.line_spacings
             commands.append(ModifyPropertyCommand(item, "line_spacings", old, [value] * len(old)))
         if len(commands) == 1:
@@ -2866,7 +2897,7 @@ class PropertyPanel(QDockWidget):
             ModifyPropertyCommand(
                 item, "smoothing_fit", item.smoothing_fit, (fraction, item.fit_segments(fraction))
             )
-            for item in self._selected_freehand()
+            for item in self._editable(self._selected_freehand())
         ]
         self._push_commands(commands, "Re-smooth freehand strokes")
 
