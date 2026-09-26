@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Navigation &amp; Raster Operations</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.13</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.14</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Select / Move · Pan · Zoom · Raster selection · Crop · Resize canvas · Border · Copy, cut, paste, duplicate</dd>
-    <dt>Document version</dt><dd>1.13</dd>
-    <dt>Last Updated</dt>    <dd>09-25-26 12:07</dd>
+    <dt>Document version</dt><dd>1.14</dd>
+    <dt>Last Updated</dt>    <dd>09-25-26 21:33</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.14</td>
+        <td class="nowrap">09-25-26 21:33</td>
+        <td>Doug Bower</td>
+        <td>The item lock (General UI PRD 2.61; Technical Architecture PRD 1.73; Doug's decision B of 09-25-26). The item's own lock, and its group's, join the layer's as a cause in this section, with one difference: a locked layer's item is passed over by every selection as <strong>2.2.2</strong> and <strong>2.3</strong> say, while an item locked on its own is selected and then refused. <strong>2.2.2</strong>: a click on a locked item selects it and begins no move; the hover cursor over it is the forbidden cursor. <strong>2.3</strong>: the rubber band takes a locked item. <strong>2.4</strong>: a drag and the arrow keys move the unlocked items of the selection and leave a locked one where it is, silently; a selection locked through and through moves nothing. <strong>2.5</strong>: the handles of such a selection draw grey with a solid frame and a drag on them does nothing; in a mixed selection a resize or a rotation reaches the unlocked items. <strong>2.7</strong>: Delete and Cut skip a locked item silently, as they skip a locked layer's. <strong>2.8</strong>: the hint over a locked item reads "This item is locked. Unlock it to move or edit it."; over a locked layer's item it reads as before. <strong>8.4</strong> stands: Resize Image, Crop, the merges, and Renumber All Steps still act on a locked item, since the lock prevents interactive editing, not programmatic operations.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.13</td>
         <td class="nowrap">09-25-26 12:07</td>
@@ -157,6 +164,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">09-25-26 21:33</td>
+        <td>2.2.2, 2.3, 2.4, 2.5, 2.7, 2.8</td>
+        <td>Changed</td>
+        <td><strong>Changed</strong> (09-25-26, the item lock, General UI PRD 2.61): the item's own lock and its group's are a second cause beside the layer's throughout Section 2. A locked item is selected by a click, the rubber band, and Tab, and is then refused by a drag, the arrow keys, the handles, Delete, Cut, and the double-click edits; the hint row gains the item's wording. The detail is the 1.14 revision row.</td>
+      </tr>
       <tr>
         <td class="nowrap">09-21-26 16:24</td>
         <td>10.1</td>
@@ -520,7 +533,8 @@ resize/rotate/skew. It is the only tool that interacts with TransformHandles dir
 
 <ul>
   <li>Verify the item is on a visible, unlocked layer. If not, ignore the click (show
-  forbidden cursor on hover).</li>
+  forbidden cursor on hover). An item locked on its own is selected by the click but
+  begins no move, and shows the forbidden cursor on hover (1.14).</li>
   <li>If no modifier keys: deselect all, then select this item. Emit
   selectionChanged([<code>item_id</code>]).</li>
   <li>If Shift is held: add this item to the current selection (additive select).</li>
@@ -714,8 +728,8 @@ threshold (3 pixels).</p>
 <ul>
   <li>Pressing Delete or Backspace with items selected: remove all selected items. Push a
   MacroCommand containing a RemoveItemCommand for each item.</li>
-  <li>If the selection includes items on locked layers, those items are silently skipped (not
-  deleted).</li>
+  <li>If the selection includes items on locked layers, or items locked on their own (1.14),
+  those items are silently skipped (not deleted).</li>
   <li>After deletion, emit <code>selectionCleared()</code>.</li>
 </ul>
 
@@ -746,7 +760,7 @@ threshold (3 pixels).</p>
     <tr><th>Rubber-band selecting</th><td>Release to select enclosed items. Shift: add to selection. Ctrl: toggle.</td></tr>
     <tr><th>Resizing via handle</th><td>W: 200  H: 150 | Shift: maintain ratio | Alt: from center</td></tr>
     <tr><th>Rotating via handle</th><td>45.0° | Shift: snap to 15° increments</td></tr>
-    <tr><th>Hovering over locked item</th><td>This item is locked. Unlock its layer to interact with it.</td></tr>
+    <tr><th>Hovering over locked item</th><td>This item is locked. Unlock it to move or edit it. (Over a locked layer's item: This item is locked. Unlock its layer to interact with it.)</td></tr>
   </tbody>
 </table>
 

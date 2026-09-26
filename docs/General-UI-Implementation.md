@@ -1,6 +1,6 @@
 # General UI Implementation Notes
 
-Last Updated: 09-25-26 20:56 · Revision 1.50
+Last Updated: 09-25-26 21:33 · Revision 1.51
 
 Implements the SnapMock General User Interface PRD (version 2.4, `PRDs/SnapMock-General-UI-PRD.html`) in the eight phases defined by `docs/General-UI-Implementation-Kickoff-Prompt.md`. A session pasting that prompt starts at the first phase not marked done in Section 1.
 
@@ -21,7 +21,7 @@ Implements the SnapMock General User Interface PRD (version 2.4, `PRDs/SnapMock-
 | Group and Ungroup | The group item, its two commands, the Select tool, every item walk (Section 17) | Done | a4c3dd3 to c07a352, then this close-out commit |
 | Navigation and Raster Operations follow-up | Merge Down, Merge Visible, Flatten All; the layer blend mode and the BG and raster badges; the background layer on drop and paste; the Zoom tool's Alt+click (Section 18) | Done | b3c591d to 47ef98d, then this close-out commit |
 | Check for Updates | Help > Check for Updates: the GitHub releases query, the version comparison, the messages (Section 19) | Done | f45cf44 to ed3dbbb, then this close-out commit |
-| The Item Lock | The per-item lock as the four PRD passages define it: the model, selection, mutation, close-out (Section 30) | In progress | from 99ec438 |
+| The Item Lock | The per-item lock as the four PRD passages define it: the model, selection, mutation, close-out (Section 30) | Done | e9c61b7 to b7dbad5, then this close-out commit |
 
 Phase 0 was verified against the repository at commit `a198744` on 09-07-26. The working tree also carried uncommitted Basic Shape Annotation Tools work in `snapmock/items/` and `tests/test_items.py`; it was left untouched and is not part of this inventory.
 
@@ -737,16 +737,40 @@ Doug's decision B of 09-25-26, from `docs/Item-Lock-Kickoff-Prompt.md`, taken be
 
 ### 30.2 Silences decided
 
-Filled in as the steps land.
+| Silence | Decision |
+|---|---|
+| 1 A layer's lock toggle writing the item flags (Technical Architecture 3.2) | Reading live. `SnapScene.is_locked` reads the layer each time; nothing writes the layer's lock onto an item, so the item's own flag survives a layer's lock and unlock. Technical Architecture PRD 1.73 withdraws the 3.2 sentence. |
+| 2 Group and Ungroup with a locked member | Kept: `add_member` and the group's `locked` setter still write the group's lock onto every member, and Ungroup leaves the members as the group set them. New: Group refuses a selection holding a locked item ("every selected item unlocked"), and Ungroup refuses a locked group ("an unlocked group selected"), since both are edits of it. |
+| 3 The clipboard's PNG rendering and the exports | Untouched. A lock changes nothing that paints. |
+| 4 Paste and Paste in Place of a locked item | The copy is locked and the paste selects it, which decision B allows. |
+| 5 Escape's second rung when the item last added is locked | The rung selects the item, locked or not; `_selectable` is unchanged, since under decision B a locked item is selectable. |
+| 6 The bulk selections | Select All on Layer, Select All Layers, and Select All Text keep skipping a locked item (they now read `is_locked`), as Technical Architecture PRD 3.4 says "unlocked" and a bulk selection is made for a bulk edit, which a locked item refuses. The pointer routes take a locked item, since they are how it is reached to be unlocked. Doug may push back: the alternative is every route taking it. |
+| 7 A mixed selection in the Property Panel (8.6) | The rows edit the unlocked items and say nothing; the checkbox shows part-checked and sets every item. A selection locked through and through answers every row but the checkbox with 1.3's message, naming the row by its control's accessible name ("Stroke width needs an unlocked item selected."), and the control shows the item's value again. |
+| 8 The whole-canvas and programmatic operations | Renumber All Steps, Resize Image, Resize Canvas, Crop, the merges, and Flatten All still act on a locked item (Navigation PRD 8.4: the lock prevents interactive editing, not programmatic operations). Find/Replace Color is a named edit and skips a locked item; its requirement reads "at least one unlocked item on the canvas". |
+| 9 Set as Starting Number | Allowed on a locked step: it reads the step's number and edits the tool, not the item. Convert Display Mode, Reset Size, Change Stamp, Change Emoji, and the inline step editor refuse a locked marker. |
+| 10 Align with a locked item in the selection | The locked item is part of the edge or centre the others align to and stays; `AlignItemsCommand` takes a `movable` subset. Distribute needs three unlocked items, since a fixed item in the middle has no even spacing to give. |
 
 ### 30.3 What was built
 
-Filled in at the close-out.
+- **The model** (0ee4c7e). `SnapScene.is_locked(item)`: the item's own flag, any group above it, or its layer, read live. `_blend_entry` and `_apply_blend_entry` on the base item became `_item_entry` and `_apply_item_entry`, the keys every serialized item carries beside its own; `locked` joins `blend_mode` there, so every item type, a group's members, the clipboard, and `clone` carry it without a change to any item's own `serialize`; absent reads as unlocked and `format_version` stays 1. `_toggle_item_lock` pushes `ModifyPropertyCommand` or `ModifyPropertiesCommand`, the checkbox's commands, so the context row undoes; `tests/test_group.py`'s lock test undoes twice now. Technical Architecture PRD 1.73.
+- **Selection** (9e20f59). The Select tool's `_movable` filters a drag's, a handle drag's, and the nudge's items through `is_locked`; a press on a locked item selects it and begins no drag; a handle press or an arrow key on a selection locked through and through is consumed and does nothing. `TransformHandles.set_locked` draws the handles grey (`LOCKED_HANDLE_FILL`) with a solid frame and gives each handle item the forbidden cursor, since an item's own cursor wins over the viewport's while the pointer is on it. The tool now listens to `command_stack.stack_changed` and refreshes the handles when idle, so an unlock through either route frees them at once, and an undone move re-frames the item. The hover cursor over a locked item, its frame, and its handles is the forbidden cursor, with `LOCKED_ITEM_HINT` in the status bar; a locked layer's item keeps `LOCKED_LAYER_HINT`, which this work adds to the tool (the hint row of Navigation PRD Section 2 was never built). A double-click on a locked item selects it and enters no edit. The Text tool's `_text_item_at` skips a locked item and `_locked_text_item_at` gives the forbidden cursor and swallows the click, so no new box starts on top of a locked text item.
+- **Mutation** (this section's third commit). `MainWindow._unlocked(action, items, minimum)` and `_editable_selection(action, minimum)`: the items an edit reaches, or an empty list after 1.3's message ("an unlocked item selected", "at least two unlocked items selected", ...). Delete and Cut go through `_delete_items`, which skips a locked item silently and deselects only when something was removed; Cut copies what it removes. Move to Layer, the four z-order rows, both flips, Align to Canvas Center, Align (with the locked items as reference), Distribute, Group, Ungroup, Properties..., Convert Display Mode, the two Reset Size rows, and `open_marker_editor` refuse as 30.2 says. The Select tool's Delete key reads `is_locked`. `color_matches` skips a locked item. The Property Panel's `_editable` sits in `_push_property`, `_push_scale`, `_push_font`, the width, height, line-spacing, and freehand re-smoothing handlers, and the Layer combo; `_push_property(..., unlocked_only=False)` is the checkbox's way through.
+
+### 30.4 Tests
+
+`tests/test_item_lock.py` (19 tests: `is_locked`'s three causes and the live layer read, the save round trip and the absent key, the clone and the clipboard entry, Duplicate, both routes' undo; Delete and Cut skipping silently, a pasted locked copy selected, Move to Layer's skip and message, Align's reference and the five messages of a locked selection, z-order and flip reaching the unlocked item, Group and Ungroup refusing, Find/Replace Color skipping, the Properties dialog and the marker rows refusing, the Property Panel's rows refusing with the control's name and reverting, editing the unlocked item of a mixed selection silently, and the checkbox freeing the item), five in `tests/test_tools/test_select_tool.py` (a click selects but no drag moves, and the hint; a mixed drag and nudge; a handle drag and a nudge on a locked selection; the rubber band and Tab; a double-click entering no edit), two in `tests/test_cursors.py` (the forbidden cursor over the item, the frame, and the handles, the grey fill, and the handles freed by a command; the Text tool's forbidden cursor and swallowed click). The suite at each commit: 1915, 1922, and 1931, with 14 skipped and the two environmental deselections. One segfault during the step 3 run, in the library panel's size worker thread (`_SizeWorker.run` emitting after its owner was gone) while `tests/test_menu_entry_action.py` set up a temporary directory; the modules pass alone and the rerun passed whole. Not caused by this work; recorded here for the next time it is seen.
+
+### 30.5 Deviations and what the display must show
+
+Deviations from the PRDs as written, each with its change-log row: the Technical Architecture item table's "cannot be selected" (1.73, the decision); the Navigation PRD's hint wording (1.14); Select All's exclusion kept (silence 6). The display checks are the numbered list at the close of the session's last reply, one per rung of the selection and mutation steps; they are owed on Doug's display.
+
+**Next required step:** the display checks, then the release of everything unreleased since v1.4.0 (paste at the pointer, Escape's three rungs, the opaque pick, the item lock) as v1.5.0 through `docs/Release-Engineering.md` Section 5.
 
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.51 | 09-25-26 21:33 | Claude (Claude Code) | Section 30 complete: the silences, what was built, the tests, the deviations; the phase-table row done. General UI PRD 2.61, Navigation PRD 1.14, Technical Architecture PRD 1.73. |
 | 1.50 | 09-25-26 20:56 | Claude (Claude Code) | Section 30: the item lock in progress, decision 1 taken as option B; the phase-table row. |
 | 1.49 | 09-25-26 20:22 | Claude (Claude Code) | Section 29: a pick over transparent is opaque (General UI PRD 2.60). |
 | 1.48 | 09-25-26 20:16 | Claude (Claude Code) | Section 28: the third rung is silent with nothing selected (General UI PRD 2.59). |
