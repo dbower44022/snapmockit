@@ -111,13 +111,13 @@ def test_escape_resets_a_crop_region_before_it_leaves_the_tool(main_window: Main
     assert main_window.tool_manager.active_tool_id == "select"
 
 
-def test_escape_under_the_select_tool_with_nothing_selected_stays_put(
+def test_escape_under_the_select_tool_with_nothing_selected_is_silent(
     main_window: MainWindow, unmet_messages: list[tuple[str, str]]
 ) -> None:
-    """The third rung with nothing to deselect: the message, not a switch or a selection."""
+    """The third rung with nothing to deselect: no switch, no selection, no message (2.59)."""
     main_window.tool_manager.activate("select")
     _draw(main_window)
     main_window._edit_deselect()  # noqa: SLF001
     assert main_window.tool_manager.active_tool_id == "select"
     assert main_window.selection_manager.items == []
-    assert unmet_messages and unmet_messages[0][0] == "Deselect"
+    assert unmet_messages == []

@@ -2825,7 +2825,8 @@ class MainWindow(QMainWindow):
     def _edit_deselect(self) -> None:
         """Escape, a ladder of three rungs (General UI PRD 2.58; Doug's decision C of
         09-25-26): end the active tool's own operation, else leave any other tool for the
-        Select tool with the item last added to the document selected, else deselect all.
+        Select tool with the item last added to the document selected, else deselect all,
+        silently when there is nothing to deselect (2.59).
 
         The first rung is the tool's: point-editing mode leaves and keeps the selection
         (Basic Shape PRD 3.5); an arc or a polygon in progress is cancelled (7.2, 8.2); a
@@ -2842,8 +2843,9 @@ class MainWindow(QMainWindow):
             if item is not None and self._selectable(item):
                 self._selection_manager.select(item)
             return
-        if self._require_selection("Deselect"):
-            self._selection_manager.deselect_all()
+        # The third rung with nothing selected is silent, not a message: Escape is the
+        # key a user presses to make sure nothing is going on (2.59, Doug's 09-25-26)
+        self._selection_manager.deselect_all()
 
     def _selectable(self, item: QGraphicsItem) -> bool:
         """Whether a selection may take *item*: on a visible, unlocked layer and not the

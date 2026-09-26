@@ -1,6 +1,6 @@
 # General UI Implementation Notes
 
-Last Updated: 09-25-26 12:20 · Revision 1.47
+Last Updated: 09-25-26 20:16 · Revision 1.48
 
 Implements the SnapMock General User Interface PRD (version 2.4, `PRDs/SnapMock-General-UI-PRD.html`) in the eight phases defined by `docs/General-UI-Implementation-Kickoff-Prompt.md`. A session pasting that prompt starts at the first phase not marked done in Section 1.
 
@@ -716,7 +716,7 @@ The full suite at the commit (3636f52), run from a scratch worktree between 10:1
 
 ## 28. Escape's Three Rungs
 
-Doug's decision C of 09-25-26 (General UI PRD 2.58; Basic Shape PRD 1.29; Technical Architecture PRD 1.72): after drawing a shape, one Escape puts it under the Select tool's handles. The Deselect slot in `snapmock/main_window.py` is a ladder. First the active tool's `handle_escape` ends its own operation; the Raster Selection, Lasso and Crop tools gained overrides for it, since their Escape lived in `key_press`, which the window's shortcut reaches before the view's key handler does. Else any tool but the Select tool is left for the Select tool, and the scene's `last_added_item` is selected when it is still on the scene, on a visible unlocked layer, and not the Background image. Else Escape deselects all, as before. `AddItemCommand` sets `last_added_item` on redo and clears it on undo, so the item is per document and never stale after Undo.
+Doug's decision C of 09-25-26 (General UI PRD 2.58; Basic Shape PRD 1.29; Technical Architecture PRD 1.72): after drawing a shape, one Escape puts it under the Select tool's handles. The Deselect slot in `snapmock/main_window.py` is a ladder. First the active tool's `handle_escape` ends its own operation; the Raster Selection, Lasso and Crop tools gained overrides for it, since their Escape lived in `key_press`, which the window's shortcut reaches before the view's key handler does. Else any tool but the Select tool is left for the Select tool, and the scene's `last_added_item` is selected when it is still on the scene, on a visible unlocked layer, and not the Background image. Else Escape deselects all, silently when there is nothing selected (2.59; 1.3's message set aside there on Doug's request after the display check). `AddItemCommand` sets `last_added_item` on redo and clears it on undo, so the item is per document and never stale after Undo.
 
 Not built: option B, the shape staying selected with the shape tool moving it, which would have overturned Basic Shape PRD 2.5 and put the Select tool's press logic in front of every tool's. Tests: `tests/test_escape_ladder.py`, eight tests, one per rung and edge.
 
@@ -724,6 +724,7 @@ Not built: option B, the shape staying selected with the shape tool moving it, w
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.48 | 09-25-26 20:16 | Claude (Claude Code) | Section 28: the third rung is silent with nothing selected (General UI PRD 2.59). |
 | 1.47 | 09-25-26 12:20 | Claude (Claude Code) | Section 28: Escape's three rungs (General UI PRD 2.58). |
 | 1.46 | 09-14-26 15:15 | Claude (Claude Code) | Section 27: the full suite at the guard commit, 1637 passed, whole, in 15 minutes 32 seconds. |
 | 1.45 | 09-14-26 15:00 | Claude (Claude Code) | Section 27: the capture timeout traced to the theme manager re-applying the application style sheet on every window, and fixed (86a4dbc); the suite pending. General UI PRD 2.38. |
