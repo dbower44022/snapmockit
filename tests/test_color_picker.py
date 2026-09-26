@@ -68,6 +68,32 @@ def test_square_and_bars_apply_live(qtbot: QtBot) -> None:
     popover.hide()
 
 
+def test_a_pick_over_transparent_is_opaque(qtbot: QtBot) -> None:
+    """A fill starts transparent; a hue, a point on the square, or a typed channel lands
+    opaque, and only the Opacity bar keeps a colour transparent (General UI PRD 2.60)."""
+    picker = _picker(qtbot, "#00000000")
+    popover = _open(qtbot, picker)
+    square = popover._square  # noqa: SLF001
+    qtbot.mouseClick(square, Qt.MouseButton.LeftButton, pos=QPoint(SQUARE_SIZE - 1, 0))
+    assert picker.color.alpha() == 255 and picker.color == QColor(255, 0, 0)
+    popover._transparent_btn.click()  # type: ignore[union-attr]  # noqa: SLF001
+    assert picker.color.alpha() == 0
+    hue = popover._hue_bar  # noqa: SLF001
+    qtbot.mouseClick(hue, Qt.MouseButton.LeftButton, pos=QPoint(hue.width() // 3, 5))
+    assert picker.color.alpha() == 255
+    popover._transparent_btn.click()  # type: ignore[union-attr]  # noqa: SLF001
+    popover._rgb_spins[1].setValue(200)  # noqa: SLF001
+    assert picker.color.alpha() == 255 and picker.color.green() == 200
+    popover._transparent_btn.click()  # type: ignore[union-attr]  # noqa: SLF001
+    popover._hsl_spins[2].setValue(50)  # noqa: SLF001
+    assert picker.color.alpha() == 255
+    # A half-transparent colour keeps its alpha through a pick
+    popover.set_color(QColor(255, 0, 0, 128))
+    qtbot.mouseClick(square, Qt.MouseButton.LeftButton, pos=QPoint(SQUARE_SIZE - 1, 0))
+    assert picker.color.alpha() == 128
+    popover.hide()
+
+
 def test_inputs_sync_each_other(qtbot: QtBot) -> None:
     picker = _picker(qtbot)
     popover = _open(qtbot, picker)

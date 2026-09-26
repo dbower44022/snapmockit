@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.59</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.60</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.59</dd>
-    <dt>Last Updated</dt>    <dd>09-25-26 20:16</dd>
+    <dt>Document version</dt><dd>2.60</dd>
+    <dt>Last Updated</dt>    <dd>09-25-26 20:22</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.60</td>
+        <td class="nowrap">09-25-26 20:22</td>
+        <td>Doug Bower</td>
+        <td>Found on Doug's display on 09-25-26: a fill colour picked for a shape never showed. <strong>11.1</strong>: the popover carried the current colour's alpha into every pick from the square, the hue bar, and the RGB and HSL inputs, and a shape's fill starts fully transparent, so each pick landed at alpha 0. Now a pick from a fully transparent colour is opaque; a colour with any alpha keeps it; only the Opacity bar and the Transparent button set the alpha themselves. Fixed in <code>ui/color_picker.py</code> with a test.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.59</td>
         <td class="nowrap">09-25-26 20:16</td>

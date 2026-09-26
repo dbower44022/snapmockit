@@ -1,6 +1,6 @@
 # General UI Implementation Notes
 
-Last Updated: 09-25-26 20:16 · Revision 1.48
+Last Updated: 09-25-26 20:22 · Revision 1.49
 
 Implements the SnapMock General User Interface PRD (version 2.4, `PRDs/SnapMock-General-UI-PRD.html`) in the eight phases defined by `docs/General-UI-Implementation-Kickoff-Prompt.md`. A session pasting that prompt starts at the first phase not marked done in Section 1.
 
@@ -720,10 +720,15 @@ Doug's decision C of 09-25-26 (General UI PRD 2.58; Basic Shape PRD 1.29; Techni
 
 Not built: option B, the shape staying selected with the shape tool moving it, which would have overturned Basic Shape PRD 2.5 and put the Select tool's press logic in front of every tool's. Tests: `tests/test_escape_ladder.py`, eight tests, one per rung and edge.
 
+## 29. A Pick Over Transparent Is Opaque
+
+Doug's display, 09-25-26: a fill colour picked for a rectangle, arrow or ellipse never showed (General UI PRD 2.60). The popover in `snapmock/ui/color_picker.py` built every picked colour with the current colour's alpha, and a shape's fill starts at `#00000000`, so a pick from the square, the hue bar, or the RGB and HSL inputs landed at alpha 0 and the fill stayed invisible. `_pick_alpha` now answers 255 when the current colour is fully transparent and the current alpha otherwise; the Opacity bar and the Transparent button still set the alpha themselves. Test: `test_a_pick_over_transparent_is_opaque` in `tests/test_color_picker.py`.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.49 | 09-25-26 20:22 | Claude (Claude Code) | Section 29: a pick over transparent is opaque (General UI PRD 2.60). |
 | 1.48 | 09-25-26 20:16 | Claude (Claude Code) | Section 28: the third rung is silent with nothing selected (General UI PRD 2.59). |
 | 1.47 | 09-25-26 12:20 | Claude (Claude Code) | Section 28: Escape's three rungs (General UI PRD 2.58). |
 | 1.46 | 09-14-26 15:15 | Claude (Claude Code) | Section 27: the full suite at the guard commit, 1637 passed, whole, in 15 minutes 32 seconds. |

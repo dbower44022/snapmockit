@@ -494,13 +494,20 @@ class ColorPopover(QWidget):
 
     # --- control handlers ---
 
+    def _pick_alpha(self) -> int:
+        """The alpha a colour pick keeps: the current one, or opaque from a fully
+        transparent colour, since a hue chosen over "no colour" is meant to be seen (General
+        UI PRD 2.60). Only the Opacity bar sets the alpha itself."""
+        alpha = self._color.alpha()
+        return 255 if alpha == 0 else alpha
+
     def _on_square_changed(self, saturation: int, value: int) -> None:
-        color = QColor.fromHsv(self._hue_bar.value, saturation, value, self._color.alpha())
+        color = QColor.fromHsv(self._hue_bar.value, saturation, value, self._pick_alpha())
         self._apply(color)
 
     def _on_hue_changed(self, hue: int) -> None:
         c = self._color
-        color = QColor.fromHsv(hue, c.hsvSaturation(), c.value(), c.alpha())
+        color = QColor.fromHsv(hue, c.hsvSaturation(), c.value(), self._pick_alpha())
         self._apply(color)
 
     def _on_alpha_changed(self, percent: int) -> None:
@@ -521,13 +528,15 @@ class ColorPopover(QWidget):
         if self._updating:
             return
         r, g, b = (spin.value() for spin in self._rgb_spins)
-        self._apply(QColor(r, g, b, self._color.alpha()))
+        self._apply(QColor(r, g, b, self._pick_alpha()))
 
     def _on_hsl_changed(self, _value: int) -> None:
         if self._updating:
             return
         h, s, lightness = (spin.value() for spin in self._hsl_spins)
-        color = QColor.fromHslF(min(h, 359) / 360, s / 100, lightness / 100, self._color.alphaF())
+        color = QColor.fromHslF(
+            min(h, 359) / 360, s / 100, lightness / 100, self._pick_alpha() / 255
+        )
         self._apply(color)
 
     def _on_transparent(self) -> None:
