@@ -67,23 +67,29 @@ EDGE_HANDLES = {
 }
 
 
+LOCKED_HANDLE_FILL = QColor(176, 176, 176)
+"""The fill of a handle over a locked selection: grey, since a drag on it does nothing."""
+
+
 class HandleItem(QGraphicsRectItem):
     """Small square handle for resizing."""
 
     def __init__(self, position: HandlePosition) -> None:
         super().__init__(-HANDLE_HALF, -HANDLE_HALF, HANDLE_SIZE, HANDLE_SIZE)
         self.position = position
+        self._own_cursor = QCursor(_CURSOR_MAP.get(position, Qt.CursorShape.ArrowCursor))
         self.apply_theme()
         self.setZValue(999998)
-        cursor = _CURSOR_MAP.get(position, Qt.CursorShape.ArrowCursor)
-        self.setCursor(cursor)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
 
-    def apply_theme(self) -> None:
-        """Handle squares in the theme's selection-handle colour (PRD 13.2, 13.3)."""
+    def apply_theme(self, locked: bool = False) -> None:
+        """Handle squares in the theme's selection-handle colour (PRD 13.2, 13.3); filled
+        grey over a locked selection, whose handles do nothing (the item lock)."""
         self.setPen(QPen(current_theme().selection_handle, 1))
-        self.setBrush(QBrush(QColor(255, 255, 255)))
+        self.setBrush(QBrush(LOCKED_HANDLE_FILL if locked else QColor(255, 255, 255)))
+        # The item's own cursor wins over the viewport's while the pointer is on it
+        self.setCursor(QCursor(Qt.CursorShape.ForbiddenCursor) if locked else self._own_cursor)
 
 
 class RotateHandleItem(QGraphicsEllipseItem):
@@ -95,13 +101,13 @@ class RotateHandleItem(QGraphicsEllipseItem):
         self.position = HandlePosition.ROTATE
         self.apply_theme()
         self.setZValue(999998)
-        self.setCursor(rotate_cursor())
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
 
-    def apply_theme(self) -> None:
+    def apply_theme(self, locked: bool = False) -> None:
         self.setPen(QPen(current_theme().selection_handle, 1))
-        self.setBrush(QBrush(QColor(255, 255, 255)))
+        self.setBrush(QBrush(LOCKED_HANDLE_FILL if locked else QColor(255, 255, 255)))
+        self.setCursor(QCursor(Qt.CursorShape.ForbiddenCursor) if locked else rotate_cursor())
 
 
 class TransformHandles(QGraphicsItemGroup):
@@ -113,6 +119,7 @@ class TransformHandles(QGraphicsItemGroup):
     def __init__(self, scene: SnapScene) -> None:
         super().__init__()
         self._scene = scene
+        self._locked = False
         self.setZValue(999997)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
@@ -147,9 +154,22 @@ class TransformHandles(QGraphicsItemGroup):
         """Re-read the selection colours after a theme switch (PRD 13.4)."""
         theme = current_theme()
         for handle in self._handles.values():
-            handle.apply_theme()
+            handle.apply_theme(self._locked)
         self._rotate_line.setPen(QPen(theme.selection_handle, 1))
-        self._border.setPen(QPen(theme.selection_outline, 1, Qt.PenStyle.DashLine))
+        style = Qt.PenStyle.SolidLine if self._locked else Qt.PenStyle.DashLine
+        self._border.setPen(QPen(theme.selection_outline, 1, style))
+
+    @property
+    def locked(self) -> bool:
+        """Whether the handles frame a selection that is locked through and through
+        (the item lock, Doug's decision B of 09-25-26): they draw grey with a solid
+        border and do nothing."""
+        return self._locked
+
+    def set_locked(self, locked: bool) -> None:
+        if locked != self._locked:
+            self._locked = locked
+            self.apply_theme()
 
     @property
     def current_rect(self) -> QRectF:

@@ -1,7 +1,7 @@
 """Tests for SelectTool."""
 
 import pytest
-from PyQt6.QtCore import QEvent, QPointF, QRectF, Qt
+from PyQt6.QtCore import QEvent, QLineF, QPointF, QRectF, Qt
 from PyQt6.QtGui import QKeyEvent, QMouseEvent, QTransform
 from PyQt6.QtWidgets import QApplication
 from pytestqt.qtbot import QtBot
@@ -531,3 +531,142 @@ def test_a_slow_drag_without_snap_follows_the_pointer_exactly(
     assert item.pos() == QPointF(178, 217)
     tool.mouse_release(_mouse(view, QEvent.Type.MouseButtonRelease, QPointF(228, 267)))
     assert item.pos() == QPointF(178, 217)
+
+
+# --- the item lock (Doug's decision B of 09-25-26; notes Section 30) ---
+
+
+def _locked_rect(scene: SnapScene, x: float = 0, y: float = 0) -> RectangleItem:
+    layer = scene.layer_manager.active_layer
+    assert layer is not None
+    item = RectangleItem(rect=QRectF(0, 0, 100, 60))
+    item.fill_color = item.stroke_color
+    item.setPos(x, y)
+    scene.command_stack.push(AddItemCommand(scene, item, layer.layer_id))
+    item.locked = True
+    return item
+
+
+def test_a_click_selects_a_locked_item_but_a_drag_leaves_it_in_place(
+    qtbot: QtBot, scene: SnapScene
+) -> None:
+    from snapmock.tools.select_tool import LOCKED_ITEM_HINT
+
+    view = _view_for(qtbot, scene)
+    sm = SelectionManager(scene)
+    tool = SelectTool()
+    tool.activate(scene, sm)
+    item = _locked_rect(scene)
+    before = item.sceneBoundingRect()
+    undo_text = scene.command_stack.undo_text
+    tool.mouse_press(_mouse(view, QEvent.Type.MouseButtonPress, QPointF(50, 30)))
+    assert sm.items == [item]
+    assert tool._state is _State.IDLE  # no drag begins on a locked item
+    tool.mouse_move(_mouse(view, QEvent.Type.MouseMove, QPointF(80, 70)))
+    tool.mouse_release(_mouse(view, QEvent.Type.MouseButtonRelease, QPointF(80, 70)))
+    assert item.sceneBoundingRect() == before
+    assert scene.command_stack.undo_text == undo_text
+    assert tool._handles is not None and tool._handles.locked
+    # The hint says why while the pointer rests on the item
+    tool.mouse_move(_mouse(view, QEvent.Type.MouseMove, QPointF(50, 30)))
+    assert tool.status_hint == LOCKED_ITEM_HINT
+    tool.mouse_move(_mouse(view, QEvent.Type.MouseMove, QPointF(300, 300)))
+    assert tool.status_hint != LOCKED_ITEM_HINT
+    # Unlocked again, the same drag moves it and the handles are live
+    item.locked = False
+    tool.mouse_press(_mouse(view, QEvent.Type.MouseButtonPress, QPointF(50, 30)))
+    tool.mouse_move(_mouse(view, QEvent.Type.MouseMove, QPointF(80, 70)))
+    tool.mouse_release(_mouse(view, QEvent.Type.MouseButtonRelease, QPointF(80, 70)))
+    assert item.sceneBoundingRect() == before.translated(30, 40)
+    assert not tool._handles.locked
+
+
+def test_a_drag_on_a_mixed_selection_moves_only_the_unlocked_item(
+    qtbot: QtBot, scene: SnapScene
+) -> None:
+    view = _view_for(qtbot, scene)
+    sm = SelectionManager(scene)
+    tool = SelectTool()
+    tool.activate(scene, sm)
+    locked = _locked_rect(scene)
+    free = _locked_rect(scene, 200, 0)
+    free.locked = False
+    sm.select_items([locked, free])
+    tool._update_handles()
+    assert tool._handles is not None and not tool._handles.locked
+    before = (locked.sceneBoundingRect(), free.sceneBoundingRect())
+    tool.mouse_press(_mouse(view, QEvent.Type.MouseButtonPress, QPointF(250, 30)))  # on free
+    tool.mouse_move(_mouse(view, QEvent.Type.MouseMove, QPointF(280, 70)))
+    tool.mouse_release(_mouse(view, QEvent.Type.MouseButtonRelease, QPointF(280, 70)))
+    assert locked.sceneBoundingRect() == before[0]
+    assert free.sceneBoundingRect() == before[1].translated(30, 40)
+    assert sm.items == [locked, free]
+    # The nudge skips the locked item too
+    event = QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Right, Qt.KeyboardModifier.NoModifier)
+    assert tool.key_press(event)
+    assert locked.sceneBoundingRect() == before[0]
+    assert free.sceneBoundingRect() == before[1].translated(31, 40)
+
+
+def test_a_handle_drag_on_a_locked_selection_does_nothing(qtbot: QtBot, scene: SnapScene) -> None:
+    view = _view_for(qtbot, scene)
+    sm = SelectionManager(scene)
+    tool = SelectTool()
+    tool.activate(scene, sm)
+    item = _locked_rect(scene)
+    sm.select(item)
+    tool._update_handles()
+    assert tool._handles is not None
+    corner = tool._handles.current_rect.bottomRight()
+    before = item.sceneBoundingRect()
+    undo_text = scene.command_stack.undo_text
+    tool.mouse_press(_mouse(view, QEvent.Type.MouseButtonPress, corner))
+    assert tool._state is _State.IDLE
+    tool.mouse_move(_mouse(view, QEvent.Type.MouseMove, corner + QPointF(40, 40)))
+    tool.mouse_release(_mouse(view, QEvent.Type.MouseButtonRelease, corner + QPointF(40, 40)))
+    assert item.sceneBoundingRect() == before
+    assert scene.command_stack.undo_text == undo_text
+    # The nudge with nothing movable is silent and consumed
+    event = QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Right, Qt.KeyboardModifier.NoModifier)
+    assert tool.key_press(event)
+    assert item.sceneBoundingRect() == before
+
+
+def test_a_rubber_band_and_tab_take_a_locked_item(qtbot: QtBot, scene: SnapScene) -> None:
+    view = _view_for(qtbot, scene)
+    sm = SelectionManager(scene)
+    tool = SelectTool()
+    tool.activate(scene, sm)
+    item = _locked_rect(scene)
+    tool.mouse_press(_mouse(view, QEvent.Type.MouseButtonPress, QPointF(-20, -20)))
+    tool.mouse_move(_mouse(view, QEvent.Type.MouseMove, QPointF(150, 100)))
+    tool.mouse_release(_mouse(view, QEvent.Type.MouseButtonRelease, QPointF(150, 100)))
+    assert sm.items == [item]
+    sm.deselect_all()
+    assert tool.cycle_selection(forward=True)
+    assert sm.items == [item]
+
+
+def test_a_double_click_on_a_locked_item_does_not_enter_an_edit(
+    qtbot: QtBot, scene: SnapScene
+) -> None:
+    from snapmock.items.line_item import LineItem
+    from snapmock.tools.select_tool import LOCKED_ITEM_HINT
+
+    view = _view_for(qtbot, scene)
+    sm = SelectionManager(scene)
+    tool = SelectTool()
+    tool.activate(scene, sm)
+    layer = scene.layer_manager.active_layer
+    assert layer is not None
+    line = LineItem(QLineF(0, 0, 100, 0))
+    line.setPos(50, 50)
+    scene.command_stack.push(AddItemCommand(scene, line, layer.layer_id))
+    line.locked = True
+    tool.mouse_double_click(_mouse(view, QEvent.Type.MouseButtonDblClick, QPointF(100, 50)))
+    assert sm.items == [line]
+    assert tool._point_session is None
+    assert tool.status_hint == LOCKED_ITEM_HINT
+    line.locked = False
+    tool.mouse_double_click(_mouse(view, QEvent.Type.MouseButtonDblClick, QPointF(100, 50)))
+    assert tool._point_session is not None

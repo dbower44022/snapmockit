@@ -402,6 +402,9 @@ class TextTool(BaseTool):
         if clicked_item is not None:
             # Edit existing text item
             self._start_editing(clicked_item)
+        elif self._locked_text_item_at(scene_pos) is not None:
+            # A locked text item is not edited, and no new box is started over it
+            return True
         else:
             # Start potential drag-to-create
             self._drag_start = scene_pos
@@ -533,21 +536,32 @@ class TextTool(BaseTool):
         return False
 
     def _update_hover_cursor(self, scene_pos: QPointF) -> None:
-        """PRD 6.6: the highlighted I-beam over an existing text item, forbidden over one
-        on a locked layer, the plain I-beam elsewhere."""
+        """PRD 6.6: the highlighted I-beam over an existing text item, forbidden over a
+        locked one or one on a locked layer, the plain I-beam elsewhere."""
         view = self._view
         if view is None or self._scene is None:
             return
         if self._text_item_at(scene_pos) is not None:
             view.set_hover_cursor(text_hover_cursor())
             return
+        if self._locked_text_item_at(scene_pos) is not None:
+            view.set_hover_cursor(Qt.CursorShape.ForbiddenCursor)
+            return
+        view.set_hover_cursor(None)
+
+    def _locked_text_item_at(self, scene_pos: QPointF) -> _TextLike | None:
+        """A visible top-level text item under *scene_pos* that a click may not edit:
+        locked itself (the item lock, decision B of 09-25-26) or on a locked layer."""
+        if self._scene is None:
+            return None
         for gitem in self._scene.items(scene_pos):
             if isinstance(gitem, (TextItem, CalloutItem)) and gitem.parentItem() is None:
                 layer = self._scene.layer_manager.layer_by_id(gitem.layer_id)
-                if layer is not None and layer.locked and layer.visible:
-                    view.set_hover_cursor(Qt.CursorShape.ForbiddenCursor)
-                    return
-        view.set_hover_cursor(None)
+                if layer is None or not layer.visible:
+                    continue
+                if self._scene.is_locked(gitem):
+                    return gitem
+        return None
 
     def _text_item_at(self, scene_pos: QPointF) -> _TextLike | None:
         """Find a top-level TextItem or CalloutItem under the given scene position.
@@ -561,6 +575,8 @@ class TextTool(BaseTool):
             if isinstance(gitem, (TextItem, CalloutItem)) and gitem.parentItem() is None:
                 layer = self._scene.layer_manager.layer_by_id(gitem.layer_id)
                 if layer is not None and (layer.locked or not layer.visible):
+                    continue
+                if self._scene.is_locked(gitem):
                     continue
                 return gitem
         return None

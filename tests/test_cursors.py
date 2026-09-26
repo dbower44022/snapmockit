@@ -298,3 +298,71 @@ def test_external_image_drag_is_a_copy(qtbot: QtBot, tmp_path: object) -> None:
     )
     view.dragMoveEvent(move)
     assert move.dropAction() == Qt.DropAction.CopyAction
+
+
+def test_select_tool_forbidden_over_a_locked_item_and_its_handles(qtbot: QtBot) -> None:
+    """The item lock (Doug's decision B of 09-25-26): a locked item can be clicked but
+    not dragged, so the pointer over it, over its selection frame, and over its handles
+    is the forbidden cursor, and the handles draw locked."""
+    from snapmock.ui.transform_handles import LOCKED_HANDLE_FILL
+
+    scene, view, tm = _view_with_tools(qtbot)
+    item = _add_rect(scene)
+    item.locked = True
+    tm.activate("select")
+    view.centerOn(150, 150)
+    on_stroke = QPointF(100, 150)
+    _move(view, on_stroke)
+    assert _shape(view) == Shape.ForbiddenCursor
+    _press(view, on_stroke)
+    _release(view, on_stroke)
+    assert tm._selection_manager.items == [item]  # noqa: SLF001
+    tool = tm.active_tool
+    assert isinstance(tool, SelectTool) and tool._handles is not None  # noqa: SLF001
+    assert tool._handles.locked  # noqa: SLF001
+    corner = tool._handles._handles[HandlePosition.TOP_LEFT]  # noqa: SLF001
+    assert corner.brush().color() == LOCKED_HANDLE_FILL
+    _move(view, tool._handles.current_rect.bottomRight())  # noqa: SLF001
+    assert _shape(view) == Shape.ForbiddenCursor
+    _move(view, QPointF(150, 150))  # the frame's interior
+    assert _shape(view) == Shape.ForbiddenCursor
+    _move(view, QPointF(20, 20))
+    assert _shape(view) == Shape.ArrowCursor
+    # Unlocked through a command, as the checkbox and the context-menu row do it, the
+    # handles are live again at once: the stroke point is the middle-left handle
+    from snapmock.commands.modify_property import ModifyPropertyCommand
+
+    scene.command_stack.push(ModifyPropertyCommand(item, "locked", True, False))
+    assert not tool._handles.locked  # noqa: SLF001
+    _move(view, on_stroke)
+    assert _shape(view) == Shape.SizeHorCursor
+    # Leaving a handle item, Qt restores the cursor it saved on entering; the next move
+    # of a real pointer sets the tool's cursor again, so the test sends two
+    _move(view, QPointF(135, 110))  # the top stroke, clear of the handles
+    _move(view, QPointF(136, 110))
+    assert _shape(view) == Shape.OpenHandCursor
+
+
+def test_text_tool_forbidden_over_a_locked_text_item_and_its_click_makes_no_box(
+    qtbot: QtBot,
+) -> None:
+    scene, view, tm = _view_with_tools(qtbot)
+    layer = scene.layer_manager.active_layer
+    assert layer is not None
+    item = TextItem()
+    item.text = "Hello"
+    item.setPos(100, 100)
+    scene.command_stack.push(AddItemCommand(scene, item, layer.layer_id))
+    item.locked = True
+    tm.activate("text")
+    view.centerOn(150, 150)
+    inside = item.sceneBoundingRect().center()
+    _move(view, inside)
+    assert _shape(view) == Shape.ForbiddenCursor
+    tool = tm.active_tool
+    assert isinstance(tool, TextTool)
+    _press(view, inside)
+    assert tool._editing_item is None  # noqa: SLF001
+    assert tool._drag_preview is None  # noqa: SLF001
+    _release(view, inside)
+    assert len(scene.annotation_items()) == 1

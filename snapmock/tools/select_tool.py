@@ -57,6 +57,13 @@ def _next_grid_line(value: float, grid: float, direction: float) -> float:
     return (math.floor(steps) + 1) * grid if direction > 0 else math.floor(steps) * grid
 
 
+LOCKED_ITEM_HINT = "This item is locked. Unlock it to move or edit it."
+"""The status-bar hint over a locked item (Navigation PRD Section 2; decision B)."""
+
+LOCKED_LAYER_HINT = "This item is locked. Unlock its layer to interact with it."
+"""The hint over a locked layer's item, which no selection takes (Navigation PRD 2.2.2)."""
+
+
 class _State(Enum):
     IDLE = auto()
     RUBBER_BAND = auto()
@@ -101,6 +108,9 @@ class SelectTool(BaseTool):
         self._text_originals: dict[int, dict[str, Any]] = {}
         # Set by a double-click on a group; shown in the status bar (kickoff silence 1)
         self._group_hint: bool = False
+        # The status-bar hint while the pointer rests on a locked item (Navigation PRD
+        # Section 2's hint row, the item's own lock a second cause since 09-25-26)
+        self._locked_hint: str = ""
         # Point-editing mode (Basic Shape PRD 3.5; Basic Shape remainder decision 1)
         self._point_session: PointEditSession | None = None
         self._point_handles: PointHandlesItem | None = None
@@ -151,6 +161,9 @@ class SelectTool(BaseTool):
         self._handles = TransformHandles(scene)
         self._canvas_handles = CanvasHandles(scene)
         scene.canvas_size_changed.connect(self._on_canvas_size_changed)
+        # A lock or unlock is a command, and the handles' locked look follows it
+        # (the item lock of 09-25-26), as does their rect after an undone move
+        scene.command_stack.stack_changed.connect(self._on_stack_changed)
         self._update_handles()
         if selection_manager is not None:
             selection_manager.selection_changed.connect(self._on_selection_changed)
@@ -164,6 +177,10 @@ class SelectTool(BaseTool):
     def _on_zoom_changed(self, _percent: int) -> None:
         if self._brush_session is not None:
             self._refresh_cursor()
+
+    def _on_stack_changed(self) -> None:
+        if self._state == _State.IDLE:
+            self._update_handles()
 
     def apply_theme(self) -> None:
         """Recolour the transform handles after a theme switch (General UI PRD 13.4)."""
@@ -184,6 +201,11 @@ class SelectTool(BaseTool):
         if self._selection_manager is not None:
             try:
                 self._selection_manager.selection_changed.disconnect(self._on_selection_changed)
+            except (TypeError, RuntimeError):
+                pass
+        if self._scene is not None:
+            try:
+                self._scene.command_stack.stack_changed.disconnect(self._on_stack_changed)
             except (TypeError, RuntimeError):
                 pass
         if self._handles is not None:
@@ -410,6 +432,7 @@ class SelectTool(BaseTool):
             self._handles.remove_from_scene()
             return
         self._handles.add_to_scene()
+        self._handles.set_locked(not self._movable(items))
         rect = self._selection_bounding_rect(items)
         self._handles.update_rect(rect)
 
@@ -484,11 +507,35 @@ class SelectTool(BaseTool):
                     return True
         return False
 
-    def _update_hover_cursor(self, scene_pos: QPointF) -> None:
-        """The idle cursor of PRD 6.6.
+    def _movable(self, items: list[SnapGraphicsItem]) -> list[SnapGraphicsItem]:
+        """The items of *items* a move, a resize, a rotation, or a nudge reaches: the
+        ones ``SnapScene.is_locked`` does not refuse (the item lock, decision B). A
+        locked item in a mixed selection is skipped silently, as the Navigation PRD's
+        Delete skips a locked layer's item."""
+        if self._scene is None:
+            return list(items)
+        return [i for i in items if not self._scene.is_locked(i)]
 
-        Open hand over what can be dragged, forbidden over a locked layer's item,
-        the handle's own cursor over a handle, the arrow elsewhere.
+    def _selection_locked(self) -> bool:
+        """Whether every selected item is locked, so the handles do nothing."""
+        if self._selection_manager is None:
+            return False
+        items = [i for i in self._selection_manager.items if isinstance(i, SnapGraphicsItem)]
+        return bool(items) and not self._movable(items)
+
+    def _set_locked_hint(self, hint: str) -> None:
+        if hint != self._locked_hint:
+            self._locked_hint = hint
+            self._show_status_hint()
+
+    def _update_hover_cursor(self, scene_pos: QPointF) -> None:
+        """The idle cursor of PRD 6.6, and the locked hint of Navigation PRD Section 2.
+
+        Open hand over what can be dragged; forbidden over a locked item, over a locked
+        layer's item, and over the handles of a selection that is locked through and
+        through, since none of those can be dragged (decision B of 09-25-26: a locked
+        item can still be selected); the handle's own cursor over a handle; the arrow
+        elsewhere.
         """
         view = self._view
         if view is None:
@@ -496,10 +543,15 @@ class SelectTool(BaseTool):
         if self._point_session is not None and self._point_session.handle_at(scene_pos):
             view.set_hover_cursor(Qt.CursorShape.SizeAllCursor)
             return
-        if self._handles is not None and self._handles.scene() is not None:
+        handles_shown = self._handles is not None and self._handles.scene() is not None
+        if self._handles is not None and handles_shown:
             handle = self._handles.handle_at(scene_pos)
             if handle is not None:
-                view.set_hover_cursor(self._handles.cursor_for(handle))
+                if self._handles.locked:
+                    self._set_locked_hint(LOCKED_ITEM_HINT)
+                    view.set_hover_cursor(Qt.CursorShape.ForbiddenCursor)
+                else:
+                    view.set_hover_cursor(self._handles.cursor_for(handle))
                 return
         canvas_handles = self._canvas_handles
         if canvas_handles is not None and canvas_handles.scene() is not None:
@@ -507,17 +559,30 @@ class SelectTool(BaseTool):
             if canvas_handle is not None:
                 view.set_hover_cursor(canvas_handles.cursor_for(canvas_handle))
                 return
-        if self._item_at(scene_pos) is not None:
-            view.set_hover_cursor(Qt.CursorShape.OpenHandCursor)
+        item = self._item_at(scene_pos)
+        if item is not None:
+            if self._scene is not None and self._scene.is_locked(item):
+                self._set_locked_hint(LOCKED_ITEM_HINT)
+                view.set_hover_cursor(Qt.CursorShape.ForbiddenCursor)
+            else:
+                self._set_locked_hint("")
+                view.set_hover_cursor(Qt.CursorShape.OpenHandCursor)
         elif (
             self._handles is not None
-            and self._handles.scene() is not None
+            and handles_shown
             and self._handles.current_rect.contains(scene_pos)
         ):
-            view.set_hover_cursor(Qt.CursorShape.OpenHandCursor)
+            if self._handles.locked:
+                self._set_locked_hint(LOCKED_ITEM_HINT)
+                view.set_hover_cursor(Qt.CursorShape.ForbiddenCursor)
+            else:
+                self._set_locked_hint("")
+                view.set_hover_cursor(Qt.CursorShape.OpenHandCursor)
         elif self._locked_item_at(scene_pos):
+            self._set_locked_hint(LOCKED_LAYER_HINT)
             view.set_hover_cursor(Qt.CursorShape.ForbiddenCursor)
         else:
+            self._set_locked_hint("")
             view.set_hover_cursor(None)
 
     # --- mouse events ---
@@ -572,15 +637,20 @@ class SelectTool(BaseTool):
         if self._handles is not None and self._handles.scene() is not None:
             handle = self._handles.handle_at(scene_pos)
             if handle is not None:
+                # A locked item keeps its place under a resize or a rotation of a mixed
+                # selection; a selection locked through and through has handles that
+                # do nothing (decision B)
+                items = self._movable(
+                    [i for i in self._selection_manager.items if isinstance(i, SnapGraphicsItem)]
+                )
+                if not items:
+                    return True
                 self._state = _State.HANDLE_DRAG
                 self._drag_start = scene_pos
                 self._handle_pos = handle
                 self._handle_origin_rect = QRectF(self._handles.current_rect)
                 self._handle_anchor = self._handles.anchor_for_handle(handle)
                 # Save original pos/transform for each selected item
-                items = [
-                    i for i in self._selection_manager.items if isinstance(i, SnapGraphicsItem)
-                ]
                 self._handle_item_originals = [
                     (item, QPointF(item.pos()), QTransform(item.transform())) for item in items
                 ]
@@ -614,13 +684,13 @@ class SelectTool(BaseTool):
             sel_rect = self._handles.current_rect
             if not sel_rect.isEmpty() and sel_rect.contains(scene_pos):
                 self._drag_start = scene_pos
-                self._drag_items = [
-                    i for i in self._selection_manager.items if isinstance(i, SnapGraphicsItem)
-                ]
+                self._drag_items = self._movable(
+                    [i for i in self._selection_manager.items if isinstance(i, SnapGraphicsItem)]
+                )
                 if self._drag_items:
                     self._state = _State.DRAGGING
                     self._set_cursor(Qt.CursorShape.ClosedHandCursor)
-                    return True
+                return True
 
         if item is not None:
             shift = bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
@@ -631,13 +701,15 @@ class SelectTool(BaseTool):
                 self._selection_manager.select(item, add=True)
             elif item not in self._selection_manager.items:
                 self._selection_manager.select(item)
-            # Prepare for drag
+            # Prepare for drag: a locked item is selected but stays where it is (decision
+            # B), and a locked item of a mixed selection stays while the others move
             self._drag_start = scene_pos
-            self._drag_items = [
-                i for i in self._selection_manager.items if isinstance(i, SnapGraphicsItem)
-            ]
-            self._state = _State.DRAGGING
-            self._set_cursor(Qt.CursorShape.ClosedHandCursor)
+            self._drag_items = self._movable(
+                [i for i in self._selection_manager.items if isinstance(i, SnapGraphicsItem)]
+            )
+            if self._drag_items:
+                self._state = _State.DRAGGING
+                self._set_cursor(Qt.CursorShape.ClosedHandCursor)
         else:
             # No item — start rubber-band or deselect
             if not (
@@ -723,6 +795,12 @@ class SelectTool(BaseTool):
             return True
         if item is not None:
             self._selection_manager.select(item)
+            if self._scene.is_locked(item):
+                # No in-place edit reaches a locked item: text, marker, brush, or point
+                # editing (decision B); the status bar says why
+                self._update_handles()
+                self._set_locked_hint(LOCKED_ITEM_HINT)
+                return True
             if isinstance(item, GroupItem):
                 # A group's members are edited after Ungroup (kickoff silence 1); the
                 # status bar says so.
@@ -1437,7 +1515,14 @@ class SelectTool(BaseTool):
             direction = None
 
         if direction is not None:
-            items = [i for i in self._selection_manager.items if isinstance(i, SnapGraphicsItem)]
+            selected = [
+                i for i in self._selection_manager.items if isinstance(i, SnapGraphicsItem)
+            ]
+            # A locked item stays; a selection locked through and through consumes the
+            # key silently (decision B; Navigation PRD 2.7's "silently skipped")
+            items = self._movable(selected)
+            if selected and not items:
+                return True
             if items:
                 delta = direction
                 if shift:
@@ -1533,6 +1618,8 @@ class SelectTool(BaseTool):
             if self._text_originals:
                 return "Shift: scale text | Alt: from center"
             return "Shift: proportional | Alt: from center | Ctrl+edge: skew"
+        if self._locked_hint:
+            return self._locked_hint
         if self._group_hint:
             return "Group selected | Ungroup (Ctrl+Shift+G) to edit its items"
         return "Click to select | Drag to move | Shift+click: add | Right-click: menu"
