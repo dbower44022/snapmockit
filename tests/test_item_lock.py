@@ -311,3 +311,63 @@ def test_the_property_panel_rows_refuse_a_locked_item_and_the_checkbox_frees_it(
     assert not locked.locked
     panel._x_spin.setValue(300)  # noqa: SLF001
     assert locked.pos().x() == 300
+
+
+def test_a_slider_drag_on_a_locked_item_is_refused_once_and_released(
+    qtbot: QtBot, unmet_messages: list[tuple[str, str]]
+) -> None:
+    """Doug's display, 09-25-26: the message came back on every mouse move, since the
+    modal box took the release the slider was waiting for."""
+    from PyQt6.QtCore import QEvent, QPoint, QPointF, Qt
+    from PyQt6.QtGui import QMouseEvent
+    from PyQt6.QtWidgets import QApplication, QStyle, QStyleOptionSlider
+
+    scene = SnapScene()
+    sm = SelectionManager(scene)
+    panel = PropertyPanel(sm, scene)
+    qtbot.addWidget(panel)
+    panel.resize(360, 900)
+    panel.show()
+    qtbot.waitExposed(panel)
+    item = _rect(scene)
+    item.locked = True
+    sm.select(item)
+    # An earlier test may have left the section collapsed in the settings; the drag
+    # needs the slider on screen with room to move
+    panel._appearance_section.set_expanded(True)  # noqa: SLF001
+    slider = panel._stroke_w_slider  # noqa: SLF001
+    assert slider.isVisible() and slider.width() > 40
+    width = item.stroke_width
+    # The press lands on the handle wherever the active style draws it
+    option = QStyleOptionSlider()
+    slider.initStyleOption(option)
+    handle = slider.style().subControlRect(
+        QStyle.ComplexControl.CC_Slider, option, QStyle.SubControl.SC_SliderHandle, slider
+    )
+    grip = handle.center()
+
+    # Sent to the slider itself: the window path of QTest resolves the widget under the
+    # point, and in a full run the panel may be scrolled so the slider is off screen
+    def _send(kind: QEvent.Type, pos: QPoint, button: Qt.MouseButton) -> None:
+        event = QMouseEvent(
+            kind,
+            QPointF(pos),
+            QPointF(slider.mapToGlobal(pos)),
+            button,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        QApplication.sendEvent(slider, event)
+
+    _send(QEvent.Type.MouseButtonPress, grip, Qt.MouseButton.LeftButton)
+    for dx in (0, 8, 16):
+        _send(
+            QEvent.Type.MouseMove,
+            QPoint(slider.width() // 2 + dx, grip.y()),
+            Qt.MouseButton.NoButton,
+        )
+    assert unmet_messages == [
+        ("Stroke width slider", "Stroke width slider needs an unlocked item selected.")
+    ]
+    assert not slider.isSliderDown()
+    assert item.stroke_width == width and slider.value() == int(width)

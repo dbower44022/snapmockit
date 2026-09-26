@@ -10,9 +10,20 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
-from PyQt6.QtCore import QPoint, QSizeF, Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QFont, QTextBlockFormat, QTextCharFormat, QTextCursor
+from PyQt6.QtCore import QEvent, QObject, QPoint, QPointF, QSizeF, Qt, pyqtSignal
+from PyQt6.QtGui import (
+    QColor,
+    QCursor,
+    QFont,
+    QMouseEvent,
+    QTextBlockFormat,
+    QTextCharFormat,
+    QTextCursor,
+)
 from PyQt6.QtWidgets import (
+    QAbstractSlider,
+    QAbstractSpinBox,
+    QApplication,
     QCheckBox,
     QComboBox,
     QDockWidget,
@@ -228,6 +239,7 @@ class PropertyPanel(QDockWidget):
         self._scene = scene
         self._settings = AppSettings()
         self._updating = False
+        self._refusing = False  # a locked-item refusal is showing (one per gesture)
         self._tool_manager: ToolManager | None = None
         self._active_tool_id: str = ""
         self._editor_connected: bool = False
@@ -1519,12 +1531,39 @@ class PropertyPanel(QDockWidget):
         if not items:
             return items
         editable = [i for i in items if not self._scene.is_locked(i)]
-        if not editable:
-            check_requirements(
-                self, self._edit_action_name(), [(False, "an unlocked item selected")]
-            )
-            self._refresh_from_selection()
+        if not editable and not self._refusing:
+            # One message per gesture: a slider drag fires this on every move, and the
+            # modal message swallows the release the slider waits for, so without the
+            # guard and the synthetic release every later move showed it again (Doug's
+            # display, 09-25-26)
+            self._refusing = True
+            try:
+                self._end_pointer_gesture(self.sender())
+                check_requirements(
+                    self, self._edit_action_name(), [(False, "an unlocked item selected")]
+                )
+                self._refresh_from_selection()
+            finally:
+                self._refusing = False
         return editable
+
+    @staticmethod
+    def _end_pointer_gesture(sender: QObject | None) -> None:
+        """Release a slider being dragged or a spin arrow being held before a modal
+        message opens, since the message takes the real release and the control
+        would otherwise go on firing after it closes."""
+        if not isinstance(sender, (QAbstractSlider, QAbstractSpinBox)):
+            return
+        global_pos = QCursor.pos()
+        release = QMouseEvent(
+            QEvent.Type.MouseButtonRelease,
+            QPointF(sender.mapFromGlobal(global_pos)),
+            QPointF(global_pos),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        QApplication.sendEvent(sender, release)
 
     def _edit_action_name(self) -> str:
         """The row a refused edit came from, by its control's accessible name."""
