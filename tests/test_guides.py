@@ -447,3 +447,117 @@ def test_preferences_guide_colour_and_tolerance_reach_the_view(main_window: Main
     assert view.guide_pen.color().name().upper() == "#FF00FF"
     assert view.guide_pen.color().alpha() == round(40 * 2.55)
     assert view._snap_tolerance == 9  # noqa: SLF001
+
+
+# --- the selected guide (General UI PRD 2.64, 09-26-26): click, colour, nudge, delete ---
+
+
+def _key(view: SnapView, key: Qt.Key, shift: bool = False) -> None:
+    from PyQt6.QtGui import QKeyEvent
+
+    mods = Qt.KeyboardModifier.ShiftModifier if shift else Qt.KeyboardModifier.NoModifier
+    view.keyPressEvent(QKeyEvent(QEvent.Type.KeyPress, key, mods))
+
+
+def test_a_click_selects_a_guide_and_paints_it_in_the_selection_colour(qtbot: QtBot) -> None:
+    from snapmock.core.theme_manager import current_theme
+
+    scene, view, tm = _view(qtbot)
+    scene.set_guides([Guide(H, 200.0), Guide(V, 300.0)])
+    layer = scene.layer_manager.active_layer
+    assert layer is not None
+    item = RectangleItem(rect=QRectF(0, 0, 100, 60))
+    item.setPos(500, 400)
+    scene.command_stack.push(AddItemCommand(scene, item, layer.layer_id))
+    tm.selection_manager.select(item)
+    assert view.selected_guide is None
+    _press(view, QPointF(100, 200))
+    _release(view, QPointF(100, 200))
+    assert view.selected_guide == Guide(H, 200.0)
+    assert tm.selection_manager.items == []  # a guide and the items are never both selected
+    image = QImage(400, 400, QImage.Format.Format_ARGB32)
+    image.fill(Qt.GlobalColor.white)
+    painter = QPainter(image)
+    view.drawForeground(painter, QRectF(0, 0, 800, 600))
+    painter.end()
+    selected = current_theme().selection_handle.rgb()
+    assert (
+        image.pixelColor(50, 200).rgb() == selected or image.pixelColor(50, 199).rgb() == selected
+    )
+    assert image.pixelColor(300, 50).rgb() != selected  # the other guide keeps its colour
+    # A click on empty canvas lets the guide go; a click on an item does too
+    _press(view, QPointF(400, 100))
+    _release(view, QPointF(400, 100))
+    assert view.selected_guide is None
+    _press(view, QPointF(100, 200))
+    _release(view, QPointF(100, 200))
+    tm.selection_manager.select(item)
+    assert view.selected_guide is None
+
+
+def test_arrow_keys_nudge_a_selected_guide_by_the_standard_rules(qtbot: QtBot) -> None:
+    scene, view, _tm = _view(qtbot)
+    scene.set_guides([Guide(H, 200.0), Guide(V, 300.0)])
+    view.select_guide(Guide(H, 200.0))
+    _key(view, Qt.Key.Key_Down)
+    assert scene.guides[0] == Guide(H, 201.0)
+    assert view.selected_guide == Guide(H, 201.0)  # the selection follows the move
+    _key(view, Qt.Key.Key_Up)
+    _key(view, Qt.Key.Key_Up)
+    assert scene.guides[0] == Guide(H, 199.0)
+    _key(view, Qt.Key.Key_Down, shift=True)  # to the next grid line: one pixel
+    assert scene.guides[0] == Guide(H, 200.0)
+    _key(view, Qt.Key.Key_Down, shift=True)  # on a line: a whole step
+    assert scene.guides[0] == Guide(H, 210.0)
+    _key(view, Qt.Key.Key_Left)  # the wrong axis: consumed, nothing moves
+    _key(view, Qt.Key.Key_Right, shift=True)
+    assert scene.guides == [Guide(H, 210.0), Guide(V, 300.0)]
+    assert scene.command_stack.is_dirty
+    scene.command_stack.undo()  # consecutive moves of one guide are one undo step
+    assert scene.guides[0] == Guide(H, 200.0)
+    assert view.selected_guide == Guide(H, 200.0)
+    view.select_guide(Guide(V, 300.0))
+    _key(view, Qt.Key.Key_Right)
+    _key(view, Qt.Key.Key_Up)
+    assert scene.guides[1] == Guide(V, 301.0)
+
+
+def test_delete_removes_a_selected_guide_and_lock_hide_and_clear_let_it_go(
+    qtbot: QtBot,
+) -> None:
+    scene, view, _tm = _view(qtbot)
+    scene.set_guides([Guide(H, 200.0), Guide(V, 300.0)])
+    view.select_guide(Guide(H, 200.0))
+    _key(view, Qt.Key.Key_Delete)
+    assert scene.guides == [Guide(V, 300.0)]
+    assert view.selected_guide is None
+    scene.command_stack.undo()
+    assert scene.guides == [Guide(V, 300.0), Guide(H, 200.0)]
+    view.select_guide(Guide(V, 300.0))
+    view.set_guides_locked(True)
+    assert view.selected_guide is None
+    _press(view, QPointF(300, 100))
+    _release(view, QPointF(300, 100))
+    assert view.selected_guide is None  # a locked guide cannot be selected
+    view.set_guides_locked(False)
+    view.select_guide(Guide(V, 300.0))
+    view.set_guides_visible(False)
+    assert view.selected_guide is None
+    view.set_guides_visible(True)
+    view.select_guide(Guide(V, 300.0))
+    scene.command_stack.push(ClearGuidesCommand(scene))
+    assert view.selected_guide is None
+
+
+def test_escape_lets_a_selected_guide_go_without_a_message(
+    main_window: MainWindow, unmet_messages: list[tuple[str, str]]
+) -> None:
+    scene = main_window.scene
+    view = main_window._view  # noqa: SLF001
+    scene.set_guides([Guide(H, 200.0)])
+    main_window.tool_manager.activate("select")
+    view.select_guide(Guide(H, 200.0))
+    main_window._edit_deselect()  # noqa: SLF001
+    assert view.selected_guide is None
+    assert unmet_messages == []
+    scene.command_stack.mark_clean()

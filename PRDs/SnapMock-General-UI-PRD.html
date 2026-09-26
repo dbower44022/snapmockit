@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.63</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.64</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.63</dd>
-    <dt>Last Updated</dt>    <dd>09-26-26 01:00</dd>
+    <dt>Document version</dt><dd>2.64</dd>
+    <dt>Last Updated</dt>    <dd>09-26-26 01:29</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.64</td>
+        <td class="nowrap">09-26-26 01:29</td>
+        <td>Doug Bower</td>
+        <td>Doug's request of 09-26-26, the last change before v1.5.0: a guide can be selected and nudged. <strong>6.5</strong>: a click on a guide under the Select tool selects it (the click that begins a drag selects it too), and the selected guide draws in the theme's selection colour, opaque, in place of the guide colour at its opacity. The arrow keys then move it under <strong>Section 12</strong>'s nudge rules: one pixel, or with Shift to the next grid line in the arrow's direction, one pixel if that is the distance and a whole step once on a line; a horizontal guide answers Up and Down and a vertical one Left and Right, the other pair doing nothing; consecutive nudges of one guide are one undo step, as consecutive mouse moves of it are. Delete and Backspace remove the selected guide, one undoable command. The guide is let go by Escape (the third rung of 2.58, silently), by a click anywhere else, and by any item selection; a guide and the items are never selected together, so the arrows always have one thing to move. View &gt; Lock Guides and View &gt; Show Guides off let it go and refuse the click, as they refuse the drag. Clear All Guides, a drag onto the ruler, and Undo of an Add let it go with the guide. Built in <code>core/view.py</code> (the selection, the keys, the colour), with <code>SnapScene.guide_replaced</code> so the selection follows a moved guide through Undo and Redo, and the grid-line arithmetic moved from the Select tool to <code>core/guides.py</code> for both to share; <code>ToolManager.selection_manager</code> is public. Four tests in <code>tests/test_guides.py</code>.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.63</td>
         <td class="nowrap">09-26-26 01:00</td>
@@ -599,6 +606,7 @@
     </thead>
     <tbody>
       <tr><td class="nowrap">09-25-26 21:33</td><td>8, 10.2, 6.6, 1.3</td><td>Built / Decision</td><td><strong>Built</strong> (09-25-26; notes Section 30; decision B): the Item Lock checkbox of Section 8 and the Lock Item / Unlock Item row of 10.2 lock and unlock an item that can still be selected, and every move and edit refuses it. <strong>Decision</strong> 8.6: a mixed selection's rows edit the unlocked items and say nothing; a selection locked through and through answers with 1.3's message from every row but the checkbox. <strong>6.6</strong>: the forbidden row covers a locked item and the handles of a locked selection. The silences are listed in the 2.61 revision row.</td></tr>
+      <tr><td class="nowrap">09-26-26 01:29</td><td>6.5, 12</td><td>Added</td><td><strong>Added</strong> (09-26-26, Doug's request; the 2.64 revision row): a click selects a guide, which draws in the selection colour; the arrow keys nudge it by Section 12's rules and Delete removes it; Escape, a click elsewhere, or an item selection lets it go.</td></tr>
       <tr><td class="nowrap">09-18-26 23:58</td><td>3.8</td><td>Fixed</td><td><strong>Fixed</strong> (09-18-26; <code>docs/Packaging-PyPI-Implementation.md</code>, Section 7.3): the running version's parse accepts PEP 440's pre-release suffixes (<code>a</code>, <code>b</code>, <code>rc</code>, <code>dev</code>) through <code>parse_running_version</code> in <code>snapmock/core/update_check.py</code>, and a pre-release is older than its release. The release tag's parse is unchanged, so a tag such as <code>v1.2.0rc1</code> is still unreadable. Found by the continuous-integration run of the rehearsal branch at <code>1.2.0rc1</code> (run 35419613807), where three tests failed because every check read as unreadable. Tests: <code>tests/test_update_check.py</code>; one test in <code>tests/test_help_check_updates.py</code> no longer assumes a release tag equal to the running version.</td></tr>
       <tr><td class="nowrap">09-18-26 16:54</td><td>3.8</td><td>Changed</td><td><strong>Changed</strong> (09-18-26; <code>docs/Packaging-PyPI-Implementation.md</code>, decision 2.5 and Section 6): the newer-release message of an installation from the Python Package Index ends with the upgrade line for its installer, &ldquo;Upgrade with pipx upgrade snapmockit.&rdquo;, &ldquo;Upgrade with uv tool upgrade snapmockit.&rdquo;, or &ldquo;Upgrade with pip install --upgrade snapmockit.&rdquo;, so a user is not sent to the release page's AppImage and bundle. The form is read by <code>snapmock/config/packaging.py</code> from where the package was imported; the installer from where the running environment lies. Every other outcome, and every other form, reads as before. Tests: <code>tests/test_help_check_updates.py</code> and <code>tests/test_packaging_form.py</code>.</td></tr>
       <tr>
@@ -2461,7 +2469,10 @@ are non-printing and are excluded from all exports.</p>
   follows the cursor during the drag. Release to place the guide at the current position.</li>
   <li><strong>Moving guides: </strong>Hover over a guide line until the cursor changes to a
   double-headed resize arrow. Click and drag to reposition. Shift+drag constrains movement
-  to whole pixel values.</li>
+  to whole pixel values. A click selects the guide, which draws in the selection colour;
+  the arrow keys then nudge it by Section 12's rules (one pixel, Shift to the next grid
+  line), Delete removes it, and Escape, a click elsewhere, or an item selection lets it go
+  (2.64).</li>
   <li><strong>Deleting guides: </strong>Drag a guide back onto its originating ruler to remove
   it. Alternatively, use View &gt; Clear All Guides to remove all guides at once.</li>
   <li><strong>Snapping: </strong>When View &gt; Snap to Guides is enabled, item edges and
@@ -3007,7 +3018,7 @@ release.</p>
     <tr><th>Space + Left Mouse Drag</th><td>Pan the canvas (temporary hand tool)</td></tr>
     <tr><th>Home</th><td>Pan to canvas origin (0,0)</td></tr>
     <tr><th>End</th><td>Pan to bottom-right corner of canvas</td></tr>
-    <tr><th>Arrow Keys</th><td>Nudge selected items 1px in arrow direction</td></tr>
+    <tr><th>Arrow Keys</th><td>Nudge selected items, or the selected guide (6.5, 2.64), 1px in arrow direction</td></tr>
     <tr><th>Shift + Arrow Keys</th><td>Nudge selected items 10px in arrow direction</td></tr>
     <tr><th>Tab</th><td>Cycle selection to next item on active layer</td></tr>
     <tr><th>Shift + Tab</th><td>Cycle selection to previous item on active layer</td></tr>

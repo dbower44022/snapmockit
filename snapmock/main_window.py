@@ -2866,7 +2866,9 @@ class MainWindow(QMainWindow):
                 self._selection_manager.select(item)
             return
         # The third rung with nothing selected is silent, not a message: Escape is the
-        # key a user presses to make sure nothing is going on (2.59, Doug's 09-25-26)
+        # key a user presses to make sure nothing is going on (2.59, Doug's 09-25-26).
+        # A selected guide is let go here too (2.64)
+        self._view.select_guide(None)
         self._selection_manager.deselect_all()
 
     def _selectable(self, item: QGraphicsItem) -> bool:

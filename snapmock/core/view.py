@@ -58,7 +58,13 @@ from snapmock.config.constants import (
     ZOOM_PIXEL_GRID_THRESHOLD,
     ZOOM_STEPS,
 )
-from snapmock.core.guides import Guide, GuideOrientation, snap_rect_delta, snap_value
+from snapmock.core.guides import (
+    Guide,
+    GuideOrientation,
+    next_grid_line,
+    snap_rect_delta,
+    snap_value,
+)
 from snapmock.core.render_engine import paint_canvas_border
 from snapmock.core.scene import SnapScene
 from snapmock.core.theme_manager import current_theme
@@ -129,6 +135,12 @@ class SnapView(QGraphicsView):
         self._guide_drag: Guide | None = None  # being moved with the mouse
         self._guide_drag_pos: float = 0.0
         self._guide_hover: bool = False
+        # The guide a click selected (General UI PRD 2.64, 09-26-26): drawn in the
+        # selection colour, nudged by the arrow keys, removed by Delete, let go by
+        # Escape, a click elsewhere, or any item selection
+        self._selected_guide: Guide | None = None
+        scene.guides_changed.connect(self._on_guides_changed)
+        scene.guide_replaced.connect(self._on_guide_replaced)
         self._highlighted_layer: str | None = None
         self._guide_preview_inside: bool = False
 
@@ -186,6 +198,7 @@ class SnapView(QGraphicsView):
         """Set the tool manager for mouse event delegation."""
         self._tool_manager = tool_manager
         tool_manager.tool_changed.connect(self._apply_tool_cursor)
+        tool_manager.selection_manager.selection_changed.connect(self._on_items_selected)
 
     def _apply_tool_cursor(self, _tool_id: str = "") -> None:
         """Apply the active tool's cursor to the viewport."""
@@ -351,6 +364,8 @@ class SnapView(QGraphicsView):
     def set_guides_visible(self, visible: bool) -> None:
         """View > Show Guides; hidden guides stay in place and cannot be dragged."""
         self._guides_visible = visible
+        if not visible:
+            self.select_guide(None)
         self._repaint()
 
     @property
@@ -358,8 +373,11 @@ class SnapView(QGraphicsView):
         return self._guides_locked
 
     def set_guides_locked(self, locked: bool) -> None:
-        """View > Lock Guides: no mouse move or delete; Clear All Guides still works."""
+        """View > Lock Guides: no mouse move, nudge, or delete; Clear All Guides still
+        works."""
         self._guides_locked = locked
+        if locked:
+            self.select_guide(None)
 
     @property
     def snap_to_guides(self) -> bool:
@@ -499,11 +517,87 @@ class SnapView(QGraphicsView):
     def guide_preview(self) -> Guide | None:
         return self._guide_preview if self._guide_preview_inside else None
 
+    # The selected guide (General UI PRD 6.5 as 2.64 extends it)
+
+    @property
+    def selected_guide(self) -> Guide | None:
+        return self._selected_guide
+
+    def select_guide(self, guide: Guide | None) -> None:
+        """Select *guide*, or none. A guide and the items are never selected together:
+        selecting a guide clears the item selection, and an item selection clears the
+        guide, so the arrow keys always have one thing to move."""
+        if guide == self._selected_guide:
+            return
+        self._selected_guide = guide
+        if guide is not None and self._tool_manager is not None:
+            self._tool_manager.selection_manager.deselect_all()
+        self._repaint()
+
+    def _on_items_selected(self, items: list[object]) -> None:
+        if items:
+            self.select_guide(None)
+
+    def _on_guides_changed(self) -> None:
+        snap = self._snap_scene
+        if self._selected_guide is not None and (
+            snap is None or self._selected_guide not in snap.guides
+        ):
+            self.select_guide(None)
+
+    def _on_guide_replaced(self, old: object, new: object) -> None:
+        if old == self._selected_guide and isinstance(new, Guide):
+            self._selected_guide = new
+            self._repaint()
+
+    def nudge_selected_guide(self, key: Qt.Key, shift: bool) -> bool:
+        """Move the selected guide by an arrow key under the nudge rules of General UI PRD
+        Section 12: one pixel, or with Shift to the next grid line in the arrow's
+        direction. A horizontal guide answers Up and Down, a vertical one Left and Right;
+        the other pair is consumed and does nothing. False when no guide is selected or
+        the key is not an arrow."""
+        guide = self._selected_guide
+        if guide is None or not self._guides_interactive():
+            return False
+        along = {
+            Qt.Key.Key_Left: (GuideOrientation.VERTICAL, -1.0),
+            Qt.Key.Key_Right: (GuideOrientation.VERTICAL, 1.0),
+            Qt.Key.Key_Up: (GuideOrientation.HORIZONTAL, -1.0),
+            Qt.Key.Key_Down: (GuideOrientation.HORIZONTAL, 1.0),
+        }
+        if key not in along:
+            return False
+        orientation, direction = along[key]
+        if orientation is not guide.orientation:
+            return True
+        if shift:
+            target = next_grid_line(guide.position, float(self._grid_size), direction)
+        else:
+            target = guide.position + direction
+        snap = self._snap_scene
+        if snap is not None and target != guide.position:
+            from snapmock.commands.guide_commands import MoveGuideCommand
+
+            snap.command_stack.push(MoveGuideCommand(snap, guide, target))
+        return True
+
+    def delete_selected_guide(self) -> bool:
+        """Remove the selected guide, one undoable command; False when there is none."""
+        guide = self._selected_guide
+        snap = self._snap_scene
+        if guide is None or snap is None or not self._guides_interactive():
+            return False
+        from snapmock.commands.guide_commands import RemoveGuideCommand
+
+        snap.command_stack.push(RemoveGuideCommand(snap, guide))
+        return True
+
     # Moving and deleting with the mouse
 
     def _start_guide_drag(self, guide: Guide) -> None:
         self._guide_drag = guide
         self._guide_drag_pos = guide.position
+        self.select_guide(guide)
 
     def _move_guide_drag(self, event: QMouseEvent) -> None:
         if self._guide_drag is None:
@@ -540,13 +634,18 @@ class SnapView(QGraphicsView):
         snap = self._snap_scene
         if snap is None:
             return
-        painter.setPen(self.guide_pen)
-        lines = [
-            g.moved_to(self._guide_drag_pos) if g == self._guide_drag else g for g in snap.guides
+        lines: list[tuple[Guide, Guide | None]] = [
+            (g.moved_to(self._guide_drag_pos) if g == self._guide_drag else g, g)
+            for g in snap.guides
         ]
         if self._guide_preview is not None and self._guide_preview_inside:
-            lines.append(self._guide_preview)
-        for guide in lines:
+            lines.append((self._guide_preview, None))
+        for guide, original in lines:
+            # The selected guide draws in the theme's selection colour, opaque
+            if original is not None and original == self._selected_guide:
+                painter.setPen(QPen(current_theme().selection_handle, 0))
+            else:
+                painter.setPen(self.guide_pen)
             if guide.orientation is GuideOrientation.HORIZONTAL:
                 y = guide.position
                 painter.drawLine(QPointF(rect.left(), y), QPointF(rect.right(), y))
@@ -1119,6 +1218,16 @@ class SnapView(QGraphicsView):
         if scene is not None and scene.focusItem() is not None:
             super().keyPressEvent(event)
             return
+        # A selected guide takes the arrows and Delete before the tool (PRD 2.64)
+        if self._selected_guide is not None:
+            shift = bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
+            if self.nudge_selected_guide(Qt.Key(event.key()), shift):
+                event.accept()
+                return
+            if event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
+                if self.delete_selected_guide():
+                    event.accept()
+                    return
         if self._tool_manager is not None and self._tool_manager.handle_key_press(event):
             event.accept()
             return
@@ -1199,13 +1308,16 @@ class SnapView(QGraphicsView):
             self._pan_start = event.position().toPoint()
             event.accept()
             return
-        # A guide under the pointer is moved rather than handed to the tool (PRD 6.5)
+        # A guide under the pointer is selected and moved rather than handed to the tool
+        # (PRD 6.5); a press anywhere else lets a selected guide go
         if event.button() == Qt.MouseButton.LeftButton and self._guides_interactive():
             guide = self.guide_at(event.position().toPoint())
             if guide is not None:
                 self._start_guide_drag(guide)
                 event.accept()
                 return
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.select_guide(None)
         # Delegate to tool manager
         if self._tool_manager is not None and self._tool_manager.handle_mouse_press(event):
             event.accept()

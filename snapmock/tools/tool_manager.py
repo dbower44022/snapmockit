@@ -57,6 +57,11 @@ class ToolManager(QObject):
     def tool_ids(self) -> list[str]:
         return list(self._tools.keys())
 
+    @property
+    def selection_manager(self) -> SelectionManager:
+        """The selection every tool is activated with."""
+        return self._selection_manager
+
     # --- activation ---
 
     @property

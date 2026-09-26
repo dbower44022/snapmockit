@@ -17,6 +17,7 @@ from snapmock.config.constants import (
     GRID_SIZE_DEFAULT,
     MIN_TEXT_BOX_HEIGHT,
 )
+from snapmock.core.guides import next_grid_line
 from snapmock.items.base_item import SnapGraphicsItem
 from snapmock.items.blur_item import BlurItem
 from snapmock.items.callout_item import CalloutItem
@@ -42,19 +43,6 @@ from snapmock.ui.transform_handles import (
 if TYPE_CHECKING:
     from snapmock.core.scene import SnapScene
     from snapmock.core.selection_manager import SelectionManager
-
-
-def _next_grid_line(value: float, grid: float, direction: float) -> float:
-    """The grid line one step from *value* in *direction* (-1, 0, or +1 for none): the
-    next line strictly beyond *value*, or the line a whole step away when *value* is on
-    one already, so a Shift+Arrow nudge snaps first and steps after."""
-    if direction == 0:
-        return value
-    steps = value / grid
-    nearest = round(steps)
-    if abs(steps - nearest) < 1e-6:
-        return (nearest + direction) * grid
-    return (math.floor(steps) + 1) * grid if direction > 0 else math.floor(steps) * grid
 
 
 LOCKED_ITEM_HINT = "This item is locked. Unlock it to move or edit it."
@@ -1530,8 +1518,8 @@ class SelectTool(BaseTool):
                     grid = view._grid_size if view is not None else GRID_SIZE_DEFAULT  # noqa: SLF001
                     corner = self._selection_geometry_rect(items).topLeft()
                     delta = QPointF(
-                        _next_grid_line(corner.x(), grid, direction.x()) - corner.x(),
-                        _next_grid_line(corner.y(), grid, direction.y()) - corner.y(),
+                        next_grid_line(corner.x(), grid, direction.x()) - corner.x(),
+                        next_grid_line(corner.y(), grid, direction.y()) - corner.y(),
                     )
                 cmd = MoveItemsCommand(items, delta)
                 self._scene.command_stack.push(cmd)

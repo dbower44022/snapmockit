@@ -1,6 +1,6 @@
 # General UI Implementation Notes
 
-Last Updated: 09-26-26 01:00 · Revision 1.53
+Last Updated: 09-26-26 01:29 · Revision 1.54
 
 Implements the SnapMock General User Interface PRD (version 2.4, `PRDs/SnapMock-General-UI-PRD.html`) in the eight phases defined by `docs/General-UI-Implementation-Kickoff-Prompt.md`. A session pasting that prompt starts at the first phase not marked done in Section 1.
 
@@ -768,10 +768,17 @@ Deviations from the PRDs as written, each with its change-log row: the Technical
 
 **Next required step:** the display checks, then the release of everything unreleased since v1.4.0 (paste at the pointer, Escape's three rungs, the opaque pick, the item lock) as v1.5.0 through `docs/Release-Engineering.md` Section 5.
 
+## 31. A Guide Is Selected and Nudged
+
+Doug's request of 09-26-26, the last change before v1.5.0 (General UI PRD 2.64): a click on a guide selects it, the selected guide draws in the theme's selection colour, and the arrow keys nudge it under Section 12's rules, one pixel or with Shift to the next grid line in the arrow's direction, through the same `next_grid_line` the Select tool uses, moved from `tools/select_tool.py` to `core/guides.py` so the view can share it without importing a tool. Delete removes it. The selection lives on `SnapView` (`selected_guide`, `select_guide`): a guide and the items are never selected together, since the view takes the arrows before the tool and one thing must answer them; a press anywhere but on a guide lets it go, as does Escape's third rung, Lock Guides, Show Guides off, and the guide's own removal. `SnapScene.guide_replaced` (old, new) lets the selection follow a moved guide through the move, Undo, and Redo, since a guide is a frozen value and a move makes a new one. `ToolManager.selection_manager` is public for the view. Decided without asking: the selection colour is the theme's selection-handle colour, opaque, at the guide's 1 px; the wrong-axis arrows are consumed silently rather than panning; consecutive nudges merge into one undo step as the existing `MoveGuideCommand` merges. Tests: four in `tests/test_guides.py` (the click, the colour, and the exclusivity with items; the nudge rules, the wrong axis, the merged undo, and the selection following; Delete, lock, hide, and Clear letting go; Escape through the window, silent). Display checks owed: drag a guide from the ruler, click it (it turns the selection colour), press the arrows and Shift+arrows, Delete, and Escape.
+
+**Next required step:** the display checks above and the item lock's, then the v1.5.0 release through `docs/Release-Engineering.md` Section 5.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.54 | 09-26-26 01:29 | Claude (Claude Code) | Section 31: a guide is selected and nudged (General UI PRD 2.64); the next step. |
 | 1.53 | 09-26-26 01:00 | Claude (Claude Code) | Section 30.3: the refusal deferred past the event that asked, after Doug's retest showed two messages. General UI PRD 2.63. |
 | 1.52 | 09-25-26 23:58 | Claude (Claude Code) | Section 30.3: display check 7's endless message fixed, one refusal per gesture with the slider released first. General UI PRD 2.62. |
 | 1.51 | 09-25-26 21:33 | Claude (Claude Code) | Section 30 complete: the silences, what was built, the tests, the deviations; the phase-table row done. General UI PRD 2.61, Navigation PRD 1.14, Technical Architecture PRD 1.73. |

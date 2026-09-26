@@ -8,6 +8,7 @@ A guide is an orientation and a scene coordinate. The list lives on the
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
@@ -44,6 +45,21 @@ class Guide:
         except (KeyError, TypeError, ValueError):
             return None
         return cls(orientation, position)
+
+
+def next_grid_line(value: float, grid: float, direction: float) -> float:
+    """The grid line one step from *value* in *direction* (-1, 0, or +1 for none): the
+    next line strictly beyond *value*, or the line a whole step away when *value* is on
+    one already, so a Shift+Arrow nudge snaps first and steps after (General UI PRD
+    Section 12 as Doug corrected it 09-16-26). Shared by the Select tool's nudge of items
+    and the view's nudge of a selected guide."""
+    if direction == 0:
+        return value
+    steps = value / grid
+    nearest = round(steps)
+    if abs(steps - nearest) < 1e-6:
+        return (nearest + direction) * grid
+    return (math.floor(steps) + 1) * grid if direction > 0 else math.floor(steps) * grid
 
 
 def snap_value(value: float, targets: list[float], tolerance: float) -> float | None:

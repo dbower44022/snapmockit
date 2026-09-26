@@ -47,6 +47,9 @@ class SnapScene(QGraphicsScene):
     background_changed = pyqtSignal()
     canvas_dpi_changed = pyqtSignal(int)
     guides_changed = pyqtSignal()
+    guide_replaced = pyqtSignal(object, object)
+    """Emitted with (old, new) when one guide is moved, before guides_changed, so a view
+    that has the old guide selected can follow it (the guide selection of 09-26-26)."""
     border_changed = pyqtSignal()
 
     def __init__(
@@ -382,6 +385,7 @@ class SnapScene(QGraphicsScene):
     def replace_guide(self, old: Guide, new: Guide) -> None:
         if old in self._guides:
             self._guides[self._guides.index(old)] = new
+            self.guide_replaced.emit(old, new)
             self._guides_did_change()
 
     def set_guides(self, guides: list[Guide]) -> None:
