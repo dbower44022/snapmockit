@@ -1,6 +1,6 @@
 # General UI Implementation Notes
 
-Last Updated: 09-25-26 20:22 · Revision 1.49
+Last Updated: 09-25-26 20:56 · Revision 1.50
 
 Implements the SnapMock General User Interface PRD (version 2.4, `PRDs/SnapMock-General-UI-PRD.html`) in the eight phases defined by `docs/General-UI-Implementation-Kickoff-Prompt.md`. A session pasting that prompt starts at the first phase not marked done in Section 1.
 
@@ -21,6 +21,7 @@ Implements the SnapMock General User Interface PRD (version 2.4, `PRDs/SnapMock-
 | Group and Ungroup | The group item, its two commands, the Select tool, every item walk (Section 17) | Done | a4c3dd3 to c07a352, then this close-out commit |
 | Navigation and Raster Operations follow-up | Merge Down, Merge Visible, Flatten All; the layer blend mode and the BG and raster badges; the background layer on drop and paste; the Zoom tool's Alt+click (Section 18) | Done | b3c591d to 47ef98d, then this close-out commit |
 | Check for Updates | Help > Check for Updates: the GitHub releases query, the version comparison, the messages (Section 19) | Done | f45cf44 to ed3dbbb, then this close-out commit |
+| The Item Lock | The per-item lock as the four PRD passages define it: the model, selection, mutation, close-out (Section 30) | In progress | from 99ec438 |
 
 Phase 0 was verified against the repository at commit `a198744` on 09-07-26. The working tree also carried uncommitted Basic Shape Annotation Tools work in `snapmock/items/` and `tests/test_items.py`; it was left untouched and is not part of this inventory.
 
@@ -724,10 +725,29 @@ Not built: option B, the shape staying selected with the shape tool moving it, w
 
 Doug's display, 09-25-26: a fill colour picked for a rectangle, arrow or ellipse never showed (General UI PRD 2.60). The popover in `snapmock/ui/color_picker.py` built every picked colour with the current colour's alpha, and a shape's fill starts at `#00000000`, so a pick from the square, the hue bar, or the RGB and HSL inputs landed at alpha 0 and the fill stayed invisible. `_pick_alpha` now answers 255 when the current colour is fully transparent and the current alpha otherwise; the Opacity bar and the Transparent button still set the alpha themselves. Test: `test_a_pick_over_transparent_is_opaque` in `tests/test_color_picker.py`.
 
+## 30. The Item Lock
+
+Doug's decision B of 09-25-26, from `docs/Item-Lock-Kickoff-Prompt.md`, taken before anything was built. The Technical Architecture PRD's item table said a locked item "cannot be selected, moved, or edited" while the General UI PRD put the unlock in the Property Panel's Item Info section, which shows only for a selection; both could not hold. Option A, unselectable with the context menu as the way out, was recommended and declined. Option B, chosen: a locked item can be selected by a click, a rubber band, Tab, and a right-click, and once selected it is unlocked where it was locked, in the Property Panel's Locked checkbox or the context menu's Unlock Item row. Its handles draw in a locked style and do nothing; no drag, nudge, resize, rotation, delete, cut, or in-place edit reaches it; the Property Panel shows Item Info with the checkbox live and every other row answers with the 1.3 message. The item table's row is reworded to "cannot be moved or edited" in Technical Architecture PRD 1.73.
+
+### 30.1 Decision
+
+| Decision | Choice | Effect |
+|---|---|---|
+| 1 How a locked item is unlocked | B, selectable but frozen | The selection routes take a locked item; the mutation routes refuse it; the Property Panel's checkbox and the context-menu row are the two ways out, both undoable. |
+
+### 30.2 Silences decided
+
+Filled in as the steps land.
+
+### 30.3 What was built
+
+Filled in at the close-out.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.50 | 09-25-26 20:56 | Claude (Claude Code) | Section 30: the item lock in progress, decision 1 taken as option B; the phase-table row. |
 | 1.49 | 09-25-26 20:22 | Claude (Claude Code) | Section 29: a pick over transparent is opaque (General UI PRD 2.60). |
 | 1.48 | 09-25-26 20:16 | Claude (Claude Code) | Section 28: the third rung is silent with nothing selected (General UI PRD 2.59). |
 | 1.47 | 09-25-26 12:20 | Claude (Claude Code) | Section 28: Escape's three rungs (General UI PRD 2.58). |
