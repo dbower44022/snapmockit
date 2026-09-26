@@ -91,6 +91,17 @@ include = [
     "/LICENSE",
     "/pyproject.toml",
 ]
+# Hatchling walks every directory, excluded ones included, unless told to skip them, and
+# it follows symbolic links: on 09-25-26 the walk entered the Flatpak build tree under
+# build/, followed its var/run link to /run, and from there into the mounted shares,
+# where the source build hung for good. The skip prunes the excluded directories; the
+# three named here are the local build outputs, excluded by the VCS ignore as well.
+skip-excluded-dirs = true
+exclude = [
+    "/build",
+    "/dist",
+    "/.flatpak-builder",
+]
 
 [tool.ruff]
 line-length = 99

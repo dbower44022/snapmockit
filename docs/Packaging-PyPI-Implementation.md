@@ -1,6 +1,6 @@
 # Packaging: the Python Package Index — Implementation Notes
 
-Last Updated: 09-20-26 14:15 · Revision 1.7
+Last Updated: 09-25-26 20:43 · Revision 1.8
 
 Snapmockit published on the Python Package Index, so that `pipx install snapmockit`, `uv tool install snapmockit`, or `pip install snapmockit` installs the application on any platform with Python 3.12 or later, and every later release reaches the index from the release workflow. The kickoff prompt is `docs/Packaging-PyPI-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -183,10 +183,17 @@ The branch `rehearsal-1.2.0rc1` was deleted locally and on GitHub at 00:10. `1.2
 
 **The next required step** is the menu entry (end-to-end pass finding 1), then the Windows package and backend, then macOS.
 
+## 9. The source build's walk left the tree (09-25-26)
+
+The suite's source-distribution test timed out at 300 seconds, twice, on a build that had taken a second at midday. Hatchling walks every directory of the project, excluded ones included, unless `skip-excluded-dirs` is set, and its walk follows symbolic links. The Flatpak build tree under `build/` (git-ignored, but walked) holds a `var/run` link to `/run`; from there the walk reached the desktop's mounted shares and a photo backup on the network, which it was still reading when the test gave up. The share was mounted during the afternoon, which is why the morning runs passed. `pyproject.toml` now sets `skip-excluded-dirs = true` on the sdist target and names `/build`, `/dist` and `/.flatpak-builder` in `exclude`, beside the VCS ignore; the build takes half a second again. The include list of decision 4 is unchanged.
+
+Trap: a source build that hangs here is a walk that has left the tree. Look for a link under `build/` before anything else.
+
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.8 | 09-25-26 20:43 | Claude (Claude Code) | Section 9: the source build's walk followed a link under build/ out of the tree; skip-excluded-dirs and an explicit exclude list. |
 | 1.7 | 09-20-26 14:15 | Claude (Claude Code) | Section 7.5: the pipx installation used for the proof was removed again on Doug's word. |
 | 1.6 | 09-20-26 13:31 | Claude (Claude Code) | Phase 3 done and the work closed out (Sections 7.5 and 8): v1.2.0 published on the index after Doug's approval, its attestation and page read, and the package installed here with pipx; the release-engineering notes, the release process, and Technical Architecture PRD 1.68. |
 | 1.5 | 09-19-26 00:11 | Claude (Claude Code) | Section 7.4: the rehearsal passed; 1.2.0rc1 uploaded to the test index through the trusted publisher with its attestation, installed from it, started, and read as the index's form; the branch deleted. |
