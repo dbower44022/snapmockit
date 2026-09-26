@@ -78,7 +78,7 @@ class RasterRegionItem(SnapGraphicsItem):
             "image_data": image_b64,
             "flip_horizontal": self._flip_horizontal,
             "flip_vertical": self._flip_vertical,
-            **self._blend_entry(),
+            **self._item_entry(),
         }
 
     @classmethod
@@ -101,5 +101,5 @@ class RasterRegionItem(SnapGraphicsItem):
         item.layer_id = data.get("layer_id", "")
         item._flip_horizontal = data.get("flip_horizontal", False)
         item._flip_vertical = data.get("flip_vertical", False)
-        item._apply_blend_entry(data)
+        item._apply_item_entry(data)
         return item

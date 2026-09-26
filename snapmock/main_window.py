@@ -3613,14 +3613,28 @@ class MainWindow(QMainWindow):
         self._scene.command_stack.push(cmd)
 
     def _toggle_item_lock(self) -> None:
-        """Toggle the locked flag on all selected items."""
+        """Lock Item / Unlock Item (General UI PRD 10.2): one undoable command on every
+        selected item, the same command the Property Panel's Locked checkbox pushes, so
+        both routes undo (the item lock of 09-25-26). The first item's state sets the
+        direction, as the row's text does. This row and the checkbox are the two controls
+        that act on a locked item, since they are the way out."""
+        from snapmock.commands.modify_property import (
+            ModifyPropertiesCommand,
+            ModifyPropertyCommand,
+        )
+        from snapmock.core.command_stack import BaseCommand
+
         items = self._require_selection("Lock Item")
         if not items:
             return
-        # Use the first item's state to determine the toggle direction
         new_locked = not items[0].locked
-        for item in items:
-            item.locked = new_locked
+        if len(items) == 1:
+            command: BaseCommand = ModifyPropertyCommand(
+                items[0], "locked", items[0].locked, new_locked
+            )
+        else:
+            command = ModifyPropertiesCommand(items, "locked", new_locked)
+        self._scene.command_stack.push(command)
 
     def _layer_new_relative(self, reference_layer_id: str, *, above: bool) -> None:
         """Add a new layer above or below the referenced layer."""

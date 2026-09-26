@@ -527,6 +527,8 @@ def test_move_to_layer_and_lock_item_take_the_group_and_its_members(
     assert first.item_ids == [] and second.item_ids == [group.item_id]
     main_window._toggle_item_lock()  # noqa: SLF001
     assert group.locked and a.locked and b.locked
+    scene.command_stack.undo()  # the lock is a command since the item lock of 09-25-26
+    assert not group.locked and not a.locked
     scene.command_stack.undo()
     assert group.layer_id == first.layer_id and a.layer_id == first.layer_id
 

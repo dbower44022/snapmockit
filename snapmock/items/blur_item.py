@@ -628,7 +628,7 @@ class BlurItem(SnapGraphicsItem):
             "border_width": self._border_width,
             "flip_horizontal": self._flip_horizontal,
             "flip_vertical": self._flip_vertical,
-            **self._blend_entry(),
+            **self._item_entry(),
         }
 
     @classmethod
@@ -667,5 +667,5 @@ class BlurItem(SnapGraphicsItem):
         item._border_width = _clamp(data.get("border_width", 0.0), 0.0, 50.0, 0.0)
         item._flip_horizontal = data.get("flip_horizontal", False)
         item._flip_vertical = data.get("flip_vertical", False)
-        item._apply_blend_entry(data)
+        item._apply_item_entry(data)
         return item

@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.72</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.73</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.72</dd>
-    <dt>Last Updated</dt>    <dd>09-25-26 12:20</dd>
+    <dt>Document version</dt><dd>1.73</dd>
+    <dt>Last Updated</dt>    <dd>09-25-26 20:59</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.73</td>
+        <td class="nowrap">09-25-26 20:59</td>
+        <td>Doug Bower</td>
+        <td>The item lock, Doug's decision B of 09-25-26 (<code>docs/Item-Lock-Kickoff-Prompt.md</code>; General UI implementation notes Section 30). <strong>3.1.4</strong>'s <code>locked</code> row reads "cannot be moved or edited": a locked item can be selected, and is unlocked where it was locked, in the Property Panel's Item Info checkbox or the context menu's Unlock Item row; "cannot be selected" was option A, declined. <strong>3.1.4</strong> also names <code>SnapScene.is_locked</code>, the one question every move and edit asks: the item's own flag, any group above it, or its layer, read live. <strong>3.2</strong>'s "update all child items' lock state" on a layer toggle is not built and is withdrawn (kickoff silence 1): writing the layer's lock onto the items would erase the item's own flag, which General UI PRD Section 8 keeps independent of the layer. <strong>6.1</strong>: every entry in <code>items.json</code> carries <code>locked</code>; absent reads as unlocked, so <code>format_version</code> stays 1. The clipboard and a clone go through the same entry, so a paste and a duplicate keep the lock.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.72</td>
         <td class="nowrap">09-25-26 12:20</td>
@@ -630,6 +637,7 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr><td class="nowrap">09-25-26 20:59</td><td>3.1.4, 3.2, 6.1</td><td>Changed / Decision</td><td><strong>Changed</strong> (09-25-26, the item lock, Doug's decision B; notes Section 30): the <code>locked</code> row of the item base class table reads "cannot be moved or edited" and names <code>SnapScene.is_locked</code>; <code>items.json</code> entries carry <code>locked</code>, absent reading as unlocked. <strong>Decision</strong> 3.2: a layer's lock toggle does not write the items' flags; <code>is_locked</code> reads the layer live, so the item's own lock is its own (kickoff silence 1). The behaviour these serve is General UI PRD Section 8 and 10.2 and Navigation &amp; Raster Operations PRD Section 2, at those documents' versions 2.61 and 1.14.</td></tr>
       <tr><td class="nowrap">09-21-26 15:14</td><td>3.3.3, 3.9.2, 4.1, 10</td><td>Added / Changed</td><td><strong>Added</strong> (09-21-26, Doug's decision to build the border as a tool): the <code>border</code> entry in the 3.3.3 registry, the four border fields in the 4.1 project model, and <code>tools/border_tool.py</code> in Section 10. <strong>Changed</strong> 3.9.2: export rendering sizes its image from the scene's output rectangle rather than the canvas size, and paints the border's shadow, ring and stroke before the canvas. The behaviour these serve is Navigation &amp; Raster Operations PRD Section 10, at that document's version 1.8.</td></tr>
       <tr><td class="nowrap">09-20-26 13:31</td><td>7.3</td><td>Released</td><td><strong>Released</strong> (09-19-26; <code>docs/Packaging-PyPI-Implementation.md</code>, Sections 7.5 and 8): version 1.2.0, tagged <code>v1.2.0</code> on 9b307a7 and published by run 35421164271 as an ordinary GitHub release with both Linux forms attached, then uploaded to the Python Package Index at 18:49 UTC once Doug approved the <code>pypi</code> environment. On the index: <code>snapmockit-1.2.0-py3-none-any.whl</code> (761,230 bytes) and <code>snapmockit-1.2.0.tar.gz</code> (872,796 bytes), each with an attestation naming GitHub, <code>dbower44022/snapmockit</code>, <code>ci.yml</code>, and the environment <code>pypi</code>; the page carries the README, the five project addresses, and thirteen classifiers. Installed here with <code>pipx install snapmockit</code>: the command answers <code>Snapmockit 1.2.0</code>, the main window builds, the form reads as the index's with pipx as its installer, and the shortcut command is <code>snapmockit --capture region</code>. <strong>7.3 stands as follows:</strong> the Linux AppImage (primary), the Linux Flatpak (secondary), and the Python Package Index are done; the Windows installer and portable archive and the macOS bundle remain, each waiting for its machine. The release process, with the upload as a step, is <code>docs/Release-Engineering.md</code> Section 5.</td></tr>
       <tr>
@@ -1568,7 +1576,7 @@ to every item in the scene:</p>
   <tbody>
     <tr><th><code>layer_id</code></th><td>UUID</td><td>Reference to the Layer this item belongs to. Used by LayerManager for visibility and lock state.</td></tr>
     <tr><th><code>item_id</code></th><td>UUID</td><td>Globally unique identifier for this item. Used for serialization and command references.</td></tr>
-    <tr><th>locked</th><td>bool</td><td>If True, item cannot be selected, moved, or edited. Mirrors the parent layer lock state OR per-item lock.</td></tr>
+    <tr><th>locked</th><td>bool</td><td>The item's own lock. If True, the item cannot be moved or edited until it is unlocked; it can still be selected, and is unlocked where it was locked (1.73, Doug's decision B of 09-25-26; "cannot be selected" until then). <code>SnapScene.is_locked(item)</code> is the one question a move or an edit asks: the item's own flag, the flag of any group above it, OR its layer's lock, read live. Saved in <code>items.json</code> (6.1).</td></tr>
     <tr><th>visible</th><td>bool</td><td>If False, item is not rendered. Mirrors the parent layer visibility OR per-item visibility.</td></tr>
     <tr><th>opacity</th><td>float (0.0-1.0)</td><td>Item-level opacity, multiplied with layer opacity during rendering. Used by non-vector items (Blur, Highlighter, Stamp, Emoji). VectorItem subclasses use <code>fill_opacity</code> and <code>stroke_opacity</code> instead (see Section 4.3).</td></tr>
     <tr><th><code>blend_mode</code></th><td>enum</td><td>Blend mode for compositing (Normal, Multiply, Screen, Overlay, etc.). Default: Normal.</td></tr>

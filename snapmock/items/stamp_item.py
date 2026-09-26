@@ -305,7 +305,7 @@ class StampItem(ShadowMixin, SnapGraphicsItem):
             "colorizable": self._colorizable,
             "flip_horizontal": self._flip_horizontal,
             "flip_vertical": self._flip_vertical,
-            **self._blend_entry(),
+            **self._item_entry(),
         }
         if embed:
             data["svg_data"] = self._svg_data
@@ -336,7 +336,7 @@ class StampItem(ShadowMixin, SnapGraphicsItem):
         )
         item._flip_horizontal = bool(data.get("flip_horizontal", False))
         item._flip_vertical = bool(data.get("flip_vertical", False))
-        item._apply_blend_entry(data)
+        item._apply_item_entry(data)
         item._apply_shadow_data(data)
         svg = data.get("svg_data")
         source = str(data.get("stamp_source", BUILTIN))

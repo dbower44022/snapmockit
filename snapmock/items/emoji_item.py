@@ -221,7 +221,7 @@ class EmojiItem(ShadowMixin, SnapGraphicsItem):
             "skin_tone": self._skin_tone.value,
             "flip_horizontal": self._flip_horizontal,
             "flip_vertical": self._flip_vertical,
-            **self._blend_entry(),
+            **self._item_entry(),
         }
         data.update(self._shadow_data())
         return data
@@ -241,7 +241,7 @@ class EmojiItem(ShadowMixin, SnapGraphicsItem):
         item._emoji_size = _clamp(float(data.get("emoji_size", DEFAULT_EMOJI_SIZE)))
         item._flip_horizontal = bool(data.get("flip_horizontal", False))
         item._flip_vertical = bool(data.get("flip_vertical", False))
-        item._apply_blend_entry(data)
+        item._apply_item_entry(data)
         item._apply_shadow_data(data)
         # Section 7.3: the tone is in the sequence; the property rebuilds it when they differ
         try:

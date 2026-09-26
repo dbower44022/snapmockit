@@ -684,7 +684,7 @@ class CalloutItem(ShadowMixin, RichTextMixin, SnapGraphicsItem):
             "stroke_opacity": self._stroke_opacity,
             "flip_horizontal": self._flip_horizontal,
             "flip_vertical": self._flip_vertical,
-            **self._blend_entry(),
+            **self._item_entry(),
             **self._shadow_data(),
         }
         if self._tail_control_point is not None:
@@ -757,7 +757,7 @@ class CalloutItem(ShadowMixin, RichTextMixin, SnapGraphicsItem):
             item._tail_control_point = QPointF(tcp[0], tcp[1])
         item._flip_horizontal = data.get("flip_horizontal", False)
         item._flip_vertical = data.get("flip_vertical", False)
-        item._apply_blend_entry(data)
+        item._apply_item_entry(data)
         item._fill_opacity = _clamp_unit(data.get("fill_opacity", 1.0))
         item._stroke_opacity = _clamp_unit(data.get("stroke_opacity", 1.0))
         item._apply_shadow_data(data)

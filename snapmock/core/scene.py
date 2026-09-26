@@ -321,6 +321,25 @@ class SnapScene(QGraphicsScene):
         layer = self.layer_manager.layer_by_id(item.layer_id)
         return layer is not None and layer.is_background
 
+    def is_locked(self, item: QGraphicsItem) -> bool:
+        """Whether *item* refuses a move or an edit: its own ``locked`` flag, the flag of
+        any group above it, or its layer's lock (Technical Architecture PRD 3.1.4, "mirrors
+        the parent layer lock state OR per-item lock"; the item lock of 09-25-26, Doug's
+        decision B). The layer is read live, never copied onto the item, so the item's own
+        flag stays its own when the layer is unlocked again (kickoff silence 1).
+        """
+        from snapmock.items.base_item import SnapGraphicsItem
+
+        if not isinstance(item, SnapGraphicsItem):
+            return False
+        node: QGraphicsItem | None = item
+        while isinstance(node, SnapGraphicsItem):
+            if node.locked:
+                return True
+            node = node.parentItem()
+        layer = self.layer_manager.layer_by_id(item.layer_id)
+        return layer is not None and layer.locked
+
     def items_on_layer(self, layer_id: str) -> list[QGraphicsItem]:
         """The top-level annotation items on *layer_id*."""
         return [i for i in self.annotation_items() if i.layer_id == layer_id]

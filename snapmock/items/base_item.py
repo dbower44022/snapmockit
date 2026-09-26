@@ -125,6 +125,9 @@ class SnapGraphicsItem(QGraphicsObject):
 
     @property
     def locked(self) -> bool:
+        """The item's own lock (Technical Architecture PRD 3.1.4; General UI PRD 8, Item
+        Info). The one question a caller asks is ``SnapScene.is_locked``, which reads this
+        flag, every group above the item, and the item's layer together."""
         return self._locked
 
     @locked.setter
@@ -191,12 +194,16 @@ class SnapGraphicsItem(QGraphicsObject):
             self._paint_saved = False
         self._item_blend_active = False
 
-    def _blend_entry(self) -> dict[str, Any]:
-        """The ``blend_mode`` key of a serialized item; absent reads as Normal."""
-        return {"blend_mode": self._blend_mode}
+    def _item_entry(self) -> dict[str, Any]:
+        """The keys every serialized item carries beside its own: ``blend_mode`` (absent
+        reads as Normal) and ``locked`` (absent reads as unlocked; Technical Architecture
+        PRD 6.1, the item lock of 09-25-26). A save, the clipboard, and a clone all go
+        through here, so a locked item stays locked through each."""
+        return {"blend_mode": self._blend_mode, "locked": self._locked}
 
-    def _apply_blend_entry(self, data: dict[str, Any]) -> None:
+    def _apply_item_entry(self, data: dict[str, Any]) -> None:
         self._blend_mode = normalize_item_blend_mode(data.get("blend_mode", DEFAULT_BLEND_MODE))
+        self._locked = bool(data.get("locked", False))
 
     # --- position / transform property shims ---
 
