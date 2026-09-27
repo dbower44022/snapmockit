@@ -459,10 +459,8 @@ def _key(view: SnapView, key: Qt.Key, shift: bool = False) -> None:
     view.keyPressEvent(QKeyEvent(QEvent.Type.KeyPress, key, mods))
 
 
-def test_a_click_selects_a_guide_and_paints_it_in_the_selection_colour(qtbot: QtBot) -> None:
-    """Since 2.67 the selection colour is a halo behind the line, not the line itself."""
-    from snapmock.core.theme_manager import current_theme
-
+def test_a_click_selects_a_guide_and_draws_it_solid_and_wider(qtbot: QtBot) -> None:
+    """Since 2.68 a selected guide draws in its own colour, opaque, three pixels wide."""
     scene, view, tm = _view(qtbot)
     scene.set_guides([Guide(H, 200.0), Guide(V, 300.0)])
     layer = scene.layer_manager.active_layer
@@ -481,14 +479,13 @@ def test_a_click_selects_a_guide_and_paints_it_in_the_selection_colour(qtbot: Qt
     painter = QPainter(image)
     view.drawForeground(painter, QRectF(0, 0, 800, 600))
     painter.end()
-    # The selection is a halo in the selection colour beside the line; the other guide
-    # has none
+    # Selected: the guide's own colour, solid and opaque, three pixels wide; the other
+    # guide stays one pixel at the Preferences opacity
     white = QColor(Qt.GlobalColor.white).rgb()
-    beside = image.pixelColor(50, 202)
-    assert beside.rgb() != white
-    assert beside.blue() > beside.red()  # tinted by the theme's blue selection colour
+    solid = QColor(view.guide_pen.color().rgb()).rgb()
+    assert [image.pixelColor(50, y).rgb() for y in (199, 200, 201)] == [solid] * 3
+    assert image.pixelColor(50, 203).rgb() == white
     assert image.pixelColor(302, 50).rgb() == white
-    assert current_theme().selection_handle.alpha() == 255
     # A click on empty canvas lets the guide go; a click on an item does too
     _press(view, QPointF(400, 100))
     _release(view, QPointF(400, 100))
@@ -728,5 +725,5 @@ def test_a_colour_picked_for_a_selected_guide_shows_at_once(qtbot: QtBot) -> Non
     painter = QPainter(image)
     view.drawForeground(painter, QRectF(0, 0, 800, 600))
     painter.end()
-    on_the_line = {image.pixelColor(50, 200).rgb(), image.pixelColor(50, 199).rgb()}
-    assert QColor("#ffff0000").rgb() in on_the_line
+    red_rgb = QColor("#ffff0000").rgb()
+    assert [image.pixelColor(50, y).rgb() for y in (199, 200, 201)] == [red_rgb] * 3

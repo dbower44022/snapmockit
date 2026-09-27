@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.67</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.68</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.67</dd>
-    <dt>Last Updated</dt>    <dd>09-27-26 00:13</dd>
+    <dt>Document version</dt><dd>2.68</dd>
+    <dt>Last Updated</dt>    <dd>09-27-26 00:26</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.68</td>
+        <td class="nowrap">09-27-26 00:26</td>
+        <td>Doug Bower</td>
+        <td>Doug's retest of 2.67 on 09-27-26: the translucent band around a selected guide read as a fill with dark lines around it, and the line colour should be solid. <strong>6.5</strong>: the band is gone. A selected guide draws in its own colour (or the Preferences colour), opaque, 3 screen pixels wide, in its own line style; an unselected guide stays 1 pixel at its colour's own opacity (the Preferences opacity for the Preferences colour). The selection reads as the guide becoming a bold solid line rather than as a change of hue, since a guide's hue is now its own (2.66). Fixed in <code>core/view.py</code>; the tests read three rows of the chosen colour across a selected guide.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.67</td>
         <td class="nowrap">09-27-26 00:13</td>
@@ -2491,7 +2498,7 @@ are non-printing and are excluded from all exports.</p>
   follows the cursor during the drag. Release to place the guide at the current position.</li>
   <li><strong>Moving guides: </strong>Hover over a guide line until the cursor changes to a
   double-headed resize arrow. Click and drag to reposition. Shift+drag constrains movement
-  to whole pixel values. A click selects the guide, which draws in the selection colour;
+  to whole pixel values. A click selects the guide, which draws as a bold solid line in its own colour (2.68);
   the arrow keys then nudge it by Section 12's rules (one pixel, Shift to the next grid
   line), Delete removes it, and Escape, a click elsewhere, or an item selection lets it go
   (2.64).</li>

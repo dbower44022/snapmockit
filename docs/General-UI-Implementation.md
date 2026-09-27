@@ -1,6 +1,6 @@
 # General UI Implementation Notes
 
-Last Updated: 09-27-26 00:13 · Revision 1.57
+Last Updated: 09-27-26 00:26 · Revision 1.58
 
 Implements the SnapMock General User Interface PRD (version 2.4, `PRDs/SnapMock-General-UI-PRD.html`) in the eight phases defined by `docs/General-UI-Implementation-Kickoff-Prompt.md`. A session pasting that prompt starts at the first phase not marked done in Section 1.
 
@@ -778,7 +778,7 @@ Doug's display, 09-26-26: Delete did nothing. The Delete and Backspace keys are 
 
 Doug's decision A of 09-26-26 (General UI PRD 2.66; Technical Architecture PRD 1.74), over option B, the panel showing the shared Preferences colour and View > Lock Guides. `Guide` gains `color` (an `#AARRGGBB` string or None for the Preferences colour at the Preferences opacity), `style` (`GuideStyle`: solid, dashed, dotted) and `locked`, written to the manifest only when they differ from the defaults; `with_changes` makes the copy a `ChangeGuideCommand` swaps in. The view's `guide_pen_for` draws each guide in its own colour and style, the selection colour when selected. A locked guide is selected by the click, shows the forbidden cursor, and refuses the drag, the arrows, and Delete silently, the item lock's shape. The Property Panel's Guide section (`_build_guide_section`) is shown alone while a guide is selected: Type, Position (X or Y), Color, Style, Locked, each one undoable command; a locked guide's other rows refuse with the 1.3 message the same deferred way as a locked item's, and the checkbox is the way out. The panel learns of the selection through `SnapView.selected_guide_changed` and `PropertyPanel.set_view`, which the main window calls at construction and on every document switch. Tests: three in `tests/test_guides.py` (the manifest keys and the defaults, the pen and the locked guide's refusals with the selection following an undo, the panel's rows through the main window with the refusal and the undos). Display checks owed: click a guide and see the Guide section; change its colour and style; tick Locked and try a drag, an arrow, Delete, and the position field; untick it.
 
-Doug's display, 09-27-26: a colour picked for a selected guide did not show, because the selected guide drew in the selection colour. The selection is now a halo, `guide_halo_pen` (5 screen pixels, the theme's selection colour at alpha 110), drawn behind the guide's own line; `guide_pen_for` no longer substitutes the selection colour. General UI PRD 2.67; test `test_a_colour_picked_for_a_selected_guide_shows_at_once`.
+Doug's display, 09-27-26: a colour picked for a selected guide did not show, because the selected guide drew in the selection colour. The selection is now a halo, `guide_halo_pen` (5 screen pixels, the theme's selection colour at alpha 110), drawn behind the guide's own line; `guide_pen_for` no longer substitutes the selection colour. General UI PRD 2.67; test `test_a_colour_picked_for_a_selected_guide_shows_at_once`. Doug's retest the same night: the band read as a fill with dark edges, and the line should be solid. The halo is gone; a selected guide draws its own colour opaque at `GUIDE_SELECTED_WIDTH` (3 screen pixels) in its own style (General UI PRD 2.68).
 
 **Next required step:** the display checks above and the item lock's, then the v1.5.0 release through `docs/Release-Engineering.md` Section 5.
 
@@ -786,6 +786,7 @@ Doug's display, 09-27-26: a colour picked for a selected guide did not show, bec
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.58 | 09-27-26 00:26 | Claude (Claude Code) | Section 31.1: a selected guide is a bold solid line in its own colour, the halo gone (General UI PRD 2.68). |
 | 1.57 | 09-27-26 00:13 | Claude (Claude Code) | Section 31.1: the selected guide's halo, so its own colour shows (General UI PRD 2.67). |
 | 1.56 | 09-26-26 02:09 | Claude (Claude Code) | Section 31.1: a guide's own colour, line style, and lock, decision A (General UI PRD 2.66; Technical Architecture PRD 1.74). |
 | 1.55 | 09-26-26 01:44 | Claude (Claude Code) | Section 31: Delete on a guide routed through Edit > Delete (General UI PRD 2.65). |
