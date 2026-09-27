@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.66</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.67</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.66</dd>
-    <dt>Last Updated</dt>    <dd>09-26-26 02:09</dd>
+    <dt>Document version</dt><dd>2.67</dd>
+    <dt>Last Updated</dt>    <dd>09-27-26 00:13</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.67</td>
+        <td class="nowrap">09-27-26 00:13</td>
+        <td>Doug Bower</td>
+        <td>Found on Doug's display on 09-27-26: a colour picked for a selected guide did not change it, while the line style and the lock did. The selected guide drew in the selection colour (2.64), which covered its own colour until it was let go. <strong>6.5</strong>: the selection is now a band behind the line, 5 screen pixels wide, in the theme's selection colour at 43% opacity, and the line itself keeps its own colour and style, selected or not; so a colour or style chosen in the Guide section shows at once, and the selection still reads as a change of colour around the guide. Fixed in <code>core/view.py</code> with a test that picks red for a selected guide and finds red on the line.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.66</td>
         <td class="nowrap">09-26-26 02:09</td>

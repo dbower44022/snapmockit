@@ -460,6 +460,7 @@ def _key(view: SnapView, key: Qt.Key, shift: bool = False) -> None:
 
 
 def test_a_click_selects_a_guide_and_paints_it_in_the_selection_colour(qtbot: QtBot) -> None:
+    """Since 2.67 the selection colour is a halo behind the line, not the line itself."""
     from snapmock.core.theme_manager import current_theme
 
     scene, view, tm = _view(qtbot)
@@ -480,11 +481,14 @@ def test_a_click_selects_a_guide_and_paints_it_in_the_selection_colour(qtbot: Qt
     painter = QPainter(image)
     view.drawForeground(painter, QRectF(0, 0, 800, 600))
     painter.end()
-    selected = current_theme().selection_handle.rgb()
-    assert (
-        image.pixelColor(50, 200).rgb() == selected or image.pixelColor(50, 199).rgb() == selected
-    )
-    assert image.pixelColor(300, 50).rgb() != selected  # the other guide keeps its colour
+    # The selection is a halo in the selection colour beside the line; the other guide
+    # has none
+    white = QColor(Qt.GlobalColor.white).rgb()
+    beside = image.pixelColor(50, 202)
+    assert beside.rgb() != white
+    assert beside.blue() > beside.red()  # tinted by the theme's blue selection colour
+    assert image.pixelColor(302, 50).rgb() == white
+    assert current_theme().selection_handle.alpha() == 255
     # A click on empty canvas lets the guide go; a click on an item does too
     _press(view, QPointF(400, 100))
     _release(view, QPointF(400, 100))
@@ -704,3 +708,25 @@ def test_the_property_panel_shows_the_selected_guide_and_edits_it(
     assert not panel._guide_section.isVisible()  # noqa: SLF001
     assert panel._canvas_section.isVisible()  # noqa: SLF001
     scene.command_stack.mark_clean()
+
+
+def test_a_colour_picked_for_a_selected_guide_shows_at_once(qtbot: QtBot) -> None:
+    """Doug's display, 09-27-26: the selection colour covered the guide's own colour
+    until the guide was let go, so a colour change seemed to do nothing."""
+    from snapmock.commands.guide_commands import ChangeGuideCommand
+
+    scene, view, _tm = _view(qtbot)
+    guide = Guide(H, 200.0)
+    scene.set_guides([guide])
+    view.select_guide(guide)
+    red = guide.with_changes(color="#ffff0000")
+    scene.command_stack.push(ChangeGuideCommand(scene, guide, red, "Change Guide Color"))
+    assert view.selected_guide == red
+    assert view.guide_pen_for(red).color() == QColor("#ffff0000")
+    image = QImage(400, 400, QImage.Format.Format_ARGB32)
+    image.fill(Qt.GlobalColor.white)
+    painter = QPainter(image)
+    view.drawForeground(painter, QRectF(0, 0, 800, 600))
+    painter.end()
+    on_the_line = {image.pixelColor(50, 200).rgb(), image.pixelColor(50, 199).rgb()}
+    assert QColor("#ffff0000").rgb() in on_the_line

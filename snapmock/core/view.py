@@ -74,6 +74,10 @@ if TYPE_CHECKING:
 
 _IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"}
 
+# The selected guide's halo: screen pixels wide, and its selection colour's alpha (2.67)
+GUIDE_HALO_WIDTH = 5
+GUIDE_HALO_ALPHA = 110
+
 # Screen pixels within which the pointer is "over" a guide line (General UI PRD 6.5)
 GUIDE_HIT_TOLERANCE = 4
 
@@ -610,14 +614,26 @@ class SnapView(QGraphicsView):
 
     def guide_pen_for(self, guide: Guide) -> QPen:
         """The pen a guide draws with: its own colour, or the Preferences colour at the
-        Preferences opacity; its own line style; the selection colour when selected."""
-        if guide == self._selected_guide:
-            pen = QPen(current_theme().selection_handle, 0)
-        elif guide.color is not None:
+        Preferences opacity, and its own line style, selected or not. The selection is
+        shown by the halo behind the line (:meth:`guide_halo_pen`), so a colour picked
+        for a selected guide shows at once (Doug's display, 09-27-26: the selection
+        colour had covered it until the guide was let go)."""
+        if guide.color is not None:
             pen = QPen(QColor(guide.color), 0)
         else:
             pen = QPen(self.guide_pen)
         pen.setStyle(guide.style.pen_style)
+        return pen
+
+    @staticmethod
+    def guide_halo_pen() -> QPen:
+        """The band drawn behind the selected guide: the theme's selection colour,
+        translucent, GUIDE_HALO_WIDTH screen pixels wide whatever the zoom."""
+        color = QColor(current_theme().selection_handle)
+        color.setAlpha(GUIDE_HALO_ALPHA)
+        pen = QPen(color, GUIDE_HALO_WIDTH)
+        pen.setCosmetic(True)
+        pen.setCapStyle(Qt.PenCapStyle.FlatCap)
         return pen
 
     def _move_guide_drag(self, event: QMouseEvent) -> None:
@@ -662,13 +678,17 @@ class SnapView(QGraphicsView):
         if self._guide_preview is not None and self._guide_preview_inside:
             lines.append((self._guide_preview, None))
         for guide, original in lines:
-            painter.setPen(self.guide_pen_for(original if original is not None else guide))
             if guide.orientation is GuideOrientation.HORIZONTAL:
                 y = guide.position
-                painter.drawLine(QPointF(rect.left(), y), QPointF(rect.right(), y))
+                ends = (QPointF(rect.left(), y), QPointF(rect.right(), y))
             else:
                 x = guide.position
-                painter.drawLine(QPointF(x, rect.top()), QPointF(x, rect.bottom()))
+                ends = (QPointF(x, rect.top()), QPointF(x, rect.bottom()))
+            if original is not None and original == self._selected_guide:
+                painter.setPen(self.guide_halo_pen())
+                painter.drawLine(*ends)
+            painter.setPen(self.guide_pen_for(original if original is not None else guide))
+            painter.drawLine(*ends)
 
     # --- theme and appearance preferences (General UI PRD 11.3, 13.4) ---
 
