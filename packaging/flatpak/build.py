@@ -16,10 +16,10 @@ produces ``dist/Snapmockit-<version>-x86_64.flatpak``, the version read from the
 3. Stage the wheel, the desktop entry, the metainfo, the MIME type, and the icons where
    the manifest's ``dir`` source reads them.
 4. Run ``flatpak-builder`` over ``io.github.dbower44022.snapmockit.yml`` into a local
-   OSTree repository, then ``flatpak build-bundle`` that repository into one file. The
-   bundle names the project's Flatpak repository and carries its public key, so an
-   installation of it updates from there (Flatpak repository decision 5). The local
-   repository is left at ``build/flatpak/repo`` for ``publish.py``.
+   OSTree repository, then ``flatpak build-bundle`` that repository into one file for
+   the smoke test. The local repository is left at ``build/flatpak/repo`` for
+   ``publish.py``, which signs it and builds the bundle a release carries (Flatpak
+   repository decision 6).
 5. Write ``snapmockit.flatpakref`` and ``snapmockit.flatpakrepo`` beside the bundle,
    for the GitHub release and the Flatpak repository's site (``publish.py``).
 
@@ -297,24 +297,19 @@ def bundle(repo: Path, destination: Path, branch: str | None = None) -> Path:
     The branch is named, never left to the command's default of ``master``: the
     manifest builds ``stable``, and a bundle of the wrong branch is either the
     build before this one or no build at all. The bundle names the Flatpak
-    repository and carries its public key, so a fresh installation of it updates
-    from there with signatures checked (Flatpak repository decision 5).
+    repository, so an installation of it knows where updates come from, but carries
+    no key: this build is unsigned, and a bundle that carries the key installs only
+    when its commit is signed. The bundle a release carries is built by
+    ``publish.py`` from the signed Flatpak repository instead (Flatpak repository
+    decision 6); this one is for the smoke test.
     """
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.exists():
         destination.unlink()
     run(
-        [
-            "flatpak",
-            "build-bundle",
-            f"--runtime-repo={_publish.FLATHUB_REPO}",
-            f"--repo-url={_publish.REPOSITORY_ADDRESS}",
-            f"--gpg-keys={_publish.PUBLIC_KEY}",
-            str(repo),
-            str(destination),
-            DESKTOP_ENTRY_ID,
-            branch or str(load_manifest()["branch"]),
-        ]
+        _publish.bundle_command(
+            repo, destination, branch or str(load_manifest()["branch"]), key=None
+        )
     )
     if not destination.exists():
         raise RuntimeError(f"flatpak build-bundle left no file at {destination}")

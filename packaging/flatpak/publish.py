@@ -22,6 +22,11 @@ builds the whole site from nothing (decision 2, option C):
    ``snapmockit.flatpakrepo``, which adds the Flatpak repository alone. They are the
    files ``build.py`` wrote for the GitHub release, copied, so the release and the site
    carry the same bytes.
+5. The bundle the GitHub release carries, built from the site's signed Flatpak
+   repository and checked by installing it into a throwaway Flatpak installation
+   (decision 6): a bundle that carries the key installs only when its commit is
+   signed, and the one it holds is the one the site serves. A rehearsal builds and
+   checks one of its own branch, and attaches nothing.
 
 The signing key is read from the GnuPG home directory the job imported the repository
 secret into; this script never sees the key itself, only its fingerprint.
@@ -34,6 +39,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import os
 import shutil
 import subprocess
 import sys
@@ -150,6 +156,61 @@ def update_command(destination: Path, branch: str, key_id: str, homedir: str | N
     return [*command, str(destination)]
 
 
+def bundle_command(
+    repo: Path, destination: Path, branch: str = STABLE, key: Path | None = PUBLIC_KEY
+) -> list[str]:
+    """``flatpak build-bundle`` of *branch* into one file that names the Flatpak repository.
+
+    With *key*, the bundle also carries the public key, so its installation checks
+    every update's signature (decision 5); such a bundle installs only when its commit
+    is signed, so it is built from the site's signed Flatpak repository (decision 6).
+    """
+    command = [
+        "flatpak",
+        "build-bundle",
+        f"--runtime-repo={FLATHUB_REPO}",
+        f"--repo-url={REPOSITORY_ADDRESS}",
+    ]
+    if key is not None:
+        command.append(f"--gpg-keys={key}")
+    return [*command, str(repo), str(destination), DESKTOP_ENTRY_ID, branch]
+
+
+def check_bundle(bundle: Path, repo: Path, scratch: Path, branch: str = STABLE) -> str:
+    """Install *bundle* into a throwaway Flatpak installation; the commit it installed.
+
+    The install is where a signature is checked, so a bundle whose commit is unsigned,
+    or signed by another key, stops the publish here. ``--no-deps`` leaves the runtime
+    uninstalled: nothing is run, and the commit must be the one the site serves.
+    """
+    env = {**os.environ, "FLATPAK_USER_DIR": str(scratch)}
+    subprocess.run(
+        [
+            "flatpak",
+            "install",
+            "--user",
+            "-y",
+            "--noninteractive",
+            "--no-deps",
+            "--bundle",
+            str(bundle),
+        ],
+        check=True,
+        env=env,
+    )
+    installed = subprocess.run(
+        ["flatpak", "info", "--user", "--show-commit", f"{DESKTOP_ENTRY_ID}//{branch}"],
+        check=True,
+        env=env,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    served = (repo / "refs" / "heads" / app_ref(branch)).read_text("ascii").strip()
+    if installed != served:
+        raise RuntimeError(f"the bundle installed {installed}, the site serves {served}")
+    return installed
+
+
 def run(command: list[str]) -> None:
     print("+ " + " ".join(command), flush=True)
     subprocess.run(command, check=True)
@@ -162,8 +223,15 @@ def publish(
     branch: str = STABLE,
     key_id: str = KEY_FINGERPRINT,
     homedir: str | None = None,
+    bundle: Path | None = None,
 ) -> Path:
-    """Build the whole site at *site* from the build's Flatpak repository; the site."""
+    """Build the whole site at *site* from the build's Flatpak repository; the site.
+
+    With *bundle*, a bundle is built from the site's signed Flatpak repository and
+    checked by installing it (decision 6). A release attaches it to the GitHub
+    release; a rehearsal builds and checks one of its own branch, so the signing is
+    proven on the runner before a release depends on it, and attaches nothing.
+    """
     if branch not in (STABLE, REHEARSAL):
         raise ValueError(f"branch must be {STABLE} or {REHEARSAL}, not {branch!r}")
     if not (source / "refs" / "heads" / app_ref(STABLE)).is_file():
@@ -178,6 +246,17 @@ def publish(
     run(update_command(repo, branch, key_id, homedir))
     for name in REFERENCE_FILES:
         shutil.copy(references / name, site / name)
+    if bundle is not None:
+        bundle.parent.mkdir(parents=True, exist_ok=True)
+        if bundle.exists():
+            bundle.unlink()
+        run(bundle_command(repo, bundle, branch))
+        scratch = bundle.parent / "check-installation"
+        try:
+            commit = check_bundle(bundle, repo, scratch, branch)
+        finally:
+            shutil.rmtree(scratch, ignore_errors=True)
+        print(f"the bundle installs with its signature checked: {commit}")
     return site
 
 
@@ -190,6 +269,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--branch", choices=(STABLE, REHEARSAL), default=STABLE)
     parser.add_argument("--gpg-homedir", default=None, help="the GnuPG home holding the key")
+    parser.add_argument(
+        "--bundle", type=Path, default=None, help="where the signed bundle is built and checked"
+    )
     args = parser.parse_args(argv)
     site = publish(
         args.source.resolve(),
@@ -198,6 +280,7 @@ def main(argv: list[str] | None = None) -> int:
         args.branch,
         KEY_FINGERPRINT,
         args.gpg_homedir,
+        args.bundle.resolve() if args.bundle else None,
     )
     print(f"site built at {site} with {app_ref(args.branch)}")
     return 0

@@ -154,17 +154,18 @@ def test_the_bundle_names_the_manifest_s_branch(
     assert str(destination) in called[0]
 
 
-def test_the_bundle_names_the_flatpak_repository_and_carries_its_key(
+def test_the_build_s_bundle_names_the_flatpak_repository_but_carries_no_key(
     recipe: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Flatpak repository decision 5: a fresh bundle installation updates from there."""
+    """Flatpak repository decision 6: the build is unsigned, and a bundle carrying the key
+    installs only when its commit is signed, so this one, for the smoke test, has none."""
     called: list[list[str]] = []
     monkeypatch.setattr(recipe, "run", lambda command, **kwargs: called.append(command) or "")
     with pytest.raises(RuntimeError):  # the faked command writes no file
         recipe.bundle(tmp_path / "repo", tmp_path / "Snapmockit-1.0.0-x86_64.flatpak")
     assert "--repo-url=https://flatpak.snapmockit.com/repo/" in called[0]
-    assert f"--gpg-keys={FLATPAK / 'snapmockit-flatpak.gpg'}" in called[0]
     assert "--runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo" in called[0]
+    assert not [option for option in called[0] if option.startswith("--gpg-keys")]
 
 
 def test_the_launcher_runs_the_module_with_the_arguments() -> None:
@@ -431,3 +432,51 @@ def test_publish_refuses_a_build_without_the_application(
     with pytest.raises(RuntimeError, match="holds no"):
         publisher.publish(tmp_path / "build", tmp_path / "site", tmp_path / "dist")
     assert not (tmp_path / "site").exists()  # nothing is built on a refusal
+
+
+def test_the_release_s_bundle_carries_the_key_and_names_the_flatpak_repository(
+    publisher: ModuleType, tmp_path: Path
+) -> None:
+    """Decisions 5 and 6: built from the site's signed Flatpak repository."""
+    command = publisher.bundle_command(tmp_path / "site" / "repo", tmp_path / "b.flatpak")
+    assert command[:2] == ["flatpak", "build-bundle"]
+    assert "--repo-url=https://flatpak.snapmockit.com/repo/" in command
+    assert f"--gpg-keys={FLATPAK / 'snapmockit-flatpak.gpg'}" in command
+    assert "--runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo" in command
+    assert command[-4:] == [
+        str(tmp_path / "site" / "repo"),
+        str(tmp_path / "b.flatpak"),
+        DESKTOP_ENTRY_ID,
+        "stable",
+    ]
+
+
+def test_the_signed_bundle_is_checked_by_installing_it_and_matching_the_site(
+    publisher: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The install is where the signature is checked; the commit must be the site's."""
+    repo = tmp_path / "repo"
+    head = repo / "refs" / "heads" / "app" / DESKTOP_ENTRY_ID / "x86_64" / "rehearsal"
+    head.parent.mkdir(parents=True)
+    head.write_text("abc123\n", "ascii")
+    calls: list[tuple[list[str], str]] = []
+
+    class Done:
+        def __init__(self, stdout: str) -> None:
+            self.stdout = stdout
+
+    def fake_run(command: list[str], **kwargs: Any) -> Done:
+        calls.append((command, kwargs["env"]["FLATPAK_USER_DIR"]))
+        return Done("abc123\n" if "info" in command else "")
+
+    monkeypatch.setattr(publisher.subprocess, "run", fake_run)
+    scratch = tmp_path / "check"
+    assert publisher.check_bundle(tmp_path / "b.flatpak", repo, scratch, "rehearsal") == "abc123"
+    install, info = calls
+    assert install[0][:2] == ["flatpak", "install"]
+    assert "--no-deps" in install[0] and "--bundle" in install[0]
+    assert info[0][-1] == f"{DESKTOP_ENTRY_ID}//rehearsal"
+    assert install[1] == info[1] == str(scratch)  # never the machine's own installation
+    head.write_text("other\n", "ascii")
+    with pytest.raises(RuntimeError, match="the site serves"):
+        publisher.check_bundle(tmp_path / "b.flatpak", repo, scratch, "rehearsal")

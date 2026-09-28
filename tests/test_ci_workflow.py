@@ -131,7 +131,11 @@ def test_release_job_attaches_both_linux_forms(workflow: dict[str, object]) -> N
     assert downloads == ["snapmockit-appimage", "snapmockit-flatpak"]
     runs = "\n".join(str(step.get("run", "")) for step in steps)
     assert "dist/Snapmockit-*-x86_64.AppImage" in runs
-    assert "dist/Snapmockit-*-x86_64.flatpak" in runs
+    # The flatpak job's bundle is unsigned; the release's comes from publish-flatpak
+    # (Flatpak repository decision 6).
+    assert "gh release create" in runs
+    create = runs[runs.index("gh release create") :]
+    assert "dist/Snapmockit-*-x86_64.flatpak" not in create.split("--title")[0]
     # The way in to the Flatpak repository (Flatpak repository decision 5).
     assert "dist/snapmockit.flatpakref" in runs
     assert "dist/snapmockit.flatpakrepo" in runs
@@ -255,7 +259,7 @@ def test_the_flatpak_repository_is_published_on_a_release_or_a_rehearsal_on_appr
     )
     assert job["needs"] == ["flatpak", "release"]
     assert job["environment"]["name"] == "github-pages"  # Doug approves each deployment
-    assert job["permissions"] == {"pages": "write", "id-token": "write"}
+    assert job["permissions"] == {"pages": "write", "id-token": "write", "contents": "write"}
     steps = job["steps"]
     downloads = [
         str(step.get("with", {}).get("name", ""))
@@ -277,3 +281,11 @@ def test_the_flatpak_repository_is_published_on_a_release_or_a_rehearsal_on_appr
     uses = [str(step.get("uses", "")) for step in steps]
     assert "actions/upload-pages-artifact@v3" in uses
     assert "actions/deploy-pages@v4" in uses
+    # Decision 6: the bundle is built from the signed Flatpak repository and checked,
+    # and attached to the release only on a tag, after the site is deployed.
+    assert '--bundle "signed/' in runs
+    attach = [step for step in steps if "gh release upload" in str(step.get("run", ""))]
+    assert len(attach) == 1
+    assert attach[0]["if"] == "startsWith(github.ref, 'refs/tags/v')"
+    assert "signed/Snapmockit-*-x86_64.flatpak" in attach[0]["run"]
+    assert steps.index(attach[0]) > uses.index("actions/deploy-pages@v4")

@@ -1,6 +1,6 @@
 # The Flatpak Repository — Implementation Notes
 
-Last Updated: 09-28-26 00:05 · Revision 1.2
+Last Updated: 09-28-26 00:05 · Revision 1.3
 
 A signed Flatpak repository of the project's own, so a Snapmockit user on Linux gets each release through `flatpak update` and through the desktop's own updater instead of downloading a bundle and installing it by hand. It replaces Flatpak decision 2 (`docs/Packaging-Flatpak-Implementation.md`, Section 2.2, option A: a bundle on the GitHub release). The kickoff prompt is `docs/Flatpak-Repository-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -10,7 +10,7 @@ A signed Flatpak repository of the project's own, so a Snapmockit user on Linux 
 |---|---|---|---|
 | 1 | The five decisions, the silences, the corrections to the kickoff prompt, and this document | Done 09-27-26 (Sections 2 to 4) | f91a18e |
 | 2 | The signing key and the address, done with Doug: the key generated, its public half committed, its private half a repository secret and an offline copy; GitHub Pages on, the DNS record at GoDaddy, HTTPS enforced; the `github-pages` environment's gate | Done 09-28-26 but the certificate, which GitHub had not issued by 09-28-26 00:05; closed at the rehearsal, the site's first deployment, on Doug's choice of 09-28-26 00:03 (Section 5) | this commit |
-| 3 | The recipe and the workflow: the Flatpak repository built and signed, the bundle naming its address, the `.flatpakref` and `.flatpakrepo` files, the publishing job, the tests, the Technical Architecture PRD rows; the rehearsal on the live address (silence 5) | Written and proven locally 09-28-26 (Section 6); the rehearsal waits for Doug | this commit |
+| 3 | The recipe and the workflow: the Flatpak repository built and signed, the bundle naming its address, the `.flatpakref` and `.flatpakrepo` files, the publishing job, the tests, the Technical Architecture PRD rows; the rehearsal on the live address (silence 5) | Written and proven locally 09-28-26 (Section 6), with decision 2.6 taken after the first run failed; the rehearsal waits for Doug | caa95d9, this commit |
 | 4 | The application and the documents: Check for Updates inside a Flatpak, the README, the release process, the Flatpak notes' change-log row | Not started | |
 | 5 | The proof: 1.6.0 published into the Flatpak repository and arriving on Doug's machine through the Update Manager (silence 4) | Not started | |
 | Close-out | The phase table done, the revision bumped, the next required step, memory updated | Not started | |
@@ -56,6 +56,18 @@ The bundle stays on the GitHub release, built with `--repo-url=https://flatpak.s
 **The cost:** a bundle installed over a 1.x bundle installation updates without its signatures being checked until one command is run (correction 4.3); and a bundle installation now contacts the Flatpak repository, which a user who wanted no remote must remove. **The 1.x installations are very likely Doug's alone:** the five 1.x bundles have been downloaded three times in all, once each for v1.1.0, v1.4.0, and v1.5.0 (read from the GitHub releases on 09-27-26), matching his own installs.
 
 **Follow-on detail, for Phase 4:** a running copy cannot tell how it was installed (correction 4.4), so Check for Updates in new versions says one thing for both kinds of copy: update with `flatpak update` or the desktop's software updater, and where that finds nothing, the README's one-time move applies.
+
+### 2.6 Where the bundle gets its signature: option A, the publishing job builds it
+
+Found by continuous integration on 09-28-26 (run 36377535497) and reproduced here: **a bundle that carries the public key installs only when its commit is signed** ("GPG verification enabled, but no signatures found"), and the `flatpak` job, which runs on every push, has no key. Presented with the consequential decision template at 00:32 and approved by Doug as recommended.
+
+The publishing job, behind Doug's approval, builds the bundle from the site's signed Flatpak repository, checks it by installing it into a throwaway Flatpak installation (where the signature is checked, and where the commit must be the one the site serves), deploys the site, and then attaches the bundle to the release. The release job attaches the AppImage and the two reference files only. The `flatpak` job's bundle keeps the address, drops the key, and is never attached to anything; it exists for the smoke test.
+
+**The cost:** until Doug approves, the release shows the AppImage and the two reference files and no bundle, which appears a few minutes after; if he never approves, the release carries none. The publishing job gains `contents: write`, as the release job has.
+
+**Follow-on detail, one change from what was presented:** the presentation said a rehearsal builds no bundle. It builds and checks one of its own branch and attaches nothing, so the signing and the check are proven on the runner at the rehearsal, not first at 1.6.0.
+
+The options not taken: B, a signing job on every tag with no approval, which uses the key outside decision 4's gate; C, a bundle with the address and no key, whose every installation would update without signatures checked.
 
 ## 3. Silences decided
 
@@ -130,9 +142,11 @@ Everything here was done on 09-27-26 and 09-28-26, each action in Doug's name ap
 - `publish.py` built a site of 57 MB: the Flatpak repository with the application's commit and the two AppStream branches, a static delta for each, and the two reference files. The delta for a first installation roughly doubles the size, well inside GitHub Pages' limit.
 - **Served over HTTP from this machine**, a `.flatpakref` pointing at it installed the application with the remote `snapmockit-origin`, `gpg-verify=true` and `gpg-verify-summary=true`, and `flatpak run … --version` answered `Snapmockit 1.5.0`.
 - **A site signed by another key was refused**: with the installation's remote pointed at it, `flatpak update` found no application in it ("No such ref … in remote snapmockit-origin") and took nothing, since the summary's signature did not verify.
-- **A bundle built by the new `bundle()`**, installed fresh, created the remote with the address `https://flatpak.snapmockit.com/repo/` and signature checking on.
+- ~~A bundle built by the new `bundle()`, installed fresh, created the remote with the address and signature checking on.~~ **Wrong, corrected 09-28-26:** the remote was created, and the installation then failed, which the test hid by discarding the install's output and never reading back what was installed. Continuous integration found it (decision 2.6). **Proven since, 08:03 to 08:07:** a bundle built by `publish.py` from the signed Flatpak repository installs fresh with signature checking on and holds the site's own commit, so `flatpak update` afterwards has nothing to do; the same check refuses a bundle signed by a key other than the one it carries ("GPG signatures found, but none are in trusted keyring"); and a rehearsal's bundle of the branch `rehearsal` is built and checked the same way.
 
 **Tests**: eleven new in `tests/test_packaging_flatpak.py` (the bundle's address, key, and runtime source; the public key parsed as OpenPGP packets, holding no secret-key packet, a version 4 RSA 4096 key of the recorded fingerprint; both reference files' keys; the key embedded whole on one line; the commit and repository commands' options, no pruning, AppStream kept; the site always built from nothing; the two refusals); `tests/test_ci_workflow.py` gains the publishing job's trigger, gate, needs, downloads, key handling, and deployment, and follows the flatpak job's two artifacts, the release job's two new files, and the rehearsal input.
+
+**After decision 2.6:** `publish.py` gains `bundle_command` (the one place the bundle's options are written; `build.py` calls it without the key) and `check_bundle`, and `--bundle`; the release job no longer attaches the Flatpak bundle; `publish-flatpak` gains `contents: write` and a last step, on a tag only, that attaches the signed bundle after the site is deployed. Three more tests: the build's bundle carries no key, the release's carries it and names the Flatpak repository, and the check installs into a throwaway Flatpak installation and refuses a commit that is not the site's.
 
 **Still owed by Phase 3:** the rehearsal (silence 5), which needs Doug to start two runs and approve each, and which also settles the certificate of Section 5.
 
@@ -144,6 +158,7 @@ The suite at this commit, then the push, then a green run of all jobs. Then the 
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.3 | 09-28-26 08:07 | Claude (Claude Code) | Decision 2.6 (A), after run 36377535497 failed: a bundle carrying the key installs only when its commit is signed, so the publishing job builds the release's bundle from the signed Flatpak repository, checks it by installing it, and attaches it after deploying; the release job attaches the AppImage and the reference files only. Section 6's claim that a fresh bundle installed was wrong and is struck through and corrected. Technical Architecture PRD 1.77. |
 | 1.2 | 09-28-26 00:16 | Claude (Claude Code) | Phase 3 written and proven locally (Section 6): `publish.py` and the two reference-file templates, the bundle naming the Flatpak repository and carrying its key, the `publish-flatpak` job gated by `github-pages`, the rehearsal input, eleven recipe tests and the workflow tests. A site built here was installed from over HTTP with signatures checked, and one signed by another key was refused. Correction 4.5: a `.flatpakrepo` cannot name a runtime source. Technical Architecture PRD 1.76. |
 | 1.1 | 09-28-26 00:05 | Claude (Claude Code) | Phase 2 done but the certificate (Section 5): the signing key generated (fingerprint DF8F 47BD 1CCF 5D53 5B7F 2986 BC56 3E79 934E 4F6C), its public half committed, its private half the repository secret and Doug's password-manager entry, the scratchpad copies shredded; GitHub Pages on with the custom domain `flatpak.snapmockit.com`, the GoDaddy CNAME resolving; the `github-pages` environment gated on Doug with the `v*.*.*` tag rule and a `main` rule for the rehearsal only. Technical Architecture PRD 1.75. |
 | 1.0 | 09-27-26 23:38 | Claude (Claude Code) | Initial notes: the phase table; the five decisions as Doug approved them on 09-27-26 (1 B, 2 C, 3 A, 4 A, 5 A); the five silences, with the first version into the Flatpak repository set at 1.6.0 and the rehearsal on the live address under the branch `rehearsal`; and four corrections to the kickoff prompt, each proven in throwaway Flatpak installations: the server needs no history, the `.flatpakref` is refused over a bundle installation, a new bundle over an old one leaves signature checking off, and the sandbox cannot tell its origin. |

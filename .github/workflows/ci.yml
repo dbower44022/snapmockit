@@ -256,13 +256,16 @@ jobs:
           [ -s release-notes.md ] || echo "Snapmockit ${GITHUB_REF_NAME#v}." > release-notes.md
           cat release-notes.md
 
-      - name: Publish the release with both Linux forms
+      # The Flatpak bundle is not attached here: the one a release carries is built
+      # from the signed Flatpak repository by publish-flatpak, once Doug approves it,
+      # since a bundle that carries the key installs only when its commit is signed
+      # (Flatpak repository decision 6). The flatpak job's own bundle is unsigned.
+      - name: Publish the release with the AppImage and the Flatpak's reference files
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "${GITHUB_REF_NAME}" \
             dist/Snapmockit-*-x86_64.AppImage \
-            dist/Snapmockit-*-x86_64.flatpak \
             dist/snapmockit.flatpakref \
             dist/snapmockit.flatpakrepo \
             --title "Snapmockit ${GITHUB_REF_NAME#v}" \
@@ -327,10 +330,12 @@ jobs:
   # whole site is rebuilt from nothing on every publish (decision 2): the flatpak job's
   # commit, signed with the key in the FLATPAK_GPG_PRIVATE_KEY secret (decision 3), the
   # summary and AppStream data, and the two reference files the release carries. On a
-  # release tag it publishes into stable once the release exists; started by hand with
-  # the rehearsal input "flatpak", into the branch rehearsal (silence 5). Either way
-  # the github-pages environment waits for Doug's approval (decision 4). Like the
-  # index's job, it downloads what another job built and builds nothing itself.
+  # release tag it publishes into stable once the release exists, and attaches to the
+  # release the bundle it builds from the signed Flatpak repository (decision 6);
+  # started by hand with the rehearsal input "flatpak", it publishes into the branch
+  # rehearsal and attaches nothing (silence 5). Either way the github-pages
+  # environment waits for Doug's approval (decision 4). Like the index's job, it
+  # downloads what another job built and compiles nothing itself.
   publish-flatpak:
     name: Flatpak repository
     if: >-
@@ -346,6 +351,7 @@ jobs:
     permissions:
       pages: write
       id-token: write
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -379,12 +385,14 @@ jobs:
           gpg --list-secret-keys --with-colons | grep -q DF8F47BD1CCF5D535B7F2986BC563E79934E4F6C
           echo "GNUPGHOME=$GNUPGHOME" >> "$GITHUB_ENV"
 
-      - name: Build the site
+      # The signed bundle takes the unsigned one's name, which the version is read from.
+      - name: Build the site and the signed bundle
         run: >
           python3 packaging/flatpak/publish.py
           --source build/repo --site site --references dist
           --branch ${{ startsWith(github.ref, 'refs/tags/v') && 'stable' || 'rehearsal' }}
           --gpg-homedir "$GNUPGHOME"
+          --bundle "signed/$(basename dist/Snapmockit-*-x86_64.flatpak)"
 
       - name: Show what is published
         run: ls -l site/ && du -sh site/
@@ -396,3 +404,9 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deploy
         uses: actions/deploy-pages@v4
+
+      - name: Attach the signed bundle to the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${GITHUB_REF_NAME}" signed/Snapmockit-*-x86_64.flatpak
