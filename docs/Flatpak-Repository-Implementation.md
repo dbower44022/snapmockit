@@ -1,6 +1,6 @@
 # The Flatpak Repository — Implementation Notes
 
-Last Updated: 09-27-26 23:38 · Revision 1.0
+Last Updated: 09-28-26 00:05 · Revision 1.1
 
 A signed Flatpak repository of the project's own, so a Snapmockit user on Linux gets each release through `flatpak update` and through the desktop's own updater instead of downloading a bundle and installing it by hand. It replaces Flatpak decision 2 (`docs/Packaging-Flatpak-Implementation.md`, Section 2.2, option A: a bundle on the GitHub release). The kickoff prompt is `docs/Flatpak-Repository-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -8,8 +8,8 @@ A signed Flatpak repository of the project's own, so a Snapmockit user on Linux 
 
 | Phase | Scope | Status | Commits |
 |---|---|---|---|
-| 1 | The five decisions, the silences, the corrections to the kickoff prompt, and this document | Done 09-27-26 (Sections 2 to 4) | this commit |
-| 2 | The signing key and the address, done with Doug: the key generated, its public half committed, its private half a repository secret and an offline copy; GitHub Pages on, the DNS record at GoDaddy, HTTPS enforced; the `github-pages` environment's gate | Not started | |
+| 1 | The five decisions, the silences, the corrections to the kickoff prompt, and this document | Done 09-27-26 (Sections 2 to 4) | f91a18e |
+| 2 | The signing key and the address, done with Doug: the key generated, its public half committed, its private half a repository secret and an offline copy; GitHub Pages on, the DNS record at GoDaddy, HTTPS enforced; the `github-pages` environment's gate | Done 09-28-26 but the certificate, which GitHub had not issued by 09-28-26 00:05; closed at the rehearsal, the site's first deployment, on Doug's choice of 09-28-26 00:03 (Section 5) | this commit |
 | 3 | The recipe and the workflow: the Flatpak repository built and signed, the bundle naming its address, the `.flatpakref` and `.flatpakrepo` files, the publishing job, the tests, the Technical Architecture PRD rows; the rehearsal on the live address (silence 5) | Not started | |
 | 4 | The application and the documents: Check for Updates inside a Flatpak, the README, the release process, the Flatpak notes' change-log row | Not started | |
 | 5 | The proof: 1.6.0 published into the Flatpak repository and arriving on Doug's machine through the Update Manager (silence 4) | Not started | |
@@ -93,12 +93,31 @@ A bundle built with `--repo-url` and `--gpg-keys`, installed fresh, creates the 
 
 Phase 4 step 1 asks this to be found out by reading `/.flatpak-info` in the sandbox. **Read inside Doug's installed 1.5.0:** `/.flatpak-info` carries the application's commit, branch, and path, and no origin or remote; and `~/.local/share/flatpak` is hidden inside the sandbox although the home directory is shared, so the remote's file cannot be read either. Check for Updates therefore gives one message for both kinds of copy (decision 5's follow-on detail).
 
-## 5. The next required step
+## 5. The key and the address (Phase 2)
 
-Phase 2 with Doug: the key's email address, then the key generated and its private half set as a repository secret; GitHub Pages turned on with the GitHub Actions source; the CNAME record at GoDaddy; HTTPS enforced; the `github-pages` environment's reviewer and tag rule. Each is asked of Doug at the moment it happens.
+Everything here was done on 09-27-26 and 09-28-26, each action in Doug's name approved by him at the moment it was taken. **No secret is in this document.**
+
+**The signing key**, generated 09-27-26 at 23:39 into a GnuPG keyring of its own under the scratchpad (never `~/.gnupg`): RSA 4096, signing and certifying, no expiry date, identity `Snapmockit Flatpak repository <flatpak@snapmockit.com>` (Doug chose a new address over his own, 23:39), fingerprint **`DF8F 47BD 1CCF 5D53 5B7F 2986 BC56 3E79 934E 4F6C`**, long key id `BC563E79934E4F6C`.
+
+- **The public half** is `packaging/flatpak/snapmockit-flatpak.gpg` (1,180 bytes, binary, read back as holding no secret key), committed with its Technical Architecture PRD 1.75 row and Section 10 line.
+- **The private half is in exactly two places.** The repository secret `FLATPAK_GPG_PRIVATE_KEY` (set 09-28-26 03:43 UTC, piped from GnuPG to `gh secret set`, never written to a file or printed), and Doug's password manager, in the entry `Snapmockit Flatpak signing key`, which holds the armored private key and GnuPG's revocation certificate as two attachments and the fingerprint in its notes (Doug's choice, 23:45; confirmed "saved" at 23:55). GnuPG writes a revocation certificate with a colon in front of its first armor line, so it cannot be imported by accident, and the colon is removed before it is used (GnuPG's documented convention; the file itself was not inspected for it).
+- **The scratchpad copies were shredded** at 23:55: the two exported files and the whole keyring. No other copy exists on this machine.
+
+**The address.**
+
+- **GitHub Pages turned on** 09-27-26 23:56 with `build_type=workflow` (GitHub Actions as the source), and the custom domain set to `flatpak.snapmockit.com` in the same minute, before the DNS record existed, so no other site could claim it in between.
+- **The DNS record**, added by Doug at GoDaddy by 09-28-26 00:00: `flatpak` CNAME `dbower44022.github.io`. Read back from this machine: `flatpak.snapmockit.com is an alias for dbower44022.github.io`, which resolves to GitHub's addresses (185.199.110.153, 185.199.111.153).
+- **The certificate: not issued by 09-28-26 00:05.** GitHub reports no certificate for the domain, and a check every minute from 00:00 found none. Inferred, not checked: GitHub may issue it only at the site's first deployment. **Doug chose at 00:03 to close Phase 2 with it open** and start Phase 3; the rehearsal's first run is the site's first deployment, and Enforce HTTPS is turned on as soon as the certificate exists.
+
+**The gate (decision 4).** GitHub created the `github-pages` environment itself when GitHub Pages was turned on, with one deployment rule, the branch `main`. At 00:02 Doug became its required reviewer and the tag rule `v*.*.*` was added; read back, the environment carries the reviewer `dbower44022` and the rules `branch main` and `tag v*.*.*`. **The `main` rule is for the rehearsal only** (silence 5) and is removed after it, before 1.6.0.
+
+## 6. The next required step
+
+Phase 3, the recipe and the workflow: the built Flatpak repository kept as an artifact, signed and given its AppStream data by `flatpak build-update-repo`; the bundle built with `--repo-url` and `--gpg-keys`; the `.flatpakref` and `.flatpakrepo` files from one template each; the publishing job gated by `github-pages`; the tests; the Technical Architecture PRD rows. Then the rehearsal of silence 5, which also settles the certificate.
 
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.1 | 09-28-26 00:05 | Claude (Claude Code) | Phase 2 done but the certificate (Section 5): the signing key generated (fingerprint DF8F 47BD 1CCF 5D53 5B7F 2986 BC56 3E79 934E 4F6C), its public half committed, its private half the repository secret and Doug's password-manager entry, the scratchpad copies shredded; GitHub Pages on with the custom domain `flatpak.snapmockit.com`, the GoDaddy CNAME resolving; the `github-pages` environment gated on Doug with the `v*.*.*` tag rule and a `main` rule for the rehearsal only. Technical Architecture PRD 1.75. |
 | 1.0 | 09-27-26 23:38 | Claude (Claude Code) | Initial notes: the phase table; the five decisions as Doug approved them on 09-27-26 (1 B, 2 C, 3 A, 4 A, 5 A); the five silences, with the first version into the Flatpak repository set at 1.6.0 and the rehearsal on the live address under the branch `rehearsal`; and four corrections to the kickoff prompt, each proven in throwaway Flatpak installations: the server needs no history, the `.flatpakref` is refused over a bundle installation, a new bundle over an old one leaves signature checking off, and the sandbox cannot tell its origin. |

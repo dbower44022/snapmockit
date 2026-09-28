@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.74</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.75</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.74</dd>
-    <dt>Last Updated</dt>    <dd>09-26-26 02:09</dd>
+    <dt>Document version</dt><dd>1.75</dd>
+    <dt>Last Updated</dt>    <dd>09-28-26 00:02</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.75</td>
+        <td class="nowrap">09-28-26 00:02</td>
+        <td>Doug Bower</td>
+        <td><strong>Section 10</strong> gains <code>packaging/flatpak/snapmockit-flatpak.gpg</code>, the public half of the key that signs the project's own Flatpak repository (<code>docs/Flatpak-Repository-Implementation.md</code>, decision 3, option A): RSA 4096, no expiry date, identity <code>Snapmockit Flatpak repository &lt;flatpak@snapmockit.com&gt;</code>, fingerprint <code>DF8F 47BD 1CCF 5D53 5B7F 2986 BC56 3E79 934E 4F6C</code>. The private half is the repository secret <code>FLATPAK_GPG_PRIVATE_KEY</code> and an offline copy Doug keeps; neither is in the repository. The Flatpak repository is served by GitHub Pages at <code>https://flatpak.snapmockit.com/</code> (decision 1, option B). <strong>7.3</strong> is unchanged until the publishing job exists (Phase 3).</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.74</td>
         <td class="nowrap">09-26-26 02:09</td>
@@ -2676,6 +2683,7 @@ packaging/
         io.github.dbower44022.snapmockit.yml   # the manifest: the KDE runtime 6.11, the PyQt base application, and the permissions of decision 3
         python3-deps.json     # generated from uv.lock: the four dependency wheels the base application does not carry, by address and digest
         snapmockit.sh         # the Flatpak's command: python3 -m snapmock with the arguments
+        snapmockit-flatpak.gpg # the public key the Flatpak repository is signed with (decision 3); its private half is the FLATPAK_GPG_PRIVATE_KEY repository secret
 scripts/                      # one-off generators run by hand: build_emoji_data.py (the emoji data file)
 tests/
     __init__.py
