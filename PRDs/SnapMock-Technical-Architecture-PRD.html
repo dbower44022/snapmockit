@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.75</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.76</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.75</dd>
-    <dt>Last Updated</dt>    <dd>09-28-26 00:02</dd>
+    <dt>Document version</dt><dd>1.76</dd>
+    <dt>Last Updated</dt>    <dd>09-28-26 00:15</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.76</td>
+        <td class="nowrap">09-28-26 00:15</td>
+        <td>Doug Bower</td>
+        <td><strong>7.3</strong>'s Flatpak is published from the project's own signed Flatpak repository, not only as a bundle (<code>docs/Flatpak-Repository-Implementation.md</code>; it replaces Flatpak decision 2): a static site served by GitHub Pages at <code>https://flatpak.snapmockit.com/</code>, holding the Flatpak repository at <code>repo/</code> and the two reference files <code>snapmockit.flatpakref</code> (installs the application and adds the Flatpak repository) and <code>snapmockit.flatpakrepo</code> (adds the Flatpak repository alone). On each release tag the workflow's <code>publish-flatpak</code> job, after Doug approves the <code>github-pages</code> environment, rebuilds the whole site from nothing with the new version alone, signed with the key of the 1.75 row, and deploys it; <code>flatpak update</code> and the desktop's software updater then find the release. The bundle stays on the release beside the AppImage and now names the Flatpak repository and carries its public key, so a fresh installation of it updates from there. <strong>Section 10</strong> gains <code>packaging/flatpak/publish.py</code> and the two templates <code>snapmockit.flatpakref.in</code> and <code>snapmockit.flatpakrepo.in</code>. Nothing is published until the rehearsal of silence 5 and then release 1.6.0.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.75</td>
         <td class="nowrap">09-28-26 00:02</td>
@@ -2416,7 +2423,7 @@ deferred to a post-1.0 release.</p>
 <h3 id="s7-3">Packaging &amp; Distribution</h3>
 
 <ul>
-  <li>Linux: AppImage (primary), Flatpak (secondary), pip install from PyPI.</li>
+  <li>Linux: AppImage (primary), Flatpak (secondary, published from the project's own signed Flatpak repository at <code>https://flatpak.snapmockit.com/</code> and as a bundle on each release; 1.76), pip install from PyPI.</li>
   <li>Windows: MSI installer (via <code>cx_Freeze</code> or PyInstaller), portable ZIP.</li>
   <li>macOS: DMG with .app bundle (via py2app or PyInstaller).</li>
   <li>All platforms: pip install from source as a fallback.</li>
@@ -2684,6 +2691,9 @@ packaging/
         python3-deps.json     # generated from uv.lock: the four dependency wheels the base application does not carry, by address and digest
         snapmockit.sh         # the Flatpak's command: python3 -m snapmock with the arguments
         snapmockit-flatpak.gpg # the public key the Flatpak repository is signed with (decision 3); its private half is the FLATPAK_GPG_PRIVATE_KEY repository secret
+        publish.py            # the publishing job's command: the whole site of the Flatpak repository built from nothing from the build's repository, signed, with the two reference files
+        snapmockit.flatpakref.in  # the template of the file that installs Snapmockit and adds the Flatpak repository; publish.py fills the address and the key
+        snapmockit.flatpakrepo.in # the template of the file that adds the Flatpak repository alone
 scripts/                      # one-off generators run by hand: build_emoji_data.py (the emoji data file)
 tests/
     __init__.py

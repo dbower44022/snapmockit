@@ -39,9 +39,14 @@ def test_workflow_runs_on_pushes_pull_requests_and_release_tags(
     assert on["push"]["tags"] == ["v*.*.*"]
     assert "pull_request" in on
     assert "workflow_dispatch" in on  # the test index's rehearsal (PyPI decision 2)
+    # Which rehearsal a run started by hand makes: the test index, or the Flatpak
+    # repository under the branch "rehearsal" (Flatpak repository silence 5).
+    rehearsal = on["workflow_dispatch"]["inputs"]["rehearsal"]
+    assert rehearsal["options"] == ["testpypi", "flatpak"]
+    assert rehearsal["default"] == "testpypi"
 
 
-def test_workflow_has_the_seven_jobs_and_their_needs(workflow: dict[str, object]) -> None:
+def test_workflow_has_the_eight_jobs_and_their_needs(workflow: dict[str, object]) -> None:
     jobs = workflow["jobs"]
     assert isinstance(jobs, dict)
     assert set(jobs) == {
@@ -52,6 +57,7 @@ def test_workflow_has_the_seven_jobs_and_their_needs(workflow: dict[str, object]
         "release",
         "publish-pypi",
         "publish-testpypi",
+        "publish-flatpak",
     }
     assert jobs["appimage"]["runs-on"] == "ubuntu-latest"
     assert set(jobs["release"]["needs"]) == {"checks", "build", "appimage", "flatpak"}
@@ -98,10 +104,21 @@ def test_flatpak_job_installs_the_runtime_builds_smokes_and_keeps_the_bundle(
     uploads = [
         step for step in steps if str(step.get("uses", "")).startswith("actions/upload-artifact")
     ]
-    assert len(uploads) == 1
-    assert uploads[0]["with"]["name"] == "snapmockit-flatpak"
-    assert uploads[0]["with"]["path"] == "dist/*.flatpak"
-    assert uploads[0]["with"]["if-no-files-found"] == "error"
+    assert [upload["with"]["name"] for upload in uploads] == [
+        "snapmockit-flatpak",
+        "snapmockit-flatpak-repo",
+    ]
+    # The bundle and the two reference files build.py writes beside it.
+    assert uploads[0]["with"]["path"].split() == [
+        "dist/*.flatpak",
+        "dist/snapmockit.flatpakref",
+        "dist/snapmockit.flatpakrepo",
+    ]
+    # The Flatpak repository the build left behind, as one file for the publishing job.
+    assert "tar -C build/flatpak -cf build/snapmockit-flatpak-repo.tar repo" in runs
+    assert uploads[1]["with"]["path"] == "build/snapmockit-flatpak-repo.tar"
+    for upload in uploads:
+        assert upload["with"]["if-no-files-found"] == "error"
 
 
 def test_release_job_attaches_both_linux_forms(workflow: dict[str, object]) -> None:
@@ -115,6 +132,9 @@ def test_release_job_attaches_both_linux_forms(workflow: dict[str, object]) -> N
     runs = "\n".join(str(step.get("run", "")) for step in steps)
     assert "dist/Snapmockit-*-x86_64.AppImage" in runs
     assert "dist/Snapmockit-*-x86_64.flatpak" in runs
+    # The way in to the Flatpak repository (Flatpak repository decision 5).
+    assert "dist/snapmockit.flatpakref" in runs
+    assert "dist/snapmockit.flatpakrepo" in runs
 
 
 def test_flatpak_smoke_script_installs_runs_and_leaves_no_trace() -> None:
@@ -204,7 +224,9 @@ def test_the_rehearsal_uploads_to_the_test_index_only_when_started_by_hand(
 ) -> None:
     """PyPI decision 2: a job started from the Actions tab, never on a tag."""
     job = workflow["jobs"]["publish-testpypi"]  # type: ignore[index]
-    assert job["if"] == "github.event_name == 'workflow_dispatch'"
+    assert job["if"] == (
+        "github.event_name == 'workflow_dispatch' && inputs.rehearsal == 'testpypi'"
+    )
     assert set(job["needs"]) == {"checks", "build"}
     assert job["environment"] == {
         "name": "testpypi",
@@ -215,3 +237,43 @@ def test_the_rehearsal_uploads_to_the_test_index_only_when_started_by_hand(
     assert downloads == ["snapmockit-dist"]
     assert len(publishes) == 1
     assert publishes[0]["with"] == {"repository-url": "https://test.pypi.org/legacy/"}
+
+
+def test_the_flatpak_repository_is_published_on_a_release_or_a_rehearsal_on_approval(
+    workflow: dict[str, object],
+) -> None:
+    """Flatpak repository decisions 2 and 4, and silence 5."""
+    job = workflow["jobs"]["publish-flatpak"]  # type: ignore[index]
+    condition = job["if"]
+    assert "!cancelled()" in condition  # the release job is skipped on a rehearsal
+    assert "needs.flatpak.result == 'success'" in condition
+    assert (
+        "(startsWith(github.ref, 'refs/tags/v') && needs.release.result == 'success')" in condition
+    )
+    assert "(github.event_name == 'workflow_dispatch' && inputs.rehearsal == 'flatpak')" in (
+        condition
+    )
+    assert job["needs"] == ["flatpak", "release"]
+    assert job["environment"]["name"] == "github-pages"  # Doug approves each deployment
+    assert job["permissions"] == {"pages": "write", "id-token": "write"}
+    steps = job["steps"]
+    downloads = [
+        str(step.get("with", {}).get("name", ""))
+        for step in steps
+        if str(step.get("uses", "")).startswith("actions/download-artifact")
+    ]
+    assert downloads == ["snapmockit-flatpak", "snapmockit-flatpak-repo"]
+    runs = "\n".join(str(step.get("run", "")) for step in steps)
+    assert "flatpak-builder" not in runs  # it builds nothing
+    assert "build.py" not in runs
+    assert "python3 packaging/flatpak/publish.py" in runs
+    assert "'stable' || 'rehearsal'" in runs  # a rehearsal never publishes into stable
+    key_steps = [step for step in steps if "FLATPAK_GPG_PRIVATE_KEY" in str(step.get("env", ""))]
+    assert len(key_steps) == 1
+    assert key_steps[0]["env"] == {
+        "FLATPAK_GPG_PRIVATE_KEY": "${{ secrets.FLATPAK_GPG_PRIVATE_KEY }}"
+    }
+    assert "RUNNER_TEMP" in key_steps[0]["run"]  # a keyring of the run's own
+    uses = [str(step.get("uses", "")) for step in steps]
+    assert "actions/upload-pages-artifact@v3" in uses
+    assert "actions/deploy-pages@v4" in uses

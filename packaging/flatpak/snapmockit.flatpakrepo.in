@@ -1,0 +1,11 @@
+# Adds Snapmockit's Flatpak repository alone (docs/Flatpak-Repository-Implementation.md).
+# Filled by packaging/flatpak/publish.py: @URL@ is the Flatpak repository's address and
+# @GPGKEY@ the public key, base64. A .flatpakrepo cannot name a runtime's source, so the
+# KDE runtime comes from Flathub only where Flathub is already added.
+[Flatpak Repo]
+Title=Snapmockit
+Url=@URL@
+Homepage=https://github.com/dbower44022/snapmockit
+Comment=Snapmockit's own Flatpak repository
+DefaultBranch=stable
+GPGKey=@GPGKEY@

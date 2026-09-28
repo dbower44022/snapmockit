@@ -1,0 +1,13 @@
+# Installs Snapmockit and adds its Flatpak repository in one step
+# (docs/Flatpak-Repository-Implementation.md). Filled by packaging/flatpak/publish.py:
+# @URL@ is the Flatpak repository's address and @GPGKEY@ the public key, base64.
+[Flatpak Ref]
+Title=Snapmockit
+Name=io.github.dbower44022.snapmockit
+Branch=stable
+Url=@URL@
+Homepage=https://github.com/dbower44022/snapmockit
+Comment=Screenshot annotation and user interface mockup tool
+IsRuntime=false
+RuntimeRepo=https://dl.flathub.org/repo/flathub.flatpakrepo
+GPGKey=@GPGKEY@

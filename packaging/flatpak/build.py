@@ -16,7 +16,12 @@ produces ``dist/Snapmockit-<version>-x86_64.flatpak``, the version read from the
 3. Stage the wheel, the desktop entry, the metainfo, the MIME type, and the icons where
    the manifest's ``dir`` source reads them.
 4. Run ``flatpak-builder`` over ``io.github.dbower44022.snapmockit.yml`` into a local
-   OSTree repository, then ``flatpak build-bundle`` that repository into one file.
+   OSTree repository, then ``flatpak build-bundle`` that repository into one file. The
+   bundle names the project's Flatpak repository and carries its public key, so an
+   installation of it updates from there (Flatpak repository decision 5). The local
+   repository is left at ``build/flatpak/repo`` for ``publish.py``.
+5. Write ``snapmockit.flatpakref`` and ``snapmockit.flatpakrepo`` beside the bundle,
+   for the GitHub release and the Flatpak repository's site (``publish.py``).
 
 The dependency modules are generated, not written by hand::
 
@@ -52,6 +57,16 @@ sys.path.insert(0, str(ROOT))
 from snapmock.config.constants import APP_NAME, DESKTOP_ENTRY_ID  # noqa: E402
 
 
+def _load_by_path(name: str, path: Path) -> ModuleType:
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:  # pragma: no cover - the file is in the tree
+        raise RuntimeError(f"cannot load {path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
 def appimage_recipe() -> ModuleType:
     """``packaging/appimage/build.py``, loaded by path under its own name.
 
@@ -59,14 +74,7 @@ def appimage_recipe() -> ModuleType:
     template fill, and the wheel build, so neither form can drift from the other.
     Loading by path keeps the two modules, both named ``build``, apart.
     """
-    path = ROOT / "packaging" / "appimage" / "build.py"
-    spec = importlib.util.spec_from_file_location("snapmock_appimage_build", path)
-    if spec is None or spec.loader is None:  # pragma: no cover - the file is in the tree
-        raise RuntimeError(f"cannot load {path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
+    return _load_by_path("snapmock_appimage_build", ROOT / "packaging" / "appimage" / "build.py")
 
 
 _appimage = appimage_recipe()
@@ -79,6 +87,8 @@ fill_template = _appimage.fill_template
 render_icons = _appimage.render_icons
 run = _appimage.run
 wheel_version = _appimage.wheel_version
+
+_publish = _load_by_path("snapmock_flatpak_publish", HERE / "publish.py")
 
 ARCH = "x86_64"
 MANIFEST = HERE / f"{DESKTOP_ENTRY_ID}.yml"
@@ -286,7 +296,9 @@ def bundle(repo: Path, destination: Path, branch: str | None = None) -> Path:
 
     The branch is named, never left to the command's default of ``master``: the
     manifest builds ``stable``, and a bundle of the wrong branch is either the
-    build before this one or no build at all.
+    build before this one or no build at all. The bundle names the Flatpak
+    repository and carries its public key, so a fresh installation of it updates
+    from there with signatures checked (Flatpak repository decision 5).
     """
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.exists():
@@ -295,7 +307,9 @@ def bundle(repo: Path, destination: Path, branch: str | None = None) -> Path:
         [
             "flatpak",
             "build-bundle",
-            "--runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo",
+            f"--runtime-repo={_publish.FLATHUB_REPO}",
+            f"--repo-url={_publish.REPOSITORY_ADDRESS}",
+            f"--gpg-keys={_publish.PUBLIC_KEY}",
             str(repo),
             str(destination),
             DESKTOP_ENTRY_ID,
@@ -308,13 +322,15 @@ def bundle(repo: Path, destination: Path, branch: str | None = None) -> Path:
 
 
 def build(out_dir: Path, work_dir: Path) -> Path:
-    """The whole recipe; the bundle's path."""
+    """The whole recipe; the bundle's path. The two reference files land beside it."""
     work_dir.mkdir(parents=True, exist_ok=True)
     wheel = build_wheel(work_dir / "wheel")
     version = wheel_version(wheel)
     stage_inputs(work_dir / "stage", wheel, version, dt.date.today())
     repo = build_repository(work_dir)
-    return bundle(repo, out_dir / bundle_name(version))
+    result = bundle(repo, out_dir / bundle_name(version))
+    _publish.write_reference_files(out_dir)
+    return result
 
 
 def digest(path: Path) -> str:
