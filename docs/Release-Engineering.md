@@ -1,6 +1,6 @@
 # Release Engineering Notes
 
-Last Updated: 09-27-26 22:31 · Revision 1.22
+Last Updated: 09-27-26 22:55 · Revision 1.23
 
 The work that turns the finished application into a product: its identity, continuous integration, packaging, and the first release. Every feature row of the nine product requirements documents was built or recorded as a departure by 09-14-26 (`docs/Freehand-Remainder-Implementation.md`, Section 8.1, names the last of them); this document holds what follows, in the order Doug set on 09-14-26: the identity, then continuous integration, then packaging, then an end-to-end pass on real work, then the two platform backends when their machines exist.
 
@@ -64,6 +64,7 @@ Everything below is ready to start and blocked only on the thing named. Nothing 
 | **The Windows package**: the MSI or the portable archive of Technical Architecture PRD 7.3 | **A Windows personal computer Doug has access to.** Doug's decision of 09-21-26: this waits until he has one | No kickoff prompt yet; it is written when the machine is in sight, since what it can assume depends on the machine |
 | **The Windows capture backend**: `snapmock/capture/windows.py`, written and never run on Windows | The same machine | `docs/Windows-Backend-Kickoff-Prompt.md` is written and ready |
 | **macOS**: the bundle of 7.3 and the backend of step 5 | A Mac, which does not exist here | `docs/Windows-macOS-Backends-Kickoff-Prompt.md` covers the backend |
+| **The Flatpak repository**: a signed repository of the project's own, so a Flatpak user updates through `flatpak update` and the desktop's updater instead of a bundle by hand (Doug's option 1 of 09-27-26; it replaces Flatpak decision 2) | Nothing but a session to run it | `docs/Flatpak-Repository-Kickoff-Prompt.md` is written and ready |
 
 The Windows package and the Windows capture backend are one sitting's work on one machine and should be taken together.
 
@@ -71,6 +72,7 @@ The Windows package and the Windows capture backend are one sitting's work on on
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.23 | 09-27-26 22:55 | Claude (Claude Code) | Section 6 gains the Flatpak repository, ready: Doug asked on 09-27-26, after installing the 1.5.0 bundle by hand, for a way to upgrade without it, and chose a signed repository of the project's own over Check for Updates installing the bundle, the AppImage's self-update, and Flathub. Its kickoff is `docs/Flatpak-Repository-Kickoff-Prompt.md` 1.0. |
 | 1.22 | 09-27-26 22:31 | Claude (Claude Code) | **v1.5.0 released 09-27-26**: the item lock (a locked item is selected and unlocked where it was locked, and nothing moves or edits it until then), guides that are selected, nudged, deleted, and carry their own colour, line style, and lock, paste at the pointer, Escape's ladder, and the opaque colour pick reach users. Release commit and tag `v1.5.0` on `b4e6bca`; the suite at that commit from a clean worktree passed 1940 with 15 skipped; the wheel and source distribution passed `twine check --strict`; continuous integration green in all five jobs. The GitHub release (run 36299491728) carries `Snapmockit-1.5.0-x86_64.AppImage` (128,391,672 bytes) and `Snapmockit-1.5.0-x86_64.flatpak` (26,695,032 bytes). The index took `snapmockit-1.5.0-py3-none-any.whl` (795,384 bytes) and `snapmockit-1.5.0.tar.gz` (924,917 bytes) at 22:29 on Doug's approval, byte for byte the sizes of the local build, each attested to `dbower44022/snapmockit`, `ci.yml`, environment `pypi`; the index lists 1.5.0 as latest. Doug's first "approved" in the session did not reach GitHub; the job waited until he approved on the run's page. Display checks of the item lock and the guides were passed by Doug on builds of the commits before the tag; none are owed on the released files beyond Section 6's standing ones. |
 | 1.21 | 09-25-26 10:34 | Claude (Claude Code) | **v1.4.0 released 09-25-26**: the Border tool and the whole-document copy reach users. Tag `v1.4.0` on `32d78f6`, one commit after the release commit `72768cd` (a git-ignored reference file failed the first run); the GitHub release carries both Linux files and the index took the wheel and source distribution on Doug's approval at 10:11. Doug installed the Flatpak bundle over 1.1.0. Section 6's owed display checks now name 1.4.0. |
 | 1.20 | 09-21-26 00:39 | Claude (Claude Code) | Section 6 added: what is waiting and on what. The Windows package and the Windows capture backend wait on a Windows personal computer Doug has access to (his decision of 09-21-26); macOS waits on a Mac; and v1.3.0's two display checks wait only on ten minutes of Doug's time. |
