@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**Operating mode:** DETAIL is this repository's project default (Doug's decision, 10-20-26). The modes are defined in `~/.claude/CLAUDE.md`.
+
 ## Project
 
 Snapmockit (named SnapMock until 09-14-26; the import package is still `snapmock`) — an open-source multi-platform screenshot annotation & UI mockup tool built with Python and PyQt6.
