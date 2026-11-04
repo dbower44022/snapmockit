@@ -1,6 +1,6 @@
 # Packaging: the Linux AppImage — Implementation Notes
 
-Last Updated: 09-17-26 13:25 · Revision 2.4
+Last Updated: 11-04-26 12:46 · Revision 2.5
 
 Implements step 3 of the release-engineering list (`docs/Release-Engineering.md`, Section 1) for Linux: the AppImage that Technical Architecture PRD 7.3 names as the primary Linux distribution, built by a recipe in the repository, proven on this machine, built in continuous integration on every push, and published as a GitHub release on a tag, together with the migration of the two on-disk names the rename of 09-14-26 left as they were. The kickoff prompt is `docs/Packaging-AppImage-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -85,7 +85,7 @@ produces `dist/Snapmockit-<version>-x86_64.AppImage`. The steps, in `build.py`:
 4. The AppDir is completed with what `python-appimage` does not carry: `usr/share/metainfo/io.github.dbower44022.snapmockit.appdata.xml` with `@VERSION@` and `@DATE@` filled (the `.appdata.xml` name is the one `appimagetool` looks for and validates; AppStream accepts it beside `.metainfo.xml`), `usr/share/mime/packages/io.github.dbower44022.snapmockit.xml`, the hicolor icon set at the eight sizes plus the scalable SVG, and `usr/bin/snapmockit`, a symlink to `AppRun`, so the desktop entry's `Exec=snapmockit %F` names a file that exists.
 5. `appimagetool` (fetched once by `python-appimage` into `~/.cache/python-appimage/bin`) seals the AppDir; it validates the AppStream metainfo and embeds the type 2 runtime.
 
-**The base image is pinned:** `python3.12.14-cp312-cp312-manylinux_2_28_x86_64.AppImage` from the `python3.12` release of `niess/python-appimage`, downloaded once into `build/appimage/` by its direct address. `python-appimage`'s own lookup reads GitHub's API unauthenticated on every build, which a shared runner is rate limited against; the pin avoids the call and makes the Python version part of the recipe.
+**The base image is pinned:** `python3.12.15-cp312-cp312-manylinux_2_28_x86_64.AppImage` (3.12.14 until 11-04-26, see the 2.5 change-log row) from the `python3.12` release of `niess/python-appimage`, downloaded once into `build/appimage/` by its direct address. `python-appimage`'s own lookup reads GitHub's API unauthenticated on every build, which a shared runner is rate limited against; the pin avoids the call and makes the Python version part of the recipe.
 
 **The build, measured here 09-14-26:** about one minute with the base image already downloaded (the pip installs from PyPI are most of it); the file is 122.3 MB (128,264,696 bytes), below the decision's 150 to 200 MB estimate because squashfs compresses the 435 MB environment well. `--version` answers in 0.40 s wall from the sealed file, mount included. `--appimage-extract-and-run --version` answers the same without FUSE. The AppDir's bundled Python builds the main window on the offscreen platform (`from snapmock.main_window import MainWindow`, then `MainWindow()`), the smoke test Phase 3 runs on the runner.
 
@@ -179,6 +179,7 @@ Version `0.9.0` and build date `2026-09-15` in commit 080e2f3, its suite green f
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 2.5 | 11-04-26 12:46 | Claude (Claude Code) | The pin moved to `python3.12.15-cp312-cp312-manylinux_2_28_x86_64.AppImage` in `packaging/appimage/build.py`. `niess/python-appimage` replaced 3.12.14 with 3.12.15 in its `python3.12` release on 10-04-26 and removed the old file, so the AppImage job failed with HTTP 404 (run 39486093190, 10-20-26). Doug chose to move the pin over keeping a copy of the base image in this repository (11-04-26); the cost is that the next patch release upstream breaks the build the same way. |
 | 2.4 | 09-17-26 13:25 | Claude (Claude Code) | Section 11: the next step it named, the end-to-end pass and 1.0.0, marked done. |
 | 2.3 | 09-17-26 11:56 | Claude (Claude Code) | Section 8.4: Capture Region confirmed by Doug; the Wayland capture passed and no display check is owed; Phase 2's row and Section 11 say so; the 2.2 row's time corrected to 11:54. |
 | 2.2 | 09-17-26 11:54 | Claude (Claude Code) | Section 8.4: the Wayland portal capture run by Doug, recorded from the files it left; Capture Region's evidence put to Doug. |

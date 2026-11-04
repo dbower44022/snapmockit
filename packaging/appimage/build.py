@@ -57,7 +57,7 @@ BUNDLED_ICON_SIZE = 256
 """The one PNG handed to python-appimage, and the AppImage's own top-level icon."""
 
 PYTHON_VERSION = "3.12"
-BASE_IMAGE = "python3.12.14-cp312-cp312-manylinux_2_28_x86_64.AppImage"
+BASE_IMAGE = "python3.12.15-cp312-cp312-manylinux_2_28_x86_64.AppImage"
 """The relocatable CPython the AppImage is built on, pinned so a build is reproducible
 and never reads GitHub's API (python-appimage's own lookup does, and a shared runner
 is rate limited). Its glibc floor is manylinux_2_28's, 2.28."""
