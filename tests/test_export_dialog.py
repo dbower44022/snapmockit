@@ -315,3 +315,50 @@ def test_preview_region_follows_the_radio(dialog: ExportDialog) -> None:
     assert pixmap is not None
     assert pixmap.width() == export_dialog_module.PREVIEW_SIZE
     assert pixmap.height() == pytest.approx(export_dialog_module.PREVIEW_SIZE * 3 / 4, abs=1)
+
+
+def test_export_quick_puts_image_path_and_file_on_the_clipboard(
+    main_window: MainWindow, tmp_path: Path
+) -> None:
+    """General UI PRD 3.1, version 2.69: one clipboard entry, three formats."""
+    from PyQt6.QtWidgets import QApplication
+
+    AppSettings().set_export_settings("png", ExportSettings().to_dict())
+    AppSettings().set_export_last_directory("png", tmp_path)
+    main_window._file_export_quick_png()  # noqa: SLF001
+    out = (tmp_path / "Untitled.png").resolve()
+    assert out.exists()
+    clipboard = QApplication.clipboard()
+    assert clipboard is not None
+    mime = clipboard.mimeData()
+    assert mime is not None
+    assert mime.text() == str(out)
+    assert [url.toLocalFile() for url in mime.urls()] == [str(out)]
+    assert mime.hasImage()
+    assert main_window._status_bar._hint_label.text().endswith(str(out))  # noqa: SLF001
+
+
+def test_export_quick_never_overwrites(main_window: MainWindow, tmp_path: Path) -> None:
+    AppSettings().set_export_settings("png", ExportSettings().to_dict())
+    AppSettings().set_export_last_directory("png", tmp_path)
+    main_window._file_export_quick_png()  # noqa: SLF001
+    main_window._file_export_quick_png()  # noqa: SLF001
+    names = sorted(p.name for p in tmp_path.iterdir() if p.suffix == ".png")
+    assert len(names) == 2
+    assert names[0].startswith("Untitled ") or names[1].startswith("Untitled ")
+    assert "Untitled.png" in names
+
+
+def test_unused_export_path_adds_time_then_counter(tmp_path: Path) -> None:
+    from datetime import datetime
+
+    from snapmock.main_window import unused_export_path
+
+    now = datetime(2026, 10, 30, 1, 46, 12)
+    target = tmp_path / "Capture.png"
+    assert unused_export_path(target, now) == target
+    target.touch()
+    stamped = tmp_path / "Capture 2026-10-30 01-46-12.png"
+    assert unused_export_path(target, now) == stamped
+    stamped.touch()
+    assert unused_export_path(target, now) == tmp_path / "Capture 2026-10-30 01-46-12 (2).png"

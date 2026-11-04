@@ -211,6 +211,47 @@ def _as_color(value: object) -> QColor:
 log = logging.getLogger("snapmock")
 
 
+def unused_export_path(path: Path, now: datetime | None = None) -> Path:
+    """*path* if free, else with the time added, then a counter (General UI PRD 3.1).
+
+    Export Quick never overwrites, so a path pasted elsewhere keeps naming its image.
+    """
+    if not path.exists():
+        return path
+    from datetime import datetime
+
+    stamp = (now or datetime.now()).strftime("%Y-%m-%d %H-%M-%S")
+    stem = f"{path.stem} {stamp}"
+    candidate = path.with_name(f"{stem}{path.suffix}")
+    counter = 2
+    while candidate.exists():
+        candidate = path.with_name(f"{stem} ({counter}){path.suffix}")
+        counter += 1
+    return candidate
+
+
+def copy_export_to_clipboard(path: Path) -> None:
+    """Put the exported file on the clipboard as image, path text, and file reference (3.1).
+
+    A terminal paste takes the plain-text path; an image editor takes the image; a file
+    manager takes the file reference.
+    """
+    from PyQt6.QtCore import QMimeData
+    from PyQt6.QtGui import QImage
+
+    clipboard = QApplication.clipboard()
+    if clipboard is None:
+        return
+    absolute = path.resolve()
+    mime = QMimeData()
+    image = QImage(str(absolute))
+    if not image.isNull():
+        mime.setImageData(image)
+    mime.setUrls([QUrl.fromLocalFile(str(absolute))])
+    mime.setText(str(absolute))
+    clipboard.setMimeData(mime)
+
+
 def _megabytes(path: Path) -> str:
     """A file's size for a sentence the user reads, in whole megabytes."""
     try:
@@ -2283,13 +2324,16 @@ class MainWindow(QMainWindow):
         else:
             directory = self._settings.export_last_directory(ExportFormat.PNG.value) or Path.home()
             path = directory / f"{doc.display_name}.png"
+        path = unused_export_path(path)
         region = resolve_region(
             self._scene,
             settings.region,
             selection=selection_rect(self._selection_manager.items),
             visible=self._visible_scene_rect(),
         )
-        self._write_export(path, settings, region)
+        if self._write_export(path, settings, region):
+            copy_export_to_clipboard(path)
+            self._status_bar.set_hint(f"Exported and copied path: {path}")
 
     def _file_print(self) -> None:
         """System print dialog with the flattened canvas, fitted to the page (PRD 3.1)."""
