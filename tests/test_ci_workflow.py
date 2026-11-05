@@ -39,10 +39,11 @@ def test_workflow_runs_on_pushes_pull_requests_and_release_tags(
     assert on["push"]["tags"] == ["v*.*.*"]
     assert "pull_request" in on
     assert "workflow_dispatch" in on  # the test index's rehearsal (PyPI decision 2)
-    # Which rehearsal a run started by hand makes: the test index, or the Flatpak
-    # repository under the branch "rehearsal" (Flatpak repository silence 5).
+    # A run started by hand rehearses the test index only. The Flatpak repository's
+    # rehearsal is done, and its trigger was removed so no run by hand can replace the
+    # live site (Flatpak repository silence 5).
     rehearsal = on["workflow_dispatch"]["inputs"]["rehearsal"]
-    assert rehearsal["options"] == ["testpypi", "flatpak"]
+    assert rehearsal["options"] == ["testpypi"]
     assert rehearsal["default"] == "testpypi"
 
 
@@ -243,20 +244,18 @@ def test_the_rehearsal_uploads_to_the_test_index_only_when_started_by_hand(
     assert publishes[0]["with"] == {"repository-url": "https://test.pypi.org/legacy/"}
 
 
-def test_the_flatpak_repository_is_published_on_a_release_or_a_rehearsal_on_approval(
+def test_the_flatpak_repository_is_published_on_a_release_tag_only_on_approval(
     workflow: dict[str, object],
 ) -> None:
     """Flatpak repository decisions 2 and 4, and silence 5."""
     job = workflow["jobs"]["publish-flatpak"]  # type: ignore[index]
     condition = job["if"]
-    assert "!cancelled()" in condition  # the release job is skipped on a rehearsal
     assert "needs.flatpak.result == 'success'" in condition
-    assert (
-        "(startsWith(github.ref, 'refs/tags/v') && needs.release.result == 'success')" in condition
-    )
-    assert "(github.event_name == 'workflow_dispatch' && inputs.rehearsal == 'flatpak')" in (
-        condition
-    )
+    assert "startsWith(github.ref, 'refs/tags/v')" in condition
+    assert "needs.release.result == 'success'" in condition
+    # Silence 5: a run started by hand would replace the whole site, so none reaches it.
+    assert "workflow_dispatch" not in condition
+    assert "rehearsal" not in condition
     assert job["needs"] == ["flatpak", "release"]
     assert job["environment"]["name"] == "github-pages"  # Doug approves each deployment
     assert job["permissions"] == {"pages": "write", "id-token": "write", "contents": "write"}
@@ -271,7 +270,8 @@ def test_the_flatpak_repository_is_published_on_a_release_or_a_rehearsal_on_appr
     assert "flatpak-builder" not in runs  # it builds nothing
     assert "build.py" not in runs
     assert "python3 packaging/flatpak/publish.py" in runs
-    assert "'stable' || 'rehearsal'" in runs  # a rehearsal never publishes into stable
+    assert "--branch stable" in runs
+    assert "rehearsal" not in runs
     key_steps = [step for step in steps if "FLATPAK_GPG_PRIVATE_KEY" in str(step.get("env", ""))]
     assert len(key_steps) == 1
     assert key_steps[0]["env"] == {
@@ -282,10 +282,9 @@ def test_the_flatpak_repository_is_published_on_a_release_or_a_rehearsal_on_appr
     assert "actions/upload-pages-artifact@v3" in uses
     assert "actions/deploy-pages@v4" in uses
     # Decision 6: the bundle is built from the signed Flatpak repository and checked,
-    # and attached to the release only on a tag, after the site is deployed.
+    # and attached to the release after the site is deployed.
     assert '--bundle "signed/' in runs
     attach = [step for step in steps if "gh release upload" in str(step.get("run", ""))]
     assert len(attach) == 1
-    assert attach[0]["if"] == "startsWith(github.ref, 'refs/tags/v')"
     assert "signed/Snapmockit-*-x86_64.flatpak" in attach[0]["run"]
     assert steps.index(attach[0]) > uses.index("actions/deploy-pages@v4")

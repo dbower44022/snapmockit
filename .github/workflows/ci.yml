@@ -12,8 +12,10 @@
 # approves the github-pages environment's run, the project's own Flatpak repository
 # rebuilt with the new version and deployed to https://flatpak.snapmockit.com/
 # (docs/Flatpak-Repository-Implementation.md, decisions 2 and 4); and, started by hand,
-# a rehearsal of either: the upload to the test index (PyPI decision 2), or the Flatpak
-# repository published under the branch "rehearsal" (Flatpak repository silence 5).
+# a rehearsal of the upload to the test index (PyPI decision 2). The Flatpak repository's
+# rehearsal ran on 11-04-26 and 11-05-26, and its manual trigger is gone (Flatpak
+# repository silence 5): a run started by hand would replace the whole site and take
+# stable away from every user.
 name: CI
 
 on:
@@ -26,7 +28,7 @@ on:
       rehearsal:
         description: What the run started by hand rehearses
         type: choice
-        options: [testpypi, flatpak]
+        options: [testpypi]
         default: testpypi
 
 concurrency:
@@ -331,17 +333,15 @@ jobs:
   # commit, signed with the key in the FLATPAK_GPG_PRIVATE_KEY secret (decision 3), the
   # summary and AppStream data, and the two reference files the release carries. On a
   # release tag it publishes into stable once the release exists, and attaches to the
-  # release the bundle it builds from the signed Flatpak repository (decision 6);
-  # started by hand with the rehearsal input "flatpak", it publishes into the branch
-  # rehearsal and attaches nothing (silence 5). Either way the github-pages
-  # environment waits for Doug's approval (decision 4). Like the index's job, it
+  # release the bundle it builds from the signed Flatpak repository (decision 6). It
+  # runs on a release tag only (silence 5), and the github-pages environment waits for
+  # Doug's approval (decision 4). Like the index's job, it
   # downloads what another job built and compiles nothing itself.
   publish-flatpak:
     name: Flatpak repository
     if: >-
       !cancelled() && needs.flatpak.result == 'success' &&
-      ((startsWith(github.ref, 'refs/tags/v') && needs.release.result == 'success') ||
-      (github.event_name == 'workflow_dispatch' && inputs.rehearsal == 'flatpak'))
+      startsWith(github.ref, 'refs/tags/v') && needs.release.result == 'success'
     needs: [flatpak, release]
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -390,7 +390,7 @@ jobs:
         run: >
           python3 packaging/flatpak/publish.py
           --source build/repo --site site --references dist
-          --branch ${{ startsWith(github.ref, 'refs/tags/v') && 'stable' || 'rehearsal' }}
+          --branch stable
           --gpg-homedir "$GNUPGHOME"
           --bundle "signed/$(basename dist/Snapmockit-*-x86_64.flatpak)"
 
@@ -406,7 +406,6 @@ jobs:
         uses: actions/deploy-pages@v4
 
       - name: Attach the signed bundle to the release
-        if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "${GITHUB_REF_NAME}" signed/Snapmockit-*-x86_64.flatpak
