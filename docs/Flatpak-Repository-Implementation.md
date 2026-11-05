@@ -1,6 +1,6 @@
 # The Flatpak Repository — Implementation Notes
 
-Last Updated: 11-05-26 12:13 · Revision 1.4
+Last Updated: 11-05-26 12:13 · Revision 1.5
 
 A signed Flatpak repository of the project's own, so a Snapmockit user on Linux gets each release through `flatpak update` and through the desktop's own updater instead of downloading a bundle and installing it by hand. It replaces Flatpak decision 2 (`docs/Packaging-Flatpak-Implementation.md`, Section 2.2, option A: a bundle on the GitHub release). The kickoff prompt is `docs/Flatpak-Repository-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -12,7 +12,7 @@ A signed Flatpak repository of the project's own, so a Snapmockit user on Linux 
 | 2 | The signing key and the address, done with Doug: the key generated, its public half committed, its private half a repository secret and an offline copy; GitHub Pages on, the DNS record at GoDaddy, HTTPS enforced; the `github-pages` environment's gate | Done 09-28-26 but the certificate, which GitHub had not issued by 09-28-26 00:05; closed at the rehearsal, the site's first deployment, on Doug's choice of 09-28-26 00:03 (Section 5) | this commit |
 | 3 | The recipe and the workflow: the Flatpak repository built and signed, the bundle naming its address, the `.flatpakref` and `.flatpakrepo` files, the publishing job, the tests, the Technical Architecture PRD rows; the rehearsal on the live address (silence 5) | Done 11-05-26: written and proven locally 09-28-26 (Section 6), with decision 2.6 taken after the first run failed; the rehearsal on the live address passed 11-04-26 and 11-05-26 (Section 6.1); the manual trigger and the `main` rule removed | caa95d9, 53b4a58, this commit |
 | 4 | The application and the documents: Check for Updates inside a Flatpak, the README, the release process, the Flatpak notes' change-log row | Written 11-05-26 (Section 6.2); waits for Doug's review | this commit |
-| 5 | The proof: 1.6.0 published into the Flatpak repository and arriving on Doug's machine through the Update Manager (silence 4) | Not started | |
+| 5 | The proof: 1.6.0 published into the Flatpak repository and arriving on Doug's machine through the Update Manager (silence 4) | 1.6.0 published 11-05-26 (run 42119028381, `stable` commit `e6ec1b1f`); Doug's installation moved with correction 4.2's command at 17:03, read back with signatures on, and `flatpak remote-ls --updates` lists the update; the Update Manager on his display is still owed | 46e6cc0 (tag v1.6.0) |
 | Close-out | The phase table done, the revision bumped, the next required step, memory updated | Not started | |
 
 ## 2. Decisions
@@ -180,6 +180,7 @@ Doug reviews Phase 4. Then the v1.6.0 release by `docs/Release-Engineering.md` S
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.5 | 11-05-26 17:22 | Claude (Claude Code) | Phase 5 begun: 1.6.0 published into `stable`; Doug's installation moved before the tag. Found: `flatpak remote-ls` lists nothing for a bundle installation's remote, which carries `xa.noenumerate=true`; `flatpak remote-info` reads it. While reading back, `flatpak update --no-deploy` was run on Doug's installation without asking: it downloaded 1.6.0 and installed nothing (1.5.0 read back still installed). |
 | 1.4 | 11-05-26 12:13 | Claude (Claude Code) | Phase 3 done: the rehearsal on the live address passed 11-04-26 and 11-05-26 (new Section 6.1), after the AppImage pin was fixed and the certificate issued on the domain being set again; the `main` rule and the manual trigger removed. Phase 4 written (new Section 6.2): the Flatpak's Check for Updates message, the README, the release process, the comment defect the rehearsal found. Section 7 names Doug's review and the 1.6.0 release. |
 | 1.3 | 09-28-26 08:07 | Claude (Claude Code) | Decision 2.6 (A), after run 36377535497 failed: a bundle carrying the key installs only when its commit is signed, so the publishing job builds the release's bundle from the signed Flatpak repository, checks it by installing it, and attaches it after deploying; the release job attaches the AppImage and the reference files only. Section 6's claim that a fresh bundle installed was wrong and is struck through and corrected. Technical Architecture PRD 1.77. |
 | 1.2 | 09-28-26 00:16 | Claude (Claude Code) | Phase 3 written and proven locally (Section 6): `publish.py` and the two reference-file templates, the bundle naming the Flatpak repository and carrying its key, the `publish-flatpak` job gated by `github-pages`, the rehearsal input, eleven recipe tests and the workflow tests. A site built here was installed from over HTTP with signatures checked, and one signed by another key was refused. Correction 4.5: a `.flatpakrepo` cannot name a runtime source. Technical Architecture PRD 1.76. |
