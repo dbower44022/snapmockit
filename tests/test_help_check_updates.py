@@ -7,6 +7,7 @@ checker's ``send`` is replaced so nothing reaches the network.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 from PyQt6.QtCore import QUrl
@@ -227,10 +228,10 @@ def test_the_checker_belongs_to_the_window_and_the_request_is_the_endpoint(
     assert QUrl(latest_release_url()).host() == "api.github.com"
 
 
-def test_inside_a_flatpak_a_newer_release_names_the_bundle(
+def test_inside_a_flatpak_a_newer_release_names_flatpak_update(
     main_window: MainWindow, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Flatpak decision 5: the release page carries one file per form."""
+    """Flatpak repository decision 5: updates come from the project's Flatpak repository."""
     from snapmock import main_window as module
 
     monkeypatch.setattr(module, "in_flatpak", lambda: True)
@@ -238,8 +239,8 @@ def test_inside_a_flatpak_a_newer_release_names_the_bundle(
     text = main_window.update_message_text(newer)
     assert text.startswith("Snapmockit v1.1.0 is available. You are running Snapmockit 1.0.0.")
     assert text.endswith(
-        "Download the new .flatpak bundle from the release page and install it with "
-        "flatpak install."
+        "Update it with flatpak update or your desktop's software updater. If neither "
+        "finds it, run the one-time command in the Flatpak section of the README."
     )
     # Only the newer outcome gains the instruction; the others read as they did.
     up_to_date = UpdateCheckResult(Outcome.UP_TO_DATE, "1.0.0", "v1.0.0", "https://example.test/r")
@@ -250,6 +251,14 @@ def test_inside_a_flatpak_a_newer_release_names_the_bundle(
         "Open Release Page",
         "https://example.test/r",
     )
+
+
+def test_the_readme_carries_the_command_the_flatpak_message_points_at() -> None:
+    """The Flatpak message sends a 1.x bundle user to the README (correction 4.2)."""
+    readme = (Path(__file__).resolve().parents[1] / "README.md").read_text("utf-8")
+    section = readme[readme.index("### The Flatpak") : readme.index("### Other forms")]
+    assert "flatpak remote-modify --user --url=https://flatpak.snapmockit.com/repo/" in section
+    assert "--gpg-import=snapmockit-flatpak.gpg --gpg-verify snapmockit-origin" in section
 
 
 def test_outside_a_flatpak_the_message_is_unchanged(

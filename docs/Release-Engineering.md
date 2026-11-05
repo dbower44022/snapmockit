@@ -1,6 +1,6 @@
 # Release Engineering Notes
 
-Last Updated: 09-27-26 22:55 · Revision 1.23
+Last Updated: 11-05-26 12:12 · Revision 1.24
 
 The work that turns the finished application into a product: its identity, continuous integration, packaging, and the first release. Every feature row of the nine product requirements documents was built or recorded as a departure by 09-14-26 (`docs/Freehand-Remainder-Implementation.md`, Section 8.1, names the last of them); this document holds what follows, in the order Doug set on 09-14-26: the identity, then continuous integration, then packaging, then an end-to-end pass on real work, then the two platform backends when their machines exist.
 
@@ -50,9 +50,10 @@ Every release is built and published from a clean runner; nothing is built here 
 4. **Push `main`** and wait for the run to be green in all five jobs.
 5. **The release notes**, written for Doug to read before the tag.
 6. **The annotated tag** `vX.Y.Z` on that commit, with the notes as its message, pushed on Doug's word. The release job refuses a tag that is not `v` followed by the package's version.
-7. **The GitHub release** is published by the workflow with the AppImage and the Flatpak bundle attached.
+7. **The GitHub release** is published by the workflow with the AppImage and the two Flatpak reference files, `snapmockit.flatpakref` and `snapmockit.flatpakrepo`, attached.
 8. **The upload to the Python Package Index** waits for Doug's approval of the `pypi` environment on the run's page (Review deployments, tick `pypi`, Approve and deploy). It uploads the wheel and sdist of the same run through trusted publishing. A version uploaded there can never be reused, so the approval is the last point at which a release can be stopped.
-9. **Read back**: the release page, `https://pypi.org/project/snapmockit/`, and the attestation of each uploaded file.
+9. **The Flatpak repository** waits for Doug's approval of the `github-pages` environment on the same run's page (Review deployments, tick `github-pages`, Approve and deploy). The `publish-flatpak` job then rebuilds `https://flatpak.snapmockit.com/repo/` from nothing with the new version under `stable`, signed, deploys it, and attaches the signed Flatpak bundle to the release. Until it is approved, the release carries no Flatpak bundle and `flatpak update` finds nothing new (`docs/Flatpak-Repository-Implementation.md`, decisions 2.4 and 2.6). The job runs on a release tag only; there is no way to start it by hand, because a run would replace the whole site.
+10. **Read back**: the release page, `https://pypi.org/project/snapmockit/`, the attestation of each uploaded file, and `flatpak remote-ls snapmockit-origin` showing the new version.
 
 ## 6. Waiting, and on what (09-21-26)
 
@@ -72,6 +73,7 @@ The Windows package and the Windows capture backend are one sitting's work on on
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.24 | 11-05-26 12:12 | Claude (Claude Code) | Section 5, the release process, follows the project's own Flatpak repository (`docs/Flatpak-Repository-Implementation.md`, Phase 4): step 7's release carries the AppImage and the two reference files; new step 9 is Doug's approval of the `github-pages` environment, after which the Flatpak repository is rebuilt and the signed bundle attached; read back becomes step 10 and gains `flatpak remote-ls`. The rehearsal on the live address passed 11-04-26 and 11-05-26. |
 | 1.23 | 09-27-26 22:55 | Claude (Claude Code) | Section 6 gains the Flatpak repository, ready: Doug asked on 09-27-26, after installing the 1.5.0 bundle by hand, for a way to upgrade without it, and chose a signed repository of the project's own over Check for Updates installing the bundle, the AppImage's self-update, and Flathub. Its kickoff is `docs/Flatpak-Repository-Kickoff-Prompt.md` 1.0. |
 | 1.22 | 09-27-26 22:31 | Claude (Claude Code) | **v1.5.0 released 09-27-26**: the item lock (a locked item is selected and unlocked where it was locked, and nothing moves or edits it until then), guides that are selected, nudged, deleted, and carry their own colour, line style, and lock, paste at the pointer, Escape's ladder, and the opaque colour pick reach users. Release commit and tag `v1.5.0` on `b4e6bca`; the suite at that commit from a clean worktree passed 1940 with 15 skipped; the wheel and source distribution passed `twine check --strict`; continuous integration green in all five jobs. The GitHub release (run 36299491728) carries `Snapmockit-1.5.0-x86_64.AppImage` (128,391,672 bytes) and `Snapmockit-1.5.0-x86_64.flatpak` (26,695,032 bytes). The index took `snapmockit-1.5.0-py3-none-any.whl` (795,384 bytes) and `snapmockit-1.5.0.tar.gz` (924,917 bytes) at 22:29 on Doug's approval, byte for byte the sizes of the local build, each attested to `dbower44022/snapmockit`, `ci.yml`, environment `pypi`; the index lists 1.5.0 as latest. Doug's first "approved" in the session did not reach GitHub; the job waited until he approved on the run's page. Display checks of the item lock and the guides were passed by Doug on builds of the commits before the tag; none are owed on the released files beyond Section 6's standing ones. |
 | 1.21 | 09-25-26 10:34 | Claude (Claude Code) | **v1.4.0 released 09-25-26**: the Border tool and the whole-document copy reach users. Tag `v1.4.0` on `32d78f6`, one commit after the release commit `72768cd` (a git-ignored reference file failed the first run); the GitHub release carries both Linux files and the index took the wheel and source distribution on Doug's approval at 10:11. Doug installed the Flatpak bundle over 1.1.0. Section 6's owed display checks now name 1.4.0. |

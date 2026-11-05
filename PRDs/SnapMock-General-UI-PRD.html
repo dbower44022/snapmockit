@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>General User Interface</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.69</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 2.70</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Main window · Menus · Toolbars · Canvas · Layer panel · Property panel · Status bar · Context menus · Dialogs · Shortcuts · Theming · Accessibility · First run</dd>
-    <dt>Document version</dt><dd>2.69</dd>
-    <dt>Last Updated</dt>    <dd>11-04-26 11:01</dd>
+    <dt>Document version</dt><dd>2.70</dd>
+    <dt>Last Updated</dt>    <dd>11-05-26 12:13</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2.70</td>
+        <td class="nowrap">11-05-26 12:13</td>
+        <td>Doug Bower</td>
+        <td><strong>3.8</strong>'s Flatpak wording of 2.50 changes with the project's own Flatpak repository (<code>docs/Flatpak-Repository-Implementation.md</code>, decision 5 and correction 4.4): inside a Flatpak a newer release reads &ldquo;Update it with flatpak update or your desktop's software updater. If neither finds it, run the one-time command in the Flatpak section of the README.&rdquo; A running copy cannot tell whether it was installed from the Flatpak repository or from a 1.x bundle, so one message serves both. Built in <code>snapmock/main_window.py</code>.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>2.69</td>
         <td class="nowrap">10-30-26 01:46</td>
@@ -640,6 +647,7 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr><td class="nowrap">11-05-26 12:13</td><td>3.8</td><td>Changed</td><td>Check for Updates inside a Flatpak: a newer release names <code>flatpak update</code> and the desktop's software updater, and the README's one-time command where neither finds it, in place of downloading the bundle (2.50). Follows Flatpak repository decision 5.</td></tr>
       <tr><td class="nowrap">10-30-26 01:46</td><td>3.1</td><td>Decision / Changed</td><td><strong>Decision</strong> (10-30-26, Doug's option B over A, path only, and C, a separate action): Export Quick (PNG) puts the image, the path as plain text, and a file reference on the clipboard in one entry. <strong>Changed</strong>: Export Quick no longer overwrites an existing file; the 09-08-26 decision's overwrite clause is superseded. Whether a pasted unquoted path containing spaces is read by Claude Code as one path is checked by hand after the build; if it is not, the plain-text path is quoted and this row is amended. <strong>Checked</strong> 11-04-26 (Doug): it is read as one path (a pasted Export Quick path, <code>…/Capture_2026-10-30_15-38-35 2026-10-30 15-40-12.png</code>, loaded in Claude Code); the path stays unquoted.</td></tr>
       <tr><td class="nowrap">09-25-26 21:33</td><td>8, 10.2, 6.6, 1.3</td><td>Built / Decision</td><td><strong>Built</strong> (09-25-26; notes Section 30; decision B): the Item Lock checkbox of Section 8 and the Lock Item / Unlock Item row of 10.2 lock and unlock an item that can still be selected, and every move and edit refuses it. <strong>Decision</strong> 8.6: a mixed selection's rows edit the unlocked items and say nothing; a selection locked through and through answers with 1.3's message from every row but the checkbox. <strong>6.6</strong>: the forbidden row covers a locked item and the handles of a locked selection. The silences are listed in the 2.61 revision row.</td></tr>
       <tr><td class="nowrap">09-26-26 01:29</td><td>6.5, 12</td><td>Added</td><td><strong>Added</strong> (09-26-26, Doug's request; the 2.64 revision row): a click selects a guide, which draws in the selection colour; the arrow keys nudge it by Section 12's rules and Delete removes it; Escape, a click elsewhere, or an item selection lets it go.</td></tr>

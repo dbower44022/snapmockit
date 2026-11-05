@@ -1,6 +1,7 @@
 # Installs Snapmockit and adds its Flatpak repository in one step
-# (docs/Flatpak-Repository-Implementation.md). Filled by packaging/flatpak/publish.py:
-# @URL@ is the Flatpak repository's address and @GPGKEY@ the public key, base64.
+# (docs/Flatpak-Repository-Implementation.md). Filled by packaging/flatpak/publish.py,
+# which writes the Flatpak repository's address into Url and the public key, base64,
+# into GPGKey.
 [Flatpak Ref]
 Title=Snapmockit
 Name=io.github.dbower44022.snapmockit

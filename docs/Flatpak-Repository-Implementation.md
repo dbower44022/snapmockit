@@ -1,6 +1,6 @@
 # The Flatpak Repository — Implementation Notes
 
-Last Updated: 09-28-26 00:05 · Revision 1.3
+Last Updated: 11-05-26 12:13 · Revision 1.4
 
 A signed Flatpak repository of the project's own, so a Snapmockit user on Linux gets each release through `flatpak update` and through the desktop's own updater instead of downloading a bundle and installing it by hand. It replaces Flatpak decision 2 (`docs/Packaging-Flatpak-Implementation.md`, Section 2.2, option A: a bundle on the GitHub release). The kickoff prompt is `docs/Flatpak-Repository-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -10,8 +10,8 @@ A signed Flatpak repository of the project's own, so a Snapmockit user on Linux 
 |---|---|---|---|
 | 1 | The five decisions, the silences, the corrections to the kickoff prompt, and this document | Done 09-27-26 (Sections 2 to 4) | f91a18e |
 | 2 | The signing key and the address, done with Doug: the key generated, its public half committed, its private half a repository secret and an offline copy; GitHub Pages on, the DNS record at GoDaddy, HTTPS enforced; the `github-pages` environment's gate | Done 09-28-26 but the certificate, which GitHub had not issued by 09-28-26 00:05; closed at the rehearsal, the site's first deployment, on Doug's choice of 09-28-26 00:03 (Section 5) | this commit |
-| 3 | The recipe and the workflow: the Flatpak repository built and signed, the bundle naming its address, the `.flatpakref` and `.flatpakrepo` files, the publishing job, the tests, the Technical Architecture PRD rows; the rehearsal on the live address (silence 5) | Written and proven locally 09-28-26 (Section 6), with decision 2.6 taken after the first run failed; the rehearsal waits for Doug | caa95d9, this commit |
-| 4 | The application and the documents: Check for Updates inside a Flatpak, the README, the release process, the Flatpak notes' change-log row | Not started | |
+| 3 | The recipe and the workflow: the Flatpak repository built and signed, the bundle naming its address, the `.flatpakref` and `.flatpakrepo` files, the publishing job, the tests, the Technical Architecture PRD rows; the rehearsal on the live address (silence 5) | Done 11-05-26: written and proven locally 09-28-26 (Section 6), with decision 2.6 taken after the first run failed; the rehearsal on the live address passed 11-04-26 and 11-05-26 (Section 6.1); the manual trigger and the `main` rule removed | caa95d9, 53b4a58, this commit |
+| 4 | The application and the documents: Check for Updates inside a Flatpak, the README, the release process, the Flatpak notes' change-log row | Written 11-05-26 (Section 6.2); waits for Doug's review | this commit |
 | 5 | The proof: 1.6.0 published into the Flatpak repository and arriving on Doug's machine through the Update Manager (silence 4) | Not started | |
 | Close-out | The phase table done, the revision bumped, the next required step, memory updated | Not started | |
 
@@ -148,16 +148,39 @@ Everything here was done on 09-27-26 and 09-28-26, each action in Doug's name ap
 
 **After decision 2.6:** `publish.py` gains `bundle_command` (the one place the bundle's options are written; `build.py` calls it without the key) and `check_bundle`, and `--bundle`; the release job no longer attaches the Flatpak bundle; `publish-flatpak` gains `contents: write` and a last step, on a tag only, that attaches the signed bundle after the site is deployed. Three more tests: the build's bundle carries no key, the release's carries it and names the Flatpak repository, and the check installs into a throwaway Flatpak installation and refuses a commit that is not the site's.
 
-**Still owed by Phase 3:** the rehearsal (silence 5), which needs Doug to start two runs and approve each, and which also settles the certificate of Section 5.
+~~**Still owed by Phase 3:** the rehearsal (silence 5), which needs Doug to start two runs and approve each, and which also settles the certificate of Section 5.~~ Done; see Section 6.1.
+
+### 6.1 The rehearsal on the live address (11-04-26 and 11-05-26)
+
+**First, the AppImage job.** The push of 10-20-26 (run 39486093190) had failed in the AppImage job: `niess/python-appimage` replaced its 3.12.14 base image with 3.12.15 on 10-04-26, and the pinned name answered 404. Doug chose to move the pin (commit c16fb99; `docs/Packaging-AppImage-Implementation.md` 2.5). Run 41880380679 was then green in all five jobs.
+
+**The certificate.** The first rehearsal run, 41898248375, started by Doug and approved by him, deployed the site at 14:50 on 11-04-26, but GitHub issued no certificate in the 25 minutes after: it reported no certificate state at all, and the site served GitHub's `*.github.io` certificate. Inferred, not checked: GitHub never started the request because the custom domain was set on 09-27-26 before its DNS record existed. On Doug's choice the domain was removed and set again from this session at 21:57; the request was created within a minute and the certificate approved within two. **Enforce HTTPS was turned on** at once. Section 5's open certificate is closed.
+
+**The install.** A throwaway Flatpak installation under the scratchpad (`FLATPAK_USER_DIR`) added the Flatpak repository from the live `snapmockit.flatpakrepo`, which created `snapmockit-origin` with `gpg-verify=true` and `gpg-verify-summary=true`, and installed `io.github.dbower44022.snapmockit//rehearsal` over HTTPS: commit `f82602ee`, version 1.5.0 (the version `main` carries), the KDE runtime 6.11 taken from the system installation.
+
+**The update.** The second run, 41969567119, approved by Doug on 11-05-26, published a new build; `flatpak update` in the same installation moved it to commit `8f3df732`. The throwaway installation was then deleted, and Doug's own installation read back unchanged (branch `stable`, 1.5.0).
+
+**Found:** the published `snapmockit.flatpakrepo` carried the whole public key inside its comment header, because the template's comment named the `@GPGKEY@` placeholder and the filling replaced every occurrence. Harmless to Flatpak, which ignores comments; fixed in Phase 4.
+
+**Then, before 1.6.0 (silence 5):** the `main` rule of the `github-pages` environment was deleted at 12:10 on 11-05-26, leaving the tag rule `v*.*.*` and Doug as required reviewer (read back); and the workflow's manual `flatpak` rehearsal was removed, so `publish-flatpak` runs on a release tag only and always into `stable`.
+
+### 6.2 Phase 4: the application and the documents
+
+- **Check for Updates inside a Flatpak** (`snapmock/main_window.py`, General UI PRD 2.70): a newer release now reads "Update it with flatpak update or your desktop's software updater. If neither finds it, run the one-time command in the Flatpak section of the README." One message for both kinds of copy, as decision 5's follow-on detail requires (correction 4.4).
+- **The README's Flatpak section** installs from `https://flatpak.snapmockit.com/snapmockit.flatpakref`, names the bundle as the file-based form, and carries correction 4.2's one-time move for a 1.x bundle installation, with the line that downloads the public key and the key's fingerprint. A test holds the README to the command the message points at.
+- **The release process** (`docs/Release-Engineering.md` 1.24, Section 5): Doug's approval of the `github-pages` environment is step 9, and read back gains `flatpak remote-ls`.
+- **The comment defect:** `publish.fill_reference` copies comment lines as they are, and both templates' comments no longer name the placeholders. Tests: the key appears once in each filled file, and a placeholder named in a comment is left alone.
+- **The Flatpak notes' change-log row:** `docs/Packaging-Flatpak-Implementation.md` 1.16 records that decision 2 is replaced.
 
 ## 7. The next required step
 
-The suite at this commit, then the push, then a green run of all jobs. Then the rehearsal: Doug starts a run by hand with `rehearsal` set to `flatpak`, approves its deployment, and a throwaway installation here installs from `https://flatpak.snapmockit.com/repo/` under the branch `rehearsal`; then a second run, and `flatpak update` in the same throwaway installation. Then the `main` rule and the manual trigger's `flatpak` option are removed, and Phase 4 begins.
+Doug reviews Phase 4. Then the v1.6.0 release by `docs/Release-Engineering.md` Section 5, steps 1 to 5, stopping before the tag for the release notes. Before the tag, Phase 5 step 1: Doug's 1.5.0 installation is moved onto the Flatpak repository with correction 4.2's command, so 1.6.0 arriving through the Update Manager proves the first release.
 
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.4 | 11-05-26 12:13 | Claude (Claude Code) | Phase 3 done: the rehearsal on the live address passed 11-04-26 and 11-05-26 (new Section 6.1), after the AppImage pin was fixed and the certificate issued on the domain being set again; the `main` rule and the manual trigger removed. Phase 4 written (new Section 6.2): the Flatpak's Check for Updates message, the README, the release process, the comment defect the rehearsal found. Section 7 names Doug's review and the 1.6.0 release. |
 | 1.3 | 09-28-26 08:07 | Claude (Claude Code) | Decision 2.6 (A), after run 36377535497 failed: a bundle carrying the key installs only when its commit is signed, so the publishing job builds the release's bundle from the signed Flatpak repository, checks it by installing it, and attaches it after deploying; the release job attaches the AppImage and the reference files only. Section 6's claim that a fresh bundle installed was wrong and is struck through and corrected. Technical Architecture PRD 1.77. |
 | 1.2 | 09-28-26 00:16 | Claude (Claude Code) | Phase 3 written and proven locally (Section 6): `publish.py` and the two reference-file templates, the bundle naming the Flatpak repository and carrying its key, the `publish-flatpak` job gated by `github-pages`, the rehearsal input, eleven recipe tests and the workflow tests. A site built here was installed from over HTTP with signatures checked, and one signed by another key was refused. Correction 4.5: a `.flatpakrepo` cannot name a runtime source. Technical Architecture PRD 1.76. |
 | 1.1 | 09-28-26 00:05 | Claude (Claude Code) | Phase 2 done but the certificate (Section 5): the signing key generated (fingerprint DF8F 47BD 1CCF 5D53 5B7F 2986 BC56 3E79 934E 4F6C), its public half committed, its private half the repository secret and Doug's password-manager entry, the scratchpad copies shredded; GitHub Pages on with the custom domain `flatpak.snapmockit.com`, the GoDaddy CNAME resolving; the `github-pages` environment gated on Doug with the `v*.*.*` tag rule and a `main` rule for the rehearsal only. Technical Architecture PRD 1.75. |

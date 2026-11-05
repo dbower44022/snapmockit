@@ -1,6 +1,6 @@
 # Packaging: the Linux Flatpak — Implementation Notes
 
-Last Updated: 09-18-26 10:28 · Revision 1.15
+Last Updated: 11-05-26 12:13 · Revision 1.16
 
 Implements the Flatpak that Technical Architecture PRD 7.3 names as the secondary Linux form, the next part of step 3 of the release-engineering list (`docs/Release-Engineering.md`, Sections 1 and 4), which Doug put ahead of the Python Package Index on 09-17-26. The kickoff prompt is `docs/Packaging-Flatpak-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL. The AppImage's notes, `docs/Packaging-AppImage-Implementation.md`, hold the recipe and the release job this work builds beside.
 
@@ -29,6 +29,8 @@ The alternatives: the freedesktop runtime with the PyQt6 wheels from the Python 
 **The cost, as presented:** the application runs on Python 3.13 and on Qt 6.11, a combination no one has tested before this work. Phase 1 step 3 answers the interpreter by running the suite under Python 3.13 and adding it to the continuous-integration checks job; Qt 6.11 is answered by Phase 2's proofs on this machine. PyQt6's version is the base application's, not the lock file's.
 
 ### 2.2 Where the Flatpak is published: option A, a bundle on the GitHub release
+
+**Replaced from 1.6.0** by the project's own signed Flatpak repository at `https://flatpak.snapmockit.com/repo/` (`docs/Flatpak-Repository-Implementation.md`, decisions 2.1 to 2.6). The bundle stays on each release, now built from the signed Flatpak repository and naming it. The text below is the decision as taken on 09-17-26.
 
 Continuous integration builds `Snapmockit-<version>-x86_64.flatpak` on every push and keeps it as an artifact; the release job attaches it to the GitHub release beside the AppImage; a user installs it with `flatpak install`. A Flathub submission is its own later step, after the bundle has been used, because Flathub's review can force changes to the manifest.
 
@@ -247,6 +249,7 @@ Doug gave the word at 01:35 and the annotated tag `v1.1.0` went up on f137f76, w
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.16 | 11-05-26 12:13 | Claude (Claude Code) | Decision 2.2 marked replaced from 1.6.0 by the project's own signed Flatpak repository (`docs/Flatpak-Repository-Implementation.md`, Phase 4). Check for Updates inside a Flatpak no longer says to download the bundle; it names `flatpak update` (General UI PRD 2.70). |
 | 1.15 | 09-18-26 10:28 | Claude (Claude Code) | Section 13 closed without a result on Doug's decision: the 1.0.0 bundle under `dist/` turned out to contain 1.1.0, so the check could not show the wording, and it rides on the next release instead; section 11 is the one display check still owed. **The change log is repaired in the same edit:** the rows for 1.7 to 1.14 were written by scripts whose anchors silently did not match and never reached the file, one row carried a literal escape, and one change-log row landed in the phase table. Each row below is taken from the commit that made the revision. |
 | 1.14 | 09-18-26 01:42 | Claude (Claude Code) | Phase 4 and the close-out: v1.1.0 published with the AppImage and the Flatpak, the published bundle downloaded and proven here, and Section 14 written — the PRD rows, the README, what of 7.3 remains, and the display checks owed. Technical Architecture PRD 1.65. (Commit 47664c4; the pointer at section 13 of the checklist page, c2ebdbf.) |
 | 1.13 | 09-18-26 01:17 | Claude (Claude Code) | Phase 4 begun (Section 13): version 1.1.0 and build date 2026-09-18 set, and the release notes written for Doug to read; nothing tagged. The suite at 5b17c5d, 1763 passed, recorded at f137f76. |

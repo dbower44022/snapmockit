@@ -84,18 +84,29 @@ This writes two of the icon sizes; Add to Menu writes eight and the scalable fil
 ### The Flatpak
 
 ```bash
-cd ~/Downloads
-flatpak install --user Snapmockit-<version>-x86_64.flatpak
+flatpak install --user https://flatpak.snapmockit.com/snapmockit.flatpakref
 flatpak run io.github.dbower44022.snapmockit
 ```
 
-Download the bundle from the same release page. The first install offers to fetch the KDE runtime 6.11 from Flathub, which is most of what the application needs; the bundle itself is 26 MB because Qt is shared with every other KDE application on the machine. The desktop entry and the icon are installed with it, so Snapmockit is in the main menu at once, and `flatpak run io.github.dbower44022.snapmockit --capture full` is the command to bind to a key.
+This installs Snapmockit from the project's own Flatpak repository, `https://flatpak.snapmockit.com/repo/`, and adds that repository to Flatpak under the name `snapmockit-origin`. Every release is published there, signed with the project's key, so `flatpak update` and the desktop's software updater bring each new version. The first install offers to fetch the KDE runtime 6.11 from Flathub, which is most of what the application needs; Snapmockit itself is about 26 MB because Qt is shared with every other KDE application on the machine. The desktop entry and the icon are installed with it, so Snapmockit is in the main menu at once, and `flatpak run io.github.dbower44022.snapmockit --capture full` is the command to bind to a key.
 
-The sandbox reaches your whole home directory, the display, the graphics device, and the network, and nothing else. Its settings live under `~/.var/app/io.github.dbower44022.snapmockit/`, copied once from `~/.config/Snapmockit` on the first start if you have been running another form; the library is the same `~/Snapmockit/Library` both forms use. A bundle installed by hand does not update itself: a new version is a new download. Both forms can be installed at once. They carry one application id, which by the desktop entry specification makes them one menu entry; Cinnamon lists a Flatpak's own entry separately, so a machine with the Flatpak installed and Snapmockit added to the menu from another form shows two entries, one of them marked as the Flatpak's. Add to Menu says so when it finds another form's entry.
+Each release page also carries the bundle, `Snapmockit-<version>-x86_64.flatpak`, for a machine that installs from a file (`flatpak install --user Snapmockit-<version>-x86_64.flatpak`). From 1.6.0 on, a bundle installed fresh names the Flatpak repository and its key, so it updates the same way.
+
+**A bundle of 1.5.0 or earlier never updates by itself**, and a newer bundle installed over it updates without its signatures being checked. One command moves such an installation onto the Flatpak repository in place, keeping its settings; the first line downloads the project's public key:
+
+```bash
+curl -LO https://raw.githubusercontent.com/dbower44022/snapmockit/main/packaging/flatpak/snapmockit-flatpak.gpg
+flatpak remote-modify --user --url=https://flatpak.snapmockit.com/repo/ --gpg-import=snapmockit-flatpak.gpg --gpg-verify snapmockit-origin
+flatpak update
+```
+
+The key's fingerprint is `DF8F 47BD 1CCF 5D53 5B7F 2986 BC56 3E79 934E 4F6C`. Check for Updates inside the Flatpak points here when `flatpak update` finds nothing.
+
+The sandbox reaches your whole home directory, the display, the graphics device, and the network, and nothing else. Its settings live under `~/.var/app/io.github.dbower44022.snapmockit/`, copied once from `~/.config/Snapmockit` on the first start if you have been running another form; the library is the same `~/Snapmockit/Library` both forms use. Both forms can be installed at once. They carry one application id, which by the desktop entry specification makes them one menu entry; Cinnamon lists a Flatpak's own entry separately, so a machine with the Flatpak installed and Snapmockit added to the menu from another form shows two entries, one of them marked as the Flatpak's. Add to Menu says so when it finds another form's entry.
 
 ### Other forms
 
-Windows and macOS have no package of their own yet; install from the Python Package Index (above) or run from source. The capture backends for both are written but untested. The Flatpak is published as the bundle above and not on Flathub.
+Windows and macOS have no package of their own yet; install from the Python Package Index (above) or run from source. The capture backends for both are written but untested. The Flatpak is published from the project's own Flatpak repository and as a bundle, and not on Flathub.
 
 ## Running from source
 

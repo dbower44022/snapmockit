@@ -93,8 +93,16 @@ def encoded_key(path: Path = PUBLIC_KEY) -> str:
 
 
 def fill_reference(template: str, key: str, url: str = REPOSITORY_ADDRESS) -> str:
-    """A reference file from its template: the address and the key filled in."""
-    return template.replace("@URL@", url).replace("@GPGKEY@", key)
+    """A reference file from its template: the address and the key filled in.
+
+    Comment lines are copied as they are, so a placeholder named in a comment is never
+    replaced by the whole key (found in the rehearsal's published file, 11-04-26).
+    """
+    lines = template.splitlines(keepends=True)
+    return "".join(
+        line if line.startswith("#") else line.replace("@URL@", url).replace("@GPGKEY@", key)
+        for line in lines
+    )
 
 
 def write_reference_files(out_dir: Path, key_path: Path = PUBLIC_KEY) -> list[Path]:

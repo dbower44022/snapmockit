@@ -373,9 +373,22 @@ def test_the_reference_files_carry_the_key_whole_on_one_line(
         text = path.read_text("utf-8")
         assert "@URL@" not in text and "@GPGKEY@" not in text
         (line,) = [line for line in text.splitlines() if line.startswith("GPGKey=")]
+        # Found in the rehearsal's published file (11-04-26): the key also landed in a
+        # comment that named its placeholder. It appears once, on its own line.
+        assert text.count(line.removeprefix("GPGKey=")) == 1
+        comments = [row for row in text.splitlines() if row.startswith("#")]
+        assert all("snapmockit.com" not in row for row in comments)
         assert base64.b64decode(line.removeprefix("GPGKey="), validate=True) == (
             publisher.PUBLIC_KEY.read_bytes()
         )
+
+
+def test_a_placeholder_named_in_a_comment_is_left_alone(publisher: ModuleType) -> None:
+    template = "# @URL@ and @GPGKEY@ are filled in below.\nUrl=@URL@\nGPGKey=@GPGKEY@\n"
+    filled = publisher.fill_reference(template, "KEY", "https://example.test/repo/")
+    assert filled == (
+        "# @URL@ and @GPGKEY@ are filled in below.\nUrl=https://example.test/repo/\nGPGKey=KEY\n"
+    )
 
 
 def test_the_commit_is_the_build_s_stable_one_signed_under_the_branch(

@@ -4375,12 +4375,14 @@ class MainWindow(QMainWindow):
         self._on_tool_changed_for_hint("")
 
     FLATPAK_UPDATE_INSTRUCTION = (
-        "Download the new .flatpak bundle from the release page and install it with "
-        "flatpak install."
+        "Update it with flatpak update or your desktop's software updater. If neither "
+        "finds it, run the one-time command in the Flatpak section of the README."
     )
-    """What a newer release means inside a Flatpak (Flatpak decision 5): the release page
-    carries one file per form, and a Flatpak user told to download the AppImage is sent to
-    the wrong one. It becomes ``flatpak update`` once the Flathub step of decision 2 exists."""
+    """What a newer release means inside a Flatpak (Flatpak repository decision 5): every
+    release is published into the project's own Flatpak repository. A running copy cannot
+    tell whether it came from there or from a 1.x bundle whose remote has no address
+    (correction 4.4), so one message serves both, and the README carries the command that
+    moves a 1.x bundle installation onto the Flatpak repository."""
 
     def update_message_text(self, result: UpdateCheckResult) -> str:
         """The message body for every outcome but network unavailable."""
