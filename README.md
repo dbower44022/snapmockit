@@ -2,7 +2,7 @@
 
 Snapmockit is an open-source screenshot annotation and user interface mockup tool for Linux, Windows, and macOS, written in Python with PyQt6. Capture a screen, a window, or a region; annotate it with shapes, arrows, text, callouts, highlights, blur, numbered steps, stamps, and emoji on layers, and put a border around it; then export it as PNG, JPEG, SVG, or PDF, or save it as a project to come back to. It reads and writes Snagit's `.snagx` files.
 
-Status: the application is complete against its nine product requirements documents (the `PRDs/` directory). Release 1.5.0 installs from the Python Package Index on any platform with Python 3.12 or later, and on Linux also ships as an AppImage and a Flatpak bundle; on Linux it puts itself in the desktop's main menu from Help > Add to Menu. The Windows and macOS capture backends are written but have not yet been tested on those machines.
+Status: the application is complete against its nine product requirements documents (the `PRDs/` directory). Release 1.6.0 installs from the Python Package Index on any platform with Python 3.12 or later, and on Linux also ships as an AppImage and as a Flatpak from the project's own signed Flatpak repository; on Linux it puts itself in the desktop's main menu from Help > Add to Menu. The Windows and macOS capture backends are written but have not yet been tested on those machines.
 
 ## Install from the Python Package Index (any platform)
 
@@ -24,7 +24,7 @@ On Linux, Qt needs the same system libraries the AppImage lists below, which eve
 
 ## Install on Linux
 
-Snapmockit ships in two forms on Linux, both for x86_64: an **AppImage**, one file that carries its own Python and Qt, and a **Flatpak**, a 26 MB bundle that runs on the KDE runtime and in a sandbox. Neither needs a package manager or a password. The AppImage runs anywhere with glibc 2.34 or later (Ubuntu 22.04, Debian 12, Fedora 35, RHEL 9, and later); the Flatpak runs anywhere Flatpak does.
+Snapmockit ships in two forms on Linux, both for x86_64: an **AppImage**, one file that carries its own Python and Qt, and a **Flatpak**, about 26 MB, that runs on the KDE runtime and in a sandbox and updates through `flatpak update`. Neither needs a password. The AppImage runs anywhere with glibc 2.34 or later (Ubuntu 22.04, Debian 12, Fedora 35, RHEL 9, and later); the Flatpak runs anywhere Flatpak does.
 
 ### The AppImage
 
