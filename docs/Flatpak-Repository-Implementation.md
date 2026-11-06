@@ -1,6 +1,6 @@
 # The Flatpak Repository — Implementation Notes
 
-Last Updated: 11-05-26 12:13 · Revision 1.7
+Last Updated: 11-06-26 16:09 · Revision 1.8
 
 A signed Flatpak repository of the project's own, so a Snapmockit user on Linux gets each release through `flatpak update` and through the desktop's own updater instead of downloading a bundle and installing it by hand. It replaces Flatpak decision 2 (`docs/Packaging-Flatpak-Implementation.md`, Section 2.2, option A: a bundle on the GitHub release). The kickoff prompt is `docs/Flatpak-Repository-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -11,9 +11,9 @@ A signed Flatpak repository of the project's own, so a Snapmockit user on Linux 
 | 1 | The five decisions, the silences, the corrections to the kickoff prompt, and this document | Done 09-27-26 (Sections 2 to 4) | f91a18e |
 | 2 | The signing key and the address, done with Doug: the key generated, its public half committed, its private half a repository secret and an offline copy; GitHub Pages on, the DNS record at GoDaddy, HTTPS enforced; the `github-pages` environment's gate | Done 09-28-26 but the certificate, which GitHub had not issued by 09-28-26 00:05; closed at the rehearsal, the site's first deployment, on Doug's choice of 09-28-26 00:03 (Section 5) | this commit |
 | 3 | The recipe and the workflow: the Flatpak repository built and signed, the bundle naming its address, the `.flatpakref` and `.flatpakrepo` files, the publishing job, the tests, the Technical Architecture PRD rows; the rehearsal on the live address (silence 5) | Done 11-05-26: written and proven locally 09-28-26 (Section 6), with decision 2.6 taken after the first run failed; the rehearsal on the live address passed 11-04-26 and 11-05-26 (Section 6.1); the manual trigger and the `main` rule removed | caa95d9, 53b4a58, this commit |
-| 4 | The application and the documents: Check for Updates inside a Flatpak, the README, the release process, the Flatpak notes' change-log row | Written 11-05-26 (Section 6.2); waits for Doug's review | this commit |
-| 5 | The proof: 1.6.0 published into the Flatpak repository and arriving on Doug's machine through the Update Manager (silence 4) | 1.6.0 published 11-05-26 (run 42119028381, `stable` commit `e6ec1b1f`); the Update Manager never showed it, because Doug's copy is a per-user installation (decision 2.7). His copy moves to the system installation; the proof is now the next release arriving through the Update Manager | 46e6cc0 (tag v1.6.0) |
-| Close-out | The phase table done, the revision bumped, the next required step, memory updated | Not started | |
+| 4 | The application and the documents: Check for Updates inside a Flatpak, the README, the release process, the Flatpak notes' change-log row | Done: released in 1.6.0 on 11-05-26 (Section 6.2) | this commit |
+| 5 | The proof: 1.6.0 published into the Flatpak repository and arriving on Doug's machine through the Update Manager (silence 4) | 1.6.0 published 11-05-26 (run 42119028381, `stable` commit `e6ec1b1f`); the Update Manager never showed it, because Doug's copy is a per-user installation (decision 2.7). His copy moves to the system installation; the proof is now the next release arriving through the Update Manager **Done 11-06-26:** 1.7.0 (release run 42289291907) arrived in Linux Mint's Update Manager on Doug's display and installed; `flatpak list` reads 1.7.0, system installation | 46e6cc0 (tag v1.6.0) |
+| Close-out | The phase table done, the revision bumped, the next required step, memory updated | Done 11-06-26 16:09 | this commit |
 
 ## 2. Decisions
 
@@ -186,12 +186,13 @@ Everything here was done on 09-27-26 and 09-28-26, each action in Doug's name ap
 
 ## 7. The next required step
 
-Doug reviews Phase 4. Then the v1.6.0 release by `docs/Release-Engineering.md` Section 5, steps 1 to 5, stopping before the tag for the release notes. Before the tag, Phase 5 step 1: Doug's 1.5.0 installation is moved onto the Flatpak repository with correction 4.2's command, so 1.6.0 arriving through the Update Manager proves the first release.
+None: the Flatpak repository is done. Each release now reaches it through `docs/Release-Engineering.md` Section 5, step 9. What is left for the project is Section 6 of that document: the Windows package and backend, then macOS, each waiting on a machine.
 
 ## Change Log
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.8 | 11-06-26 16:09 | Claude (Claude Code) | Phase 5 done and the work closed: 1.7.0 arrived through Linux Mint's Update Manager on Doug's display on 11-06-26 and installed on the system installation. Phase 4 marked released. Section 7 names no further step. |
 | 1.7 | 11-05-26 23:39 | Claude (Claude Code) | Decision 2.7's README command corrected to `sudo flatpak install -y`, the form that worked when Doug's copy moved to the system installation; the failure without `sudo` and the `noenumerate` reading recorded. |
 | 1.6 | 11-05-26 22:50 | Claude (Claude Code) | Decision 2.7 (B): Linux Mint's Update Manager updates only system-wide Flatpaks, found when 1.6.0 never appeared there; the README installs for every user, `--user` named as the alternative. Phase 5's proof moves to the next release. On the way, Doug's Spotify and Warp apt sources, whose signing keys his machine lacks, were switched off so the Update Manager could refresh; Software Sources showed the newer kind of source file wrongly and switched Google Chrome off and Spotify back on, both corrected from the terminal. |
 | 1.5 | 11-05-26 17:22 | Claude (Claude Code) | Phase 5 begun: 1.6.0 published into `stable`; Doug's installation moved before the tag. Found: `flatpak remote-ls` lists nothing for a bundle installation's remote, which carries `xa.noenumerate=true`; `flatpak remote-info` reads it. While reading back, `flatpak update --no-deploy` was run on Doug's installation without asking: it downloaded 1.6.0 and installed nothing (1.5.0 read back still installed). |
