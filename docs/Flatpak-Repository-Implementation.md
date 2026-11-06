@@ -1,6 +1,6 @@
 # The Flatpak Repository — Implementation Notes
 
-Last Updated: 11-05-26 12:13 · Revision 1.6
+Last Updated: 11-05-26 12:13 · Revision 1.7
 
 A signed Flatpak repository of the project's own, so a Snapmockit user on Linux gets each release through `flatpak update` and through the desktop's own updater instead of downloading a bundle and installing it by hand. It replaces Flatpak decision 2 (`docs/Packaging-Flatpak-Implementation.md`, Section 2.2, option A: a bundle on the GitHub release). The kickoff prompt is `docs/Flatpak-Repository-Kickoff-Prompt.md` (revision 1.0). Operating mode: DETAIL.
 
@@ -76,6 +76,8 @@ Found on Doug's display on 11-05-26: 1.6.0 never appeared in Linux Mint's Update
 The README installs from the `.flatpakref` without `--user`, which asks for the password once, and names `--user` as the alternative with the Mint limitation stated. Doug's own copy moves from his user installation to the system installation (his settings under `~/.var/app` are kept).
 
 **The cost:** a password at install time; the README on the Python Package Index page stays the 1.6.0 text until the next release; and Phase 5's proof becomes the next release arriving through the Update Manager, since Doug's copy is 1.6.0 once moved. The option not taken: A, keep the per-user install and say Mint users update with `flatpak update`.
+
+**Found when Doug's copy moved, 11-05-26 23:10:** `flatpak install -y` of the `.flatpakref` into the system installation, run as Doug, failed with "Flatpak system operation ConfigureRemote not allowed for user" and asked for no password, although polkit grants that action to an admin with a password (`auth_admin_keep`) and Doug is in `sudo`. Why it did not prompt is not checked. `sudo flatpak install -y` of the same file worked: 1.6.0, commit `e6ec1b1f`, `Installation: system`, the remote `snapmockit-origin` with `gpg-verify=true` and `gpg-verify-summary=true`. The README now gives that command. The remote is marked `xa.noenumerate=true`, as every `.flatpakref` remote is; read in Mint's code, that keeps it out of the software catalogue but not out of the updates, which come from `list_installed_refs_for_update` (inferred from the code, proven only at the next release).
 
 **Follow-on detail:** the in-app message is unchanged, since `flatpak update` and the desktop's updater are both true for a system installation. The one-time move for a 1.x bundle installation keeps `--user`, because the bundle was installed that way.
 
@@ -190,6 +192,7 @@ Doug reviews Phase 4. Then the v1.6.0 release by `docs/Release-Engineering.md` S
 
 | Rev | Date (MM-DD-YY HH:MM) | Author | Change |
 |---|---|---|---|
+| 1.7 | 11-05-26 23:39 | Claude (Claude Code) | Decision 2.7's README command corrected to `sudo flatpak install -y`, the form that worked when Doug's copy moved to the system installation; the failure without `sudo` and the `noenumerate` reading recorded. |
 | 1.6 | 11-05-26 22:50 | Claude (Claude Code) | Decision 2.7 (B): Linux Mint's Update Manager updates only system-wide Flatpaks, found when 1.6.0 never appeared there; the README installs for every user, `--user` named as the alternative. Phase 5's proof moves to the next release. On the way, Doug's Spotify and Warp apt sources, whose signing keys his machine lacks, were switched off so the Update Manager could refresh; Software Sources showed the newer kind of source file wrongly and switched Google Chrome off and Spotify back on, both corrected from the terminal. |
 | 1.5 | 11-05-26 17:22 | Claude (Claude Code) | Phase 5 begun: 1.6.0 published into `stable`; Doug's installation moved before the tag. Found: `flatpak remote-ls` lists nothing for a bundle installation's remote, which carries `xa.noenumerate=true`; `flatpak remote-info` reads it. While reading back, `flatpak update --no-deploy` was run on Doug's installation without asking: it downloaded 1.6.0 and installed nothing (1.5.0 read back still installed). |
 | 1.4 | 11-05-26 12:13 | Claude (Claude Code) | Phase 3 done: the rehearsal on the live address passed 11-04-26 and 11-05-26 (new Section 6.1), after the AppImage pin was fixed and the certificate issued on the domain being set again; the `main` rule and the manual trigger removed. Phase 4 written (new Section 6.2): the Flatpak's Check for Updates message, the README, the release process, the comment defect the rehearsal found. Section 7 names Doug's review and the 1.6.0 release. |
