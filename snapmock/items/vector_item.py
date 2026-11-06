@@ -85,6 +85,8 @@ class VectorItem(ShadowMixin, SnapGraphicsItem):
     ``paint``, ``serialize``, and ``deserialize``.
     """
 
+    KEPT_ON_RESIZE: tuple[str, ...] = ("_stroke_width",)
+
     def __init__(self, parent: SnapGraphicsItem | None = None) -> None:
         super().__init__(parent)
         self._init_shadow(
@@ -336,6 +338,9 @@ class VectorItem(ShadowMixin, SnapGraphicsItem):
         self._shadow_cache_key = None
         self.prepareGeometryChange()
         self._stroke_width *= (sx + sy) / 2.0
+
+    def _shape_state_restored(self) -> None:
+        self._shadow_cache_key = None
 
     # --- still abstract ---
 

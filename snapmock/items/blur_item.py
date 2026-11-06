@@ -117,6 +117,9 @@ def pixelate_image(image: QImage, tile: int) -> QImage:
 class BlurItem(SnapGraphicsItem):
     """A region that obscures the content beneath it."""
 
+    SHAPE_FIELDS = ("_rect", "_alpha_mask")
+    KEPT_ON_RESIZE = ("_blur_radius", "_corner_radius", "_feather")
+
     def __init__(
         self,
         rect: QRectF | None = None,
@@ -367,6 +370,9 @@ class BlurItem(SnapGraphicsItem):
         )
         self._corner_radius *= factor
         self._feather = _clamp(self._feather * factor, 0.0, BLUR_FEATHER_MAX, 0.0)
+        self._cache_key = None
+
+    def _shape_state_restored(self) -> None:
         self._cache_key = None
 
     def boundingRect(self) -> QRectF:

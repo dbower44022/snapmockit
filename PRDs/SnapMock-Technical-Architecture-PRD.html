@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Technical Architecture</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.77</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.78</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Scene graph · Layers · Tools · Selection · Raster operations · Commands · File I/O · Rendering · Data models · Plugins · Platforms · Performance</dd>
-    <dt>Document version</dt><dd>1.77</dd>
-    <dt>Last Updated</dt>    <dd>09-28-26 08:07</dd>
+    <dt>Document version</dt><dd>1.78</dd>
+    <dt>Last Updated</dt>    <dd>11-06-26 00:01</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.78</td>
+        <td class="nowrap">11-06-26 00:01</td>
+        <td>Doug Bower</td>
+        <td><strong>3.4.2</strong>: a resize handle changes a shape's own measurements and keeps its stroke width, corner rounding, arrowheads, and blur strength (Doug's decision A of 11-05-26: a placed shape, deselected and reselected, stretched like a picture under the resize handles, its border and corners growing with it, where the same shape being drawn changed size with its border fixed.) <code>SnapGraphicsItem</code> gains <code>SHAPE_FIELDS</code>, <code>KEPT_ON_RESIZE</code>, <code>shape_state</code>, <code>restore_shape_state</code>, and <code>resize_shape</code>; <code>commands/geometry_commands.py</code> gains <code>ResizeShapeCommand</code>. No new module.</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.77</td>
         <td class="nowrap">09-28-26 08:07</td>
@@ -665,6 +672,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">11-06-26 00:01</td>
+        <td>3.4.2, 3.1.4</td>
+        <td>Changed / Decision</td>
+        <td><strong>Changed</strong> (Doug's decision A of 11-05-26: a placed shape, deselected and reselected, stretched like a picture under the resize handles, its border and corners growing with it, where the same shape being drawn changed size with its border fixed.) The resize handles change a shape's measurements and keep its style values; a rotated or skewed shape, and every item that is not a shape, behave as before. Silence: the Property Panel's width and height boxes still scale everything, stroke included, through <code>ScaleGeometryCommand</code>; they are not handles and this decision did not reach them.</td>
+      </tr>
       <tr><td class="nowrap">09-25-26 20:59</td><td>3.1.4, 3.2, 6.1</td><td>Changed / Decision</td><td><strong>Changed</strong> (09-25-26, the item lock, Doug's decision B; notes Section 30): the <code>locked</code> row of the item base class table reads "cannot be moved or edited" and names <code>SnapScene.is_locked</code>; <code>items.json</code> entries carry <code>locked</code>, absent reading as unlocked. <strong>Decision</strong> 3.2: a layer's lock toggle does not write the items' flags; <code>is_locked</code> reads the layer live, so the item's own lock is its own (kickoff silence 1). The behaviour these serve is General UI PRD Section 8 and 10.2 and Navigation &amp; Raster Operations PRD Section 2, at those documents' versions 2.61 and 1.14.</td></tr>
       <tr><td class="nowrap">09-26-26 02:09</td><td>6.1, 3.1, 10</td><td>Changed</td><td><strong>Changed</strong> (09-26-26, General UI PRD 2.64 and 2.66): the manifest's <code>guides</code> entries gain optional <code>color</code>, <code>style</code>, and <code>locked</code> keys; <code>SnapScene.guide_replaced</code>; <code>ChangeGuideCommand</code> in the existing guide commands module; <code>next_grid_line</code> in <code>core/guides.py</code>. The detail is the 1.74 revision row.</td></tr>
       <tr><td class="nowrap">09-21-26 15:14</td><td>3.3.3, 3.9.2, 4.1, 10</td><td>Added / Changed</td><td><strong>Added</strong> (09-21-26, Doug's decision to build the border as a tool): the <code>border</code> entry in the 3.3.3 registry, the four border fields in the 4.1 project model, and <code>tools/border_tool.py</code> in Section 10. <strong>Changed</strong> 3.9.2: export rendering sizes its image from the scene's output rectangle rather than the canvas size, and paints the border's shadow, ring and stroke before the canvas. The behaviour these serve is Navigation &amp; Raster Operations PRD Section 10, at that document's version 1.8.</td></tr>
@@ -1844,6 +1857,7 @@ operations.</p>
   <li>Skew: holding Ctrl while dragging an edge midpoint handle applies a skew transform.</li>
   <li>All transforms are previewed in real-time during drag and committed as a single undoable
   command on mouse release.</li>
+  <li>Shapes resize by their measurements (11-06-26): A drag of a corner or edge handle changes a shape's own measurements, not its transform: the rectangle of a rectangle, ellipse, or blur; the points of a line, arrow, arc, polygon, highlight, or freehand stroke. Stroke width, corner rounding, arrowhead size, and blur strength keep their values, so a resized shape looks as it would had it been drawn at that size. The shape's outline, not the selection frame that includes its stroke, follows the pointer: the outline's edge under the handle moves as far as the pointer does and the opposite edge stays. Images, stamps, emoji, numbered steps, and groups still stretch, and text and callouts keep their reflow. A shape that is rotated or skewed still stretches, since the axis-aligned handles cannot keep it the shape it is. The drag is committed as one <code>ResizeShapeCommand</code> per shape (position and measurements, before and after).</li>
 </ul>
 
 <h4 id="s3-4-3">Alignment &amp; Distribution</h4>

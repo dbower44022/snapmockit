@@ -45,6 +45,8 @@ def _point(raw: object) -> QPointF | None:
 class HighlightItem(VectorItem):
     """A semi-transparent wide-stroke path used as a highlighter."""
 
+    SHAPE_FIELDS = ("_points",)
+
     def __init__(self, parent: VectorItem | None = None) -> None:
         super().__init__(parent)
         self._stroke_color = QColor(DEFAULT_HIGHLIGHT_COLOR)
@@ -144,6 +146,10 @@ class HighlightItem(VectorItem):
     def scale_geometry(self, sx: float, sy: float) -> None:
         super().scale_geometry(sx, sy)
         self._points = [(x * sx, y * sy) for x, y in self._points]
+        self._rebuild_path()
+
+    def _shape_state_restored(self) -> None:
+        super()._shape_state_restored()
         self._rebuild_path()
 
     def boundingRect(self) -> QRectF:

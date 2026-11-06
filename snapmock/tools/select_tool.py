@@ -62,6 +62,12 @@ class _State(Enum):
     CANVAS_RESIZE = auto()
 
 
+def _axis_aligned(xform: QTransform) -> bool:
+    """True when *xform* has no rotation or skew, so a shape's measurements can follow an
+    axis-aligned handle drag; a rotated or skewed shape still stretches (3.4.2)."""
+    return abs(xform.m12()) < 1e-9 and abs(xform.m21()) < 1e-9
+
+
 class SelectTool(BaseTool):
     """The default selection and move tool with rubber-band, nudge, and transform handles."""
 
@@ -94,6 +100,10 @@ class SelectTool(BaseTool):
         self._handle_item_originals: list[tuple[SnapGraphicsItem, QPointF, QTransform]] = []
         # Original geometry for text items (keyed by id(item))
         self._text_originals: dict[int, dict[str, Any]] = {}
+        # A shape's own measurements at the start of a handle drag, for the shapes the
+        # drag resizes rather than stretches (Technical Architecture PRD 3.4.2)
+        self._shape_originals: dict[int, dict[str, Any]] = {}
+        self._shape_frame = QRectF()
         # Set by a double-click on a group; shown in the status bar (kickoff silence 1)
         self._group_hint: bool = False
         # The status-bar hint while the pointer rests on a locked item (Navigation PRD
@@ -659,6 +669,18 @@ class SelectTool(BaseTool):
                             "tail": QPointF(it._tail_tip),
                             "font_size": it.text_document.defaultFont().pointSize(),
                         }
+                self._shape_originals = {
+                    id(it): it.shape_state()
+                    for it in items
+                    if it.resizes_shape and _axis_aligned(it.transform())
+                }
+                self._shape_frame = QRectF()
+                for it in items:
+                    if id(it) in self._shape_originals:
+                        body = it.mapRectToScene(it.geometry_rect())
+                        self._shape_frame = (
+                            body if self._shape_frame.isNull() else self._shape_frame.united(body)
+                        )
                 return True
 
         # Check for item under cursor
@@ -1155,6 +1177,8 @@ class SelectTool(BaseTool):
         sy = max(sy, 0.01)
 
         for item, orig_pos, orig_xform in self._handle_item_originals:
+            if id(item) in self._shape_originals:
+                continue
             offset = orig_pos - anchor
             item.setPos(anchor + QPointF(offset.x() * sx, offset.y() * sy))
             if id(item) in self._text_originals:
@@ -1164,6 +1188,7 @@ class SelectTool(BaseTool):
                 xform.scale(sx, sy)
                 item.setTransform(xform)
 
+        self._resize_shapes(sx, sy, from_center=from_center, proportional=proportional)
         new_rect_w = orig_rect.width() * sx
         new_rect_h = orig_rect.height() * sy
         self._show_readout(cursor, f"{new_rect_w:.0f} × {new_rect_h:.0f}")
@@ -1190,6 +1215,8 @@ class SelectTool(BaseTool):
             sy = max(new_h / max(orig_h, 1.0), 0.01)
 
         for item, orig_pos, orig_xform in self._handle_item_originals:
+            if id(item) in self._shape_originals:
+                continue
             offset = orig_pos - anchor
             item.setPos(anchor + QPointF(offset.x() * sx, offset.y() * sy))
             if id(item) in self._text_originals:
@@ -1199,9 +1226,59 @@ class SelectTool(BaseTool):
                 xform.scale(sx, sy)
                 item.setTransform(xform)
 
+        self._resize_shapes(sx, sy)
         new_w = orig_rect.width() * sx
         new_h = orig_rect.height() * sy
         self._show_readout(cursor, f"{new_w:.0f} × {new_h:.0f}")
+
+    def _resize_shapes(
+        self, sx: float, sy: float, *, from_center: bool = False, proportional: bool = False
+    ) -> None:
+        """Resize the shapes of a handle drag by their own measurements (3.4.2).
+
+        The selection frame includes each shape's stroke, which a resize keeps, so the
+        shapes scale about their own outline: each outline edge moves as far as the frame
+        edge under the pointer, and the edge opposite the handle stays where it is.
+        """
+        if not self._shape_originals:
+            return
+        frame = self._handle_origin_rect
+        anchor = frame.center() if from_center else self._handle_anchor
+        outline = self._shape_frame
+
+        def factor(span: float, outline_size: float, s: float) -> float:
+            if outline_size < 1e-6 or span < 1.0:
+                return s
+            return max((outline_size + span * (s - 1.0)) / outline_size, 0.01)
+
+        def pick(value: float, low: float, high: float, out_low: float, out_high: float) -> float:
+            if abs(value - low) < 1e-6:
+                return out_low
+            if abs(value - high) < 1e-6:
+                return out_high
+            return (out_low + out_high) / 2.0
+
+        # The pointer's own span from the anchor, which the factors were measured on;
+        # growing from the centre moves both edges, so the outline grows twice the span
+        sides = 2.0 if from_center else 1.0
+        span_x = abs(self._drag_start.x() - anchor.x()) * sides
+        span_y = abs(self._drag_start.y() - anchor.y()) * sides
+        gsx = factor(span_x, outline.width(), sx)
+        gsy = factor(span_y, outline.height(), sy)
+        if proportional:
+            gsx = gsy = min(gsx, gsy)
+        origin = QPointF(
+            pick(anchor.x(), frame.left(), frame.right(), outline.left(), outline.right()),
+            pick(anchor.y(), frame.top(), frame.bottom(), outline.top(), outline.bottom()),
+        )
+        for item, orig_pos, _orig_xform in self._handle_item_originals:
+            shape = self._shape_originals.get(id(item))
+            if shape is None:
+                continue
+            offset = orig_pos - origin
+            item.setPos(origin + QPointF(offset.x() * gsx, offset.y() * gsy))
+            item.restore_shape_state(shape)
+            item.resize_shape(gsx, gsy)
 
     def _apply_skew(self, cursor: QPointF) -> None:
         """Apply shear when Ctrl+edge drag."""
@@ -1282,6 +1359,7 @@ class SelectTool(BaseTool):
 
     def _handle_transform_release(self) -> bool:
         """Commit transform as undoable command(s)."""
+        from snapmock.commands.geometry_commands import ResizeShapeCommand
         from snapmock.commands.macro_command import MacroCommand
         from snapmock.commands.transform_item import TransformItemCommand
 
@@ -1291,8 +1369,16 @@ class SelectTool(BaseTool):
             new_pos = QPointF(item.pos())
             new_xform = QTransform(item.transform())
 
+            shape = self._shape_originals.get(id(item))
             orig = self._text_originals.get(id(item))
-            if orig is not None:
+            if shape is not None and new_xform == orig_xform:
+                # A resize; a rotation or a skew changes the transform and falls through
+                new_shape = item.shape_state()
+                if new_pos != orig_pos or new_shape != shape:
+                    item.restore_shape_state(shape)
+                    item.setPos(orig_pos)
+                    commands.append(ResizeShapeCommand(item, orig_pos, new_pos, shape, new_shape))
+            elif orig is not None:
                 # Determine mode: if transform changed → scale mode, else reflow
                 scale_mode = new_xform != orig_xform
                 sub: list[Any] = []
@@ -1328,6 +1414,7 @@ class SelectTool(BaseTool):
         self._handle_pos = None
         self._handle_item_originals = []
         self._text_originals = {}
+        self._shape_originals = {}
         self._update_handles()
         return True
 

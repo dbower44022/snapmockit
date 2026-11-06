@@ -94,6 +94,41 @@ class ModifyGeometryCommand(BaseCommand):
         return True
 
 
+class ResizeShapeCommand(BaseCommand):
+    """A handle resize of a shape: its position and its own measurements, before and after
+    (Technical Architecture PRD 3.4.2). Stroke width and the other style values stay."""
+
+    def __init__(
+        self,
+        item: SnapGraphicsItem,
+        old_pos: QPointF,
+        new_pos: QPointF,
+        old_state: dict[str, Any],
+        new_state: dict[str, Any],
+    ) -> None:
+        self._item = item
+        self._old_pos = QPointF(old_pos)
+        self._new_pos = QPointF(new_pos)
+        self._old_state = old_state
+        self._new_state = new_state
+
+    @property
+    def item(self) -> SnapGraphicsItem:
+        return self._item
+
+    def redo(self) -> None:
+        self._item.restore_shape_state(self._new_state)
+        self._item.setPos(self._new_pos)
+
+    def undo(self) -> None:
+        self._item.restore_shape_state(self._old_state)
+        self._item.setPos(self._old_pos)
+
+    @property
+    def description(self) -> str:
+        return f"Resize {shape_name(self._item)}"
+
+
 class _VertexItem(Protocol):
     def insert_vertex(self, index: int, position: QPointF) -> None: ...
     def remove_vertex(self, index: int) -> QPointF: ...

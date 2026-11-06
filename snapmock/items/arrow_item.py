@@ -147,6 +147,9 @@ def head_geometry(
 class ArrowItem(VectorItem):
     """A line with an arrowhead at the end point and an optional one at the start."""
 
+    SHAPE_FIELDS = ("_line", "_control_point", "_bend_point")
+    KEPT_ON_RESIZE = (*VectorItem.KEPT_ON_RESIZE, "_head_size_custom")
+
     def __init__(
         self,
         line: QLineF | None = None,

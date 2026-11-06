@@ -13,6 +13,8 @@ from snapmock.items.vector_item import VectorItem
 class EllipseItem(VectorItem):
     """An ellipse annotation item."""
 
+    SHAPE_FIELDS = ("_rect",)
+
     def __init__(
         self,
         rect: QRectF | None = None,

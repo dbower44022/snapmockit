@@ -13,6 +13,8 @@ from snapmock.items.vector_item import VectorItem
 class LineItem(VectorItem):
     """A straight-line annotation item."""
 
+    SHAPE_FIELDS = ("_line",)
+
     def __init__(
         self,
         line: QLineF | None = None,

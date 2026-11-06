@@ -116,6 +116,8 @@ def _mid(a: QPointF, b: QPointF) -> QPointF:
 class FreehandItem(VectorItem):
     """A freehand drawn path annotation item."""
 
+    SHAPE_FIELDS = ("_path_points", "_segments")
+
     def __init__(self, parent: VectorItem | None = None) -> None:
         super().__init__(parent)
         self._path_points: list[QPointF] = []
@@ -461,6 +463,10 @@ class FreehandItem(VectorItem):
         self._segments = [
             (scaled(a), scaled(b), scaled(c), scaled(d)) for a, b, c, d in self._segments
         ]
+        self._shape_state_restored()
+
+    def _shape_state_restored(self) -> None:
+        super()._shape_state_restored()
         self._preview = QPainterPath()
         for i, p in enumerate(self._path_points):
             if i == 0:

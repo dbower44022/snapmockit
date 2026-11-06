@@ -45,6 +45,8 @@ def circumcentre(a: QPointF, b: QPointF, c: QPointF) -> QPointF | None:
 class ArcItem(VectorItem):
     """An arc between two points, bent through a control point."""
 
+    SHAPE_FIELDS = ("_start", "_end", "_control")
+
     def __init__(
         self,
         start: QPointF | None = None,

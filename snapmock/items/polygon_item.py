@@ -65,6 +65,8 @@ def regular_vertices(
 class PolygonItem(VectorItem):
     """A polygon annotation item."""
 
+    SHAPE_FIELDS = ("_vertices", "_center", "_radius")
+
     def __init__(
         self, vertices: list[QPointF] | None = None, parent: VectorItem | None = None
     ) -> None:

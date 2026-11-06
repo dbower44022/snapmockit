@@ -6,8 +6,8 @@ import uuid
 from abc import abstractmethod
 from typing import Any
 
-from PyQt6.QtCore import QRectF
-from PyQt6.QtGui import QPainter, QPainterPath, QTransform
+from PyQt6.QtCore import QLineF, QPointF, QRectF
+from PyQt6.QtGui import QImage, QPainter, QPainterPath, QTransform
 from PyQt6.QtWidgets import QGraphicsObject
 
 from snapmock.core.layer import DEFAULT_BLEND_MODE, composition_mode, normalize_item_blend_mode
@@ -310,8 +310,66 @@ class SnapGraphicsItem(QGraphicsObject):
         Subclasses override to scale rects, paths, radii, etc. Default is no-op.
         """
 
+    # --- shape resize (Technical Architecture PRD 3.4.2) ---
+
+    SHAPE_FIELDS: tuple[str, ...] = ()
+    """The attributes that hold a shape's own measurements. Empty means the item has none
+    the resize handles can change, so a handle drag stretches it through its transform."""
+
+    KEPT_ON_RESIZE: tuple[str, ...] = ()
+    """The attributes a handle resize leaves as they are: stroke width, corner rounding,
+    arrowhead size, blur strength. scale_geometry changes them; resize_shape puts them back."""
+
+    @property
+    def resizes_shape(self) -> bool:
+        """True when a handle drag changes this item's measurements, not its transform."""
+        return bool(self.SHAPE_FIELDS)
+
+    def shape_state(self) -> dict[str, Any]:
+        """A copy of the shape's measurements, for a drag's preview and its undo."""
+        return {name: _copy_value(getattr(self, name)) for name in self.SHAPE_FIELDS}
+
+    def restore_shape_state(self, state: dict[str, Any]) -> None:
+        """Put back measurements taken by :meth:`shape_state`."""
+        self.prepareGeometryChange()
+        for name, value in state.items():
+            setattr(self, name, _copy_value(value))
+        self._shape_state_restored()
+        self.update()
+
+    def resize_shape(self, sx: float, sy: float) -> None:
+        """Resize the shape about its local origin by (sx, sy), keeping its style values."""
+        kept = {name: _copy_value(getattr(self, name)) for name in self.KEPT_ON_RESIZE}
+        self.scale_geometry(sx, sy)
+        for name, value in kept.items():
+            setattr(self, name, value)
+        self._shape_state_restored()
+        self.update()
+
+    def _shape_state_restored(self) -> None:
+        """Rebuild anything derived from the measurements. Subclasses override."""
+
     # --- type label for UI ---
 
     @property
     def type_name(self) -> str:
         return type(self).__name__
+
+
+def _copy_value(value: Any) -> Any:
+    """A copy of a measurement that later edits of the original cannot reach."""
+    if isinstance(value, QRectF):
+        return QRectF(value)
+    if isinstance(value, QPointF):
+        return QPointF(value)
+    if isinstance(value, QLineF):
+        return QLineF(value)
+    if isinstance(value, QImage):
+        return value.copy()
+    if isinstance(value, list):
+        return [_copy_value(v) for v in value]
+    if isinstance(value, tuple):
+        return tuple(_copy_value(v) for v in value)
+    if isinstance(value, dict):
+        return {k: _copy_value(v) for k, v in value.items()}
+    return value

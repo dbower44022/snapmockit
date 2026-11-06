@@ -27,6 +27,9 @@ def _clamp_radius(value: object) -> float:
 class RectangleItem(VectorItem):
     """A rectangle (optionally rounded) annotation item."""
 
+    SHAPE_FIELDS = ("_rect",)
+    KEPT_ON_RESIZE = (*VectorItem.KEPT_ON_RESIZE, "_corner_radius", "_corners")
+
     def __init__(
         self,
         rect: QRectF | None = None,

@@ -11,12 +11,12 @@
 
 <header class="doc-head">
   <h1>Navigation &amp; Raster Operations</h1>
-  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.14</span>
+  <span class="doc-id">SnapMock · Product Requirements Document · Version 1.15</span>
   <dl class="doc-meta">
     <dt>Product</dt>         <dd>SnapMock — open source screenshot annotation and user interface mockup tool</dd>
     <dt>Covers</dt>          <dd>Select / Move · Pan · Zoom · Raster selection · Crop · Resize canvas · Border · Copy, cut, paste, duplicate</dd>
-    <dt>Document version</dt><dd>1.14</dd>
-    <dt>Last Updated</dt>    <dd>09-25-26 21:33</dd>
+    <dt>Document version</dt><dd>1.15</dd>
+    <dt>Last Updated</dt>    <dd>11-06-26 00:01</dd>
     <dt>Author</dt>          <dd>Doug Bower</dd>
     <dt>Repository</dt>      <dd>dbower44022/snapmockit</dd>
   </dl>
@@ -31,6 +31,13 @@
       <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approval</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>1.15</td>
+        <td class="nowrap">11-06-26 00:01</td>
+        <td>Doug Bower</td>
+        <td><strong>2.5.1, 2.5.2</strong>: a corner or edge handle changes a shape's own measurements and keeps its stroke width, corner rounding, arrowheads, and blur strength, where it had scaled the shape like an image (Technical Architecture PRD 1.78; Doug's decision A of 11-05-26: a placed shape, deselected and reselected, stretched like a picture under the resize handles, its border and corners growing with it, where the same shape being drawn changed size with its border fixed.)</td>
+        <td><span class="status open">Pending</span></td>
+      </tr>
       <tr>
         <td>1.14</td>
         <td class="nowrap">09-25-26 21:33</td>
@@ -164,6 +171,12 @@
       <tr><th>Date</th><th>Section</th><th>Type</th><th>Detail</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td class="nowrap">11-06-26 00:01</td>
+        <td>2.5.1, 2.5.2</td>
+        <td>Changed / Decision</td>
+        <td><strong>Changed</strong> (Doug's decision A of 11-05-26: a placed shape, deselected and reselected, stretched like a picture under the resize handles, its border and corners growing with it, where the same shape being drawn changed size with its border fixed.) Where 2.5.1 says the items are "scaled", a shape's measurements are resized and its style values kept (Technical Architecture PRD 3.4.2).</td>
+      </tr>
       <tr>
         <td class="nowrap">09-25-26 21:33</td>
         <td>2.2.2, 2.3, 2.4, 2.5, 2.7, 2.8</td>
@@ -660,6 +673,7 @@ threshold (3 pixels).</p>
   <li>Minimum size: items cannot be resized below 1x1 pixel. If the drag would result in a
   smaller size, clamp to 1x1.</li>
   <li>Visual feedback: display the current width and height near the handle being dragged.</li>
+  <li>Shapes (11-06-26; Technical Architecture PRD 3.4.2): A drag of a corner or edge handle changes a shape's own measurements, not its transform: the rectangle of a rectangle, ellipse, or blur; the points of a line, arrow, arc, polygon, highlight, or freehand stroke. Stroke width, corner rounding, arrowhead size, and blur strength keep their values, so a resized shape looks as it would had it been drawn at that size. The shape's outline, not the selection frame that includes its stroke, follows the pointer: the outline's edge under the handle moves as far as the pointer does and the opposite edge stays. Images, stamps, emoji, numbered steps, and groups still stretch, and text and callouts keep their reflow. A shape that is rotated or skewed still stretches, since the axis-aligned handles cannot keep it the shape it is. The drag is committed as one <code>ResizeShapeCommand</code> per shape (position and measurements, before and after). This holds for the edge handles of 2.5.2 too.</li>
 </ul>
 
 <p><strong>2.5.2 Resize via Edge Midpoint Handles:</strong></p>
